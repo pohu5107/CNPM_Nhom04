@@ -4,9 +4,18 @@ import { useState } from "react";
 import DetailsBusForm from "./DetailsBusForm";
 
 const initial = [
-      { id: 1, code: "BUS-01", plate: "51A-123.45", seats: 45, status: "Đang hoạt động"},
-      { id: 2, code: "BUS-02", plate: "51A-678.90", seats: 30, status: "Không hoạt động" },
-    ];
+  { id: 1, code: "BUS-01", plate: "51A-123.45", seats: 45, status: "Đang hoạt động" },
+  { id: 2, code: "BUS-02", plate: "51B-678.90", seats: 30, status: "Không hoạt động" },
+  { id: 3, code: "BUS-03", plate: "51C-234.56", seats: 40, status: "Đang bảo trì" },
+  { id: 4, code: "BUS-04", plate: "51D-789.01", seats: 50, status: "Đang hoạt động" },
+  { id: 5, code: "BUS-05", plate: "51E-345.67", seats: 35, status: "Đang hoạt động" },
+  { id: 6, code: "BUS-06", plate: "51F-890.12", seats: 60, status: "Không hoạt động" },
+  { id: 7, code: "BUS-07", plate: "51G-456.78", seats: 55, status: "Đang hoạt động" },
+  { id: 8, code: "BUS-08", plate: "51H-901.23", seats: 42, status: "Đang bảo trì" },
+  { id: 9, code: "BUS-09", plate: "51K-567.89", seats: 33, status: "Đang hoạt động" },
+  { id: 10, code: "BUS-10", plate: "51L-012.34", seats: 48, status: "Không hoạt động" },
+];
+
 
 export default function BusesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
