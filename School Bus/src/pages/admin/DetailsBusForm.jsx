@@ -30,9 +30,12 @@ export default function DetailsBusForm({ visible, onCancel, bus }) {
                             <div>
                                 <span className="font-semibold">Tuyến:</span> {bus.route?.name || "Trống"}
                             </div>
+                            <div>
+                                <span className="font-semibold">Vị trí hiện tại:</span> {"Trống"}
+                            </div>
                         </div>
                         <div className="border rounded-lg p-3 bg-yellow-50 text-yellow-800 text-sm">
-                            <span className="font-semibold">Ghi chú:</span> Xe mới bảo dưỡng, lưu ý kiểm tra định kỳ.
+                            <span className="font-semibold">Ghi chú:</span> Bình thường
                         </div>
                     </div>
                 </div>
