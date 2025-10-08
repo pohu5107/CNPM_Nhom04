@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hover: #fc791a;
+
+  /* background stops */
+  --bg-start: #0f172a; /* dark */
+  --bg-end:   #0ea5a4; /* teal */
+  --bg-alt-start: #0b1220;
+  --bg-alt-end:   #7c3aed;
+
+  /* composed gradients */
+  --color-bg: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+}
+
+button {
+  cursor: pointer;
+}
