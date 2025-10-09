@@ -1,3 +1,6 @@
+import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 const Pagination = ({ 
   currentPage, 
   totalItems, 
@@ -46,37 +49,50 @@ const Pagination = ({
   };
 
   return (
-    <div className="pagination">
-      <div className="pagination-info">
-        Hiển thị {startItem}-{endItem} trong tổng số {totalItems} mục
+    <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-slate-200">
+      <div className="flex items-center text-sm text-slate-700">
+        Hiển thị {startItem} đến {endItem} trong tổng số {totalItems} mục
       </div>
       
-      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+      <div className="flex items-center gap-2">
         <button
-          className="btn btn-secondary btn-sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
         >
+          <ChevronLeft size={16} />
           Trước
         </button>
         
-        {getPageNumbers().map((page, index) => (
-          <button
-            key={index}
-            className={`btn btn-sm ${page === currentPage ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => typeof page === 'number' && onPageChange(page)}
-            disabled={page === '...'}
-          >
-            {page}
-          </button>
-        ))}
+        <div className="flex items-center gap-1">
+          {getPageNumbers().map((page, index) => (
+            page === '...' ? (
+              <span key={index} className="px-3 py-1.5 text-sm text-slate-400">
+                ...
+              </span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => onPageChange(page)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  page === currentPage
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {page}
+              </button>
+            )
+          ))}
+        </div>
         
         <button
-          className="btn btn-secondary btn-sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
         >
           Sau
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

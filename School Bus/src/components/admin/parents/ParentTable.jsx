@@ -107,7 +107,11 @@ const ParentTable = ({ onAdd, onEdit, onView, onDelete, onViewChildren }) => {
       key: 'status', 
       header: 'Trạng thái',
       render: (item) => (
-        <span className={`status-badge ${item.status === 'active' ? 'status-active' : 'status-inactive'}`}>
+        <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
+          item.status === 'active' 
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-slate-200 text-slate-600'
+        }`}>
           {item.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
         </span>
       )

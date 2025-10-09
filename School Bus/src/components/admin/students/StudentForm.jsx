@@ -205,7 +205,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         rows={3}
       />
 
-      <div className="modal-footer">
+      <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
         <Button variant="secondary" onClick={onCancel}>
           {isReadOnly ? 'Đóng' : 'Hủy'}
         </Button>

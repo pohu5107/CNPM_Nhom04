@@ -200,16 +200,20 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           />
         )}
 
-        {isReadOnly && (
-          <div className="form-group">
-            <label className="form-label">Trạng thái</label>
-            <div style={{ padding: '10px 0' }}>
-              <span className={`status-badge ${formData.status === 'active' ? 'status-active' : 'status-inactive'}`}>
-                {formData.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-              </span>
-            </div>
+      {isReadOnly && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">Trạng thái</label>
+          <div className="py-2">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              formData.status === 'active' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {formData.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+            </span>
           </div>
-        )}
+        </div>
+      )}
       </div>
 
      
@@ -227,7 +231,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
         rows={3}
       />
 
-      <div className="modal-footer">
+      <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
         <Button variant="secondary" onClick={onCancel}>
           {isReadOnly ? 'Đóng' : 'Hủy'}
         </Button>

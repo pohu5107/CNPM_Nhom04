@@ -7,6 +7,8 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [classFilter, setClassFilter] = useState('');
 
+
+
   // Get unique classes for filter
   const uniqueClasses = [...new Set(students.map(s => s.class))].sort();
 

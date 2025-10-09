@@ -1,25 +1,13 @@
-import { mockStudents } from '../../../data/mockData';
+import React from 'react';
 import Modal from '../../UI/Modal';
 import Button from '../../common/Button';
+import { mockStudents } from '../../../data/mockData';
 
-const ChildrenListModal = ({ isOpen, onClose, parent }) => {
-  // Get children details for display
-  const getChildrenDetails = () => {
-    if (!parent?.children?.length) return [];
-    
-    return parent.children.map(childId => {
-      const student = mockStudents.find(s => s.id.toString() === childId);
-      return student ? {
-        id: student.id,
-        name: student.name,
-        studentCode: student.studentCode,
-        class: student.class,
-        dateOfBirth: student.dateOfBirth
-      } : null;
-    }).filter(child => child !== null);
-  };
-
-  const childrenDetails = getChildrenDetails();
+const ChildrenListModal = ({ isOpen, onClose, parent, children = [] }) => {
+  // Find actual students from mockStudents based on parent ID
+  const childrenDetails = mockStudents.filter(student => 
+    student.parentId === parent?.id
+  );
 
   return (
     <Modal
@@ -28,84 +16,48 @@ const ChildrenListModal = ({ isOpen, onClose, parent }) => {
       title={`Danh sách con em - ${parent?.name}`}
       size="md"
     >
-      <div className="children-list-modal">
+      <div className="space-y-4">
         {/* Header Info */}
-        <div style={{ 
-          padding: '12px 16px', 
-          backgroundColor: '#f8fafc', 
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ fontWeight: '500', color: '#1e293b', marginBottom: '4px' }}>
+        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="font-medium text-slate-900 mb-1">
             Phụ huynh: {parent?.name}
           </div>
-          <div style={{ fontSize: '14px', color: '#64748b' }}>
+          <div className="text-sm text-slate-600">
             Tổng số con: {childrenDetails.length} học sinh
           </div>
         </div>
 
         {/* Children List */}
         {childrenDetails.length > 0 ? (
-          <div className="children-list-container" style={{ 
-            maxHeight: '400px', 
-            overflowY: 'auto',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px'
-          }}>
+          <div className="max-h-96 overflow-y-auto border border-slate-200 rounded-lg">
             {childrenDetails.map((child, index) => (
               <div 
                 key={child.id}
-                className="child-item"
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '12px 16px',
-                  borderBottom: index < childrenDetails.length - 1 ? '1px solid #e2e8f0' : 'none',
-                  backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc'
-                }}
+                className={`flex justify-between items-center p-4 border-b border-slate-200 last:border-b-0 ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-slate-50'
+                }`}
               >
-                <div className="child-info" style={{ flex: 1 }}>
-                  <div className="child-name" style={{ 
-                    fontWeight: '500', 
-                    color: '#1e293b',
-                    marginBottom: '4px',
-                    fontSize: '15px'
-                  }}>
+                <div className="flex-1">
+                  <div className="font-medium text-slate-900 mb-1 text-sm">
                     {child.name}
                   </div>
-                  <div className="child-details" style={{ 
-                    fontSize: '13px', 
-                    color: '#64748b',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px'
-                  }}>
-                    <span>🆔 Mã HS: {child.studentCode}</span>
-                    <span>� Lớp: {child.class}</span>
-                    <span>🎂 Ngày sinh: {new Date(child.dateOfBirth).toLocaleDateString('vi-VN')}</span>
+                  <div className="text-xs text-slate-600 space-y-1">
+                    <div>🆔 Mã HS: {child.studentCode}</div>
+                    <div>📚 Lớp: {child.class}</div>
+                    <div>🎂 Ngày sinh: {new Date(child.dateOfBirth).toLocaleDateString('vi-VN')}</div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ 
-            padding: '24px',
-            textAlign: 'center',
-            color: '#64748b',
-            fontStyle: 'italic',
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px'
-          }}>
+          <div className="p-6 text-center text-slate-500 italic bg-slate-50 border border-slate-200 rounded-lg">
             📝 Chưa có con em nào được đăng ký
           </div>
         )}
 
         {/* Footer */}
-        <div className="modal-footer" style={{ marginTop: '20px' }}>
+        <div className="flex justify-end pt-4 mt-4 border-t border-slate-200">
           <Button variant="secondary" onClick={onClose}>
             Đóng
           </Button>

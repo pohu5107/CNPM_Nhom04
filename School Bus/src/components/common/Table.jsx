@@ -16,24 +16,17 @@ const Table = ({
   emptyMessage = "Không có dữ liệu"
 }) => {
   return (
-    <div className="table-container">
-      <div className="table-header">
-        <h2 className="table-title">{title}</h2>
-        <div className="table-actions">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
+        <div className="flex gap-3 items-center">
           {/* Search */}
-          <div style={{ position: 'relative' }}>
-            <Search size={16} style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#6b7280'
-            }} />
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm kiếm..."
-              className="search-input"
-              style={{ paddingLeft: '40px' }}
+              className="pl-10 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 min-w-[250px]"
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
             />
@@ -43,13 +36,13 @@ const Table = ({
           {filters.map((filter, index) => (
             <select
               key={index}
-              className="form-select"
+              className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
               style={{ minWidth: filter.minWidth || '120px' }}
             >
               <option value="">{filter.placeholder}</option>
-              {filter.options.map(option => (
+              {filter.options?.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -59,7 +52,10 @@ const Table = ({
 
           {/* Add Button */}
           {onAdd && (
-            <button className="btn btn-primary" onClick={onAdd}>
+            <button 
+              className="h-10 px-4 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors flex items-center gap-2"
+              onClick={onAdd}
+            >
               {addButtonText}
             </button>
           )}
@@ -67,74 +63,84 @@ const Table = ({
       </div>
 
       {/* Table */}
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>STT</th>
-            {columns.map((column, index) => (
-              <th key={index}>{column.header}</th>
-            ))}
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="min-w-full divide-y divide-slate-200 bg-white">
+          <thead>
             <tr>
-              <td colSpan={columns.length + 2} style={{ textAlign: 'center', padding: '40px' }}>
-                Đang tải...
-              </td>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
+              {columns.map((column, index) => (
+                <th key={index} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
+                  {column.header}
+                </th>
+              ))}
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">Thao tác</th>
             </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length + 2} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            data.map((item, index) => (
-              <tr key={item.id || index}>
-                <td>{index + 1}</td>
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex}>
-                    {column.render ? column.render(item) : item[column.key]}
-                  </td>
-                ))}
-                <td>
-                  <div className="action-buttons">
-                    {onView && (
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => onView(item)}
-                        title="Xem chi tiết"
-                      >
-                        <Eye size={14} />
-                      </button>
-                    )}
-                    {onEdit && (
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => onEdit(item)}
-                        title="Chỉnh sửa"
-                      >
-                        <Edit size={14} />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => onDelete(item)}
-                        title="Xóa"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {isLoading ? (
+              <tr>
+                <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-slate-500">
+                  Đang tải...
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-slate-500">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+              data.map((item, index) => (
+                <tr 
+                  key={item.id || index}
+                  className={`transition-colors ${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100`}
+                >
+                  <td className="px-6 py-4 text-slate-700">{index + 1}</td>
+                  {columns.map((column) => (
+                    <td key={column.key} className="px-6 py-4 text-slate-700">
+                      {column.render ? column.render(item) : item[column.key]}
+                    </td>
+                  ))}
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end gap-2">
+                      {onView && (
+                        <button
+                          onClick={() => onView(item)}
+                          className="h-8 rounded-md border border-slate-300 px-2 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={12} />
+                          Xem chi tiết
+                        </button>
+                      )}
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(item)}
+                          className="h-8 rounded-md border border-slate-300 px-2 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit size={12} />
+                          Sửa
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(item)}
+                          className="h-8 rounded-md bg-red-500 px-2 text-white font-medium hover:bg-red-600 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          title="Xóa"
+                        >
+                          <Trash2 size={12} />
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

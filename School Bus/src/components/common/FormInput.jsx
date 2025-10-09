@@ -1,46 +1,39 @@
-const FormInput = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
-  error, 
+const FormInput = ({
+  label,
+  name,
+  type = 'text',
+  value,
+  onChange,
+  error,
   placeholder,
   required = false,
   readOnly = false,
-  rows,
-  options = [], // for select
-  ...props 
+  options = [],
+  rows = 3,
+  className = '',
+  ...props
 }) => {
-  const inputProps = {
-    name,
-    value: value || '',
-    onChange,
-    placeholder,
-    readOnly,
-    ...props
-  };
+  const baseInputClasses = 'w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors';
+  const errorClasses = error ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-slate-500';
+  const readOnlyClasses = readOnly ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white';
+  
+  const inputClasses = `${baseInputClasses} ${errorClasses} ${readOnlyClasses} ${className}`;
 
   const renderInput = () => {
     switch (type) {
-      case 'textarea':
-        return (
-          <textarea
-            {...inputProps}
-            className="form-input"
-            rows={rows || 3}
-          />
-        );
-      
       case 'select':
         return (
           <select
-            {...inputProps}
-            className="form-select"
+            name={name}
+            value={value}
+            onChange={onChange}
+            className={inputClasses}
+            required={required}
             disabled={readOnly}
+            {...props}
           >
-            <option value="">{placeholder || `Chọn ${label.toLowerCase()}`}</option>
-            {options.map(option => (
+            {placeholder && <option value="">{placeholder}</option>}
+            {options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -48,27 +41,49 @@ const FormInput = ({
           </select>
         );
       
+      case 'textarea':
+        return (
+          <textarea
+            name={name}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={inputClasses}
+            rows={rows}
+            required={required}
+            readOnly={readOnly}
+            {...props}
+          />
+        );
+      
       default:
         return (
           <input
-            {...inputProps}
             type={type}
-            className="form-input"
+            name={name}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={inputClasses}
+            required={required}
+            readOnly={readOnly}
+            {...props}
           />
         );
     }
   };
 
   return (
-    <div className="form-group">
-      <label className="form-label">
-        {label} {required && '*'}
-      </label>
+    <div className="space-y-1">
+      {label && (
+        <label className="block text-sm font-medium text-slate-700">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
       {renderInput()}
       {error && (
-        <span style={{ color: '#ef4444', fontSize: '12px' }}>
-          {error}
-        </span>
+        <p className="text-sm text-red-600">{error}</p>
       )}
     </div>
   );
