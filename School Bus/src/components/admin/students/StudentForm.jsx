@@ -50,18 +50,10 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.class = 'Lớp học là bắt buộc';
     }
 
-    // Chỉ validate parentId, busRoute, pickupPoint khi thêm mới
+    // Chỉ validate parentId khi thêm mới
     if (mode === 'add') {
       if (!formData.parentId) {
         newErrors.parentId = 'Phụ huynh là bắt buộc';
-      }
-
-      if (!formData.busRoute) {
-        newErrors.busRoute = 'Tuyến xe là bắt buộc';
-      }
-
-      if (!formData.pickupPoint) {
-        newErrors.pickupPoint = 'Điểm đón là bắt buộc';
       }
     }
 
@@ -195,34 +187,6 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           required
           readOnly={mode !== 'add'}
           placeholder={mode === 'add' ? 'Chọn phụ huynh' : undefined}
-        />
-
-        {/* Tuyến xe - Chỉ edit khi thêm mới */}
-        <FormInput
-          label="Tuyến xe"
-          name="busRoute"
-          type={mode === 'add' ? 'select' : 'text'}
-          value={formData.busRoute}
-          onChange={handleChange}
-          error={errors.busRoute}
-          options={mode === 'add' ? routes.map(route => ({ value: route, label: route })) : undefined}
-          required
-          readOnly={mode !== 'add'}
-          placeholder={mode === 'add' ? 'Chọn tuyến xe' : undefined}
-        />
-
-        {/* Điểm đón - Chỉ edit khi thêm mới */}
-        <FormInput
-          label="Điểm đón"
-          name="pickupPoint"
-          type={mode === 'add' ? 'select' : 'text'}
-          value={formData.pickupPoint}
-          onChange={handleChange}
-          error={errors.pickupPoint}
-          options={mode === 'add' ? pickupPoints.map(point => ({ value: point, label: point })) : undefined}
-          required
-          readOnly={mode !== 'add'}
-          placeholder={mode === 'add' ? 'Chọn điểm đón' : undefined}
         />
       </div>
 

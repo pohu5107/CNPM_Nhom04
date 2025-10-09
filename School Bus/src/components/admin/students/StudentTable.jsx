@@ -43,14 +43,6 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
       key: 'dateOfBirth', 
       header: 'Ngày sinh',
       render: (item) => new Date(item.dateOfBirth).toLocaleDateString('vi-VN')
-    },
-    { 
-      key: 'busRoute', 
-      header: 'Tuyến xe' 
-    },
-    { 
-      key: 'pickupPoint', 
-      header: 'Điểm đón' 
     }
   ];
 

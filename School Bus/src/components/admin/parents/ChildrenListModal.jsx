@@ -12,9 +12,9 @@ const ChildrenListModal = ({ isOpen, onClose, parent }) => {
       return student ? {
         id: student.id,
         name: student.name,
+        studentCode: student.studentCode,
         class: student.class,
-        route: student.busRoute,
-        pickupPoint: student.pickupPoint
+        dateOfBirth: student.dateOfBirth
       } : null;
     }).filter(child => child !== null);
   };
@@ -82,9 +82,9 @@ const ChildrenListModal = ({ isOpen, onClose, parent }) => {
                     flexDirection: 'column',
                     gap: '2px'
                   }}>
-                    <span>📚 Lớp: {child.class}</span>
-                    <span>🚌 Tuyến: {child.route}</span>
-                    <span>📍 Điểm đón: {child.pickupPoint}</span>
+                    <span>🆔 Mã HS: {child.studentCode}</span>
+                    <span>� Lớp: {child.class}</span>
+                    <span>🎂 Ngày sinh: {new Date(child.dateOfBirth).toLocaleDateString('vi-VN')}</span>
                   </div>
                 </div>
               </div>

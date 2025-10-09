@@ -72,16 +72,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
       newErrors.address = 'Địa chỉ là bắt buộc';
     }
 
-    // Don't validate busNumber and route for edit mode (managed in schedule page)
-    if (mode === 'add') {
-      if (!formData.busNumber) {
-        newErrors.busNumber = 'Xe buýt là bắt buộc';
-      }
-      if (!formData.route) {
-        newErrors.route = 'Tuyến đường là bắt buộc';
-      }
-    }
-
+    // Don't validate busNumber and route anymore
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -193,32 +184,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           readOnly={isReadOnly}
         />
 
-        {/* Show bus and route info but make readonly in edit mode */}
-        <FormInput
-          label="Xe buýt"
-          name="busNumber"
-          type={mode === 'add' ? 'select' : 'text'}
-          value={formData.busNumber}
-          onChange={handleChange}
-          error={errors.busNumber}
-          options={mode === 'add' ? buses.map(bus => ({ value: bus, label: bus })) : undefined}
-          required={mode === 'add'}
-          readOnly={isReadOnly || mode === 'edit'}
-          placeholder={mode === 'edit' ? 'Quản lý tại trang phân công lịch trình' : undefined}
-        />
-
-        <FormInput
-          label="Tuyến đường"
-          name="route"
-          type={mode === 'add' ? 'select' : 'text'}
-          value={formData.route}
-          onChange={handleChange}
-          error={errors.route}
-          options={mode === 'add' ? routes.map(route => ({ value: route, label: route })) : undefined}
-          required={mode === 'add'}
-          readOnly={isReadOnly || mode === 'edit'}
-          placeholder={mode === 'edit' ? 'Quản lý tại trang phân công lịch trình' : undefined}
-        />
+        {/* Only show bus and route info in view mode */}
 
         {!isReadOnly && (
           <FormInput

@@ -20,9 +20,8 @@ const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
       driver.licenseNumber.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = !statusFilter || driver.status === statusFilter;
-    const matchesRoute = !routeFilter || driver.route === routeFilter;
 
-    return matchesSearch && matchesStatus && matchesRoute;
+    return matchesSearch && matchesStatus;
   });
 
   const columns = [
@@ -43,16 +42,6 @@ const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
       header: 'Bằng lái' 
     },
     { 
-      key: 'busNumber', 
-      header: 'Xe/Tuyến',
-      render: (item) => (
-        <div style={{ fontSize: '12px' }}>
-          <div>{item.busNumber}</div>
-          <div style={{ color: '#6b7280' }}>{item.route}</div>
-        </div>
-      )
-    },
-    { 
       key: 'experience', 
       header: 'Kinh nghiệm' 
     },
@@ -68,13 +57,6 @@ const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
   ];
 
   const filters = [
-    {
-      placeholder: 'Tất cả tuyến',
-      value: routeFilter,
-      onChange: setRouteFilter,
-      options: uniqueRoutes.map(route => ({ value: route, label: route })),
-      minWidth: '120px'
-    },
     {
       placeholder: 'Tất cả trạng thái',
       value: statusFilter,
@@ -100,7 +82,7 @@ const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
       onDelete={onDelete}
       addButtonText="Thêm tài xế"
       filters={filters}
-      emptyMessage={searchTerm || statusFilter || routeFilter ? 'Không tìm thấy tài xế nào phù hợp' : 'Chưa có tài xế nào'}
+      emptyMessage={searchTerm || statusFilter ? 'Không tìm thấy tài xế nào phù hợp' : 'Chưa có tài xế nào'}
     />
   );
 };
