@@ -72,7 +72,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
       newErrors.address = 'Địa chỉ là bắt buộc';
     }
 
-    // Don't validate busNumber and route anymore
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -184,7 +184,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           readOnly={isReadOnly}
         />
 
-        {/* Only show bus and route info in view mode */}
+    
 
         {!isReadOnly && (
           <FormInput

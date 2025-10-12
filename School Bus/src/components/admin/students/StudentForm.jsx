@@ -172,7 +172,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           readOnly={isReadOnly}
         />
 
-        {/* Phụ huynh - Chỉ edit khi thêm mới, readonly khi edit/view */}
+  
         <FormInput
           label="Phụ huynh"
           name="parentId"
