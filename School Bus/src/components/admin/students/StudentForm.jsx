@@ -50,7 +50,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.class = 'Lớp học là bắt buộc';
     }
 
-    // Chỉ validate parentId khi thêm mới
+   
     if (mode === 'add') {
       if (!formData.parentId) {
         newErrors.parentId = 'Phụ huynh là bắt buộc';

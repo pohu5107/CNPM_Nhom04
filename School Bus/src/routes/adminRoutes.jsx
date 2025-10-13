@@ -20,8 +20,7 @@ const AdminRoutes = () => {
   return (
     <AdminLayout>
       <Routes>
-        {/* Default redirect to dashboard */}
-        {/* <Route path="/" element={<Navigate to="dashboard" replace />} /> */}
+   
         
         {/* Admin pages */}
         <Route path="dashboard" element={<DashboardPage />} />
@@ -29,7 +28,7 @@ const AdminRoutes = () => {
         <Route path="students" element={<StudentsPage />} />
         <Route path="drivers" element={<DriversPage />} />
         
-        {/* Default redirect to dashboard if no path */}
+       
         <Route path="" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>
