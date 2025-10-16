@@ -3,13 +3,17 @@ import { NavLink } from "react-router-dom";
 export default function Navbar_Menu() {
   return (
     <aside
-      className="w-64 min-h-screen text-white flex flex-col p-4 flex-shrink-0"
-      style={{ backgroundColor: "#174D2C" }}
+      className="h-screen w-56 sm:w-60 md:w-64 lg:w-72 flex-shrink-0 text-white flex flex-col p-4 bg-bg overflow-y-auto overflow-x-hidden"
     >
       {/* Logo / Tiêu đề */}
-      <div className="text-4xl rounded-[15px] font-semibold mb-15 text-center tracking-wide mt-[15px] bg-white text-[#174D2C] rounded-[50px] py-12 shadow-md">
+      <div className="pb-4 items-center flex justify-center ">
         {/* 🚌 */}
-         ADMIN
+        {/* download về */}
+        <img
+              src="https://www.shutterstock.com/image-vector/illustration-yellow-school-bus-flat-600nw-2246845245.jpg"
+              alt="Ảnh logo"
+              className="w-24 h-24 rounded-full object-cover border"
+          />
       </div>
 
       {/* Các link menu */}
@@ -29,11 +33,11 @@ export default function Navbar_Menu() {
             to={path}
             end={exact}
             className={({ isActive }) =>
-              `block px-4 py-3 rounded-[10px] text-lg font-medium text-center border border-black transition-all duration-200
+              `block p-1 rounded-[10px] text-lg font-medium text-center  transition-all duration-100
               ${
                 isActive
                   ? "bg-[#D8E359] text-[#174D2C] font-semibold scale-[1.02]"
-                  : "hover:bg-[#D8E359] hover:text-[#174D2C] hover:scale-[1.02]"
+                  : "hover:bg-white hover:text-[#174D2C] hover:scale-[1.02]"
               }`
             }
           >

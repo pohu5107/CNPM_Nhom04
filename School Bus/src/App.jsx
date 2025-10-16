@@ -6,9 +6,9 @@ import Navbar_Menu from "./components/admin/Navbar_Menu.jsx";
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen overflow-x-hidden">
         <Navbar_Menu />
-        <main className="flex-1 w-full overflow-hidden">
+        <main className="flex-1 min-w-0">
           <AppRouter />
         </main>
       </div>
