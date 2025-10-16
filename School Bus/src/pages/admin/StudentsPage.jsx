@@ -59,13 +59,15 @@ const StudentsPage = () => {
   };
 
   return (
-    <div className="w-full space-y-8">
-      <StudentTable
-        onAdd={handleAdd}
-        onEdit={handleEdit}
-        onView={handleView}
-        onDelete={handleDelete}
-      />
+    <div className="w-full h-full space-y-6">
+      <div className="w-full">
+        <StudentTable
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+        />
+      </div>
 
       {/* Form Modal */}
       <Modal

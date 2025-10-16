@@ -58,13 +58,15 @@ const DriversPage = () => {
   };
 
   return (
-    <div className="w-full space-y-8">
-      <DriverTable
-        onAdd={handleAdd}
-        onEdit={handleEdit}
-        onView={handleView}
-        onDelete={handleDelete}
-      />
+    <div className="w-full h-full space-y-6">
+      <div className="w-full">
+        <DriverTable
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+        />
+      </div>
 
       {/* Form Modal */}
       <Modal

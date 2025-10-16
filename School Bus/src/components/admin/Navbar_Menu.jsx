@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 export default function Navbar_Menu() {
   return (
     <aside
-      className="w-1/7 min-h-screen text-white flex flex-col p-4"
+      className="w-64 min-h-screen text-white flex flex-col p-4 flex-shrink-0"
       style={{ backgroundColor: "#174D2C" }}
     >
       {/* Logo / Tiêu đề */}

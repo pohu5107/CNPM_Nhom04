@@ -69,14 +69,16 @@ const ParentsPage = () => {
   };
 
   return (
-    <div className="w-full space-y-8">
-      <ParentTable
-        onAdd={handleAdd}
-        onEdit={handleEdit}
-        onView={handleView}
-        onDelete={handleDelete}
-        onViewChildren={handleViewChildren}
-      />
+    <div className="w-full h-full space-y-6">
+      <div className="w-full">
+        <ParentTable
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+          onView={handleView}
+          onDelete={handleDelete}
+          onViewChildren={handleViewChildren}
+        />
+      </div>
 
       {/* Pagination - placeholder for future implementation */}
       {/* <Pagination

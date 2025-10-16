@@ -16,10 +16,10 @@ const Table = ({
   emptyMessage = "Không có dữ liệu"
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center flex-wrap">
           {/* Search */}
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
@@ -63,8 +63,8 @@ const Table = ({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="min-w-full divide-y divide-slate-200 bg-white">
+      <div className="w-full overflow-x-auto rounded-lg border">
+        <table className="w-full min-w-full divide-y divide-slate-200 bg-white">
           <thead>
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
@@ -73,7 +73,7 @@ const Table = ({
                   {column.header}
                 </th>
               ))}
-              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">Thao tác</th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 w-80">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -101,12 +101,12 @@ const Table = ({
                       {column.render ? column.render(item) : item[column.key]}
                     </td>
                   ))}
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-6 py-4 w-80">
+                    <div className="flex justify-center items-center gap-2 min-w-fit">
                       {onView && (
                         <button
                           onClick={() => onView(item)}
-                          className="h-8 rounded-md border border-slate-300 px-2 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          className="h-8 rounded-md border border-slate-300 px-3 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
                           title="Xem chi tiết"
                         >
                           <Eye size={12} />
@@ -116,7 +116,7 @@ const Table = ({
                       {onEdit && (
                         <button
                           onClick={() => onEdit(item)}
-                          className="h-8 rounded-md border border-slate-300 px-2 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          className="h-8 rounded-md border border-slate-300 px-3 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-1 text-xs whitespace-nowrap"
                           title="Chỉnh sửa"
                         >
                           <Edit size={12} />
@@ -126,7 +126,7 @@ const Table = ({
                       {onDelete && (
                         <button
                           onClick={() => onDelete(item)}
-                          className="h-8 rounded-md bg-red-500 px-2 text-white font-medium hover:bg-red-600 transition flex items-center gap-1 text-xs whitespace-nowrap"
+                          className="h-8 rounded-md bg-red-500 px-3 text-white font-medium hover:bg-red-600 transition flex items-center gap-1 text-xs whitespace-nowrap"
                           title="Xóa"
                         >
                           <Trash2 size={12} />
