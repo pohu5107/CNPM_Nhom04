@@ -8,7 +8,7 @@ export default function AppRouter() {
       <main className="container mx-auto p-4">
         <Routes>
           {/* <Route path="/" element={<div className="text-slate-700"><BusesPage /></div>} /> */}
-          <Route path="/" element={<div className="text-slate-700"><RoutePage /></div>} />
+          <Route path="/" element={<div className="text-slate-700"><BusesPage /></div>} />
         </Routes>
       </main>
     </div>
