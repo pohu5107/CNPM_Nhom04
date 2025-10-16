@@ -1,18 +1,16 @@
 @import "tailwindcss";
 
+/* màu mặc định */
 @theme {
   --color-hover: #fc791a;
-
-  /* background stops */
-  --bg-start: #0f172a; /* dark */
-  --bg-end:   #0ea5a4; /* teal */
-  --bg-alt-start: #0b1220;
-  --bg-alt-end:   #7c3aed;
-
-  /* composed gradients */
-  --color-bg: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  --color-bg: #174d2c;
+  --color-bg2: #D8E359;
+  --color-bg3: #FEF8DF;
 }
 
 button {
   cursor: pointer;
+}
+body{
+  background-color: #FEF8DF;
 }

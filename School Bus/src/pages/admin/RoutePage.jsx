@@ -2,6 +2,7 @@ import AddRouteForm from "./AddRouteForm";
 import { Eye , SlidersHorizontal} from "lucide-react";
 import DetailsBusForm from "./DetailsBusForm";
 import { useState } from "react";
+import Header from "../../components/admin/Header";
 
 const initial = [
     { id: 1, name: "Điện Biên Phủ - 3/2", stops: "Bến xe Miền Đông - Ngã tư Hàng Xanh - Vòng xoay Dân Chủ" },
@@ -27,6 +28,7 @@ export default function RoutePage() {
 
   return (
     <div className="space-y-6">
+      <Header title="Quản lý tuyến đường" name="Hoàng Phong Vũ" />
       <div className="flex justify-between">
         <div>
             <button className="flex items-center gap-1 rounded-xl p-2  bg-green-200 text-green-700">
@@ -41,7 +43,7 @@ export default function RoutePage() {
      
 
       <div className="overflow-x-auto rounded-lg border">
-        <div className="w-full overflow-x-auto ">
+        <div className="w-full h-[calc(70vh)] overflow-y-auto">
           <table className="min-w-full divide-y divide-slate-200 rounded-lg shadow-sm bg-white">
             <thead>
               <tr>
