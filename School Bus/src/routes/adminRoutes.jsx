@@ -8,9 +8,13 @@ import DriversPage from '../pages/admin/DriversPage';
 
 const AdminLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {children}
+    <div className="w-full min-h-screen bg-slate-50">
+      <div className="w-full h-full">
+        <div className="p-4 lg:p-8 w-full">
+          <div className="w-full max-w-none space-y-8">
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );

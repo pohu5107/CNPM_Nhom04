@@ -58,7 +58,7 @@ const DriversPage = () => {
   };
 
   return (
-    <div>
+    <div className="w-full space-y-8">
       <DriverTable
         onAdd={handleAdd}
         onEdit={handleEdit}

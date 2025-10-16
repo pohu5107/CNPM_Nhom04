@@ -59,7 +59,7 @@ const StudentsPage = () => {
   };
 
   return (
-    <div>
+    <div className="w-full space-y-8">
       <StudentTable
         onAdd={handleAdd}
         onEdit={handleEdit}

@@ -69,7 +69,7 @@ const ParentsPage = () => {
   };
 
   return (
-    <div>
+    <div className="w-full space-y-8">
       <ParentTable
         onAdd={handleAdd}
         onEdit={handleEdit}
