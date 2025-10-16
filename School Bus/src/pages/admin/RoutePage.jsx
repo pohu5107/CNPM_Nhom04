@@ -1,5 +1,5 @@
 import AddRouteForm from "./AddRouteForm";
-import { Eye } from "lucide-react";
+import { Eye , SlidersHorizontal} from "lucide-react";
 import DetailsBusForm from "./DetailsBusForm";
 import { useState } from "react";
 
@@ -27,11 +27,18 @@ export default function RoutePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <button className="h-10 items-center rounded-md bg-slate-900 px-4 text-white hover:bg-slate-800 hover:cursor-pointer" 
-        onClick={()=>setIsOpenFormAdd(true)}
-        >Thêm tuyến đường</button>
+      <div className="flex justify-between">
+        <div>
+            <button className="flex items-center gap-1 rounded-xl p-2  bg-green-200 text-green-700">
+            <SlidersHorizontal/> Lọc</button>
+        </div>
+        <div className="flex justify-end">
+          <input className="border-2 rounded-2xl p-2 mr-2 " type="text" placeholder="Tìm kiếm tuyến đường" />
+          <button className="h-10 items-center rounded-md bg-slate-900 px-4 text-white hover:bg-slate-800 hover:cursor-pointer" 
+          onClick={() => setIsOpenFormAdd(true)}>Thêm tuyến đường</button>
+        </div>
       </div>
+     
 
       <div className="overflow-x-auto rounded-lg border">
         <div className="w-full overflow-x-auto ">
