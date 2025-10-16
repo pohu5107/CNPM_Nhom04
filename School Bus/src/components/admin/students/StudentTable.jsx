@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import Table from '../../common/Table';
-import { mockStudents, classes } from '../../../data/mockData';
+import { mockStudents } from '../../../data/mockData';
 
 const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
   const [students] = useState(mockStudents);
@@ -10,7 +11,7 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
 
 
   // Get unique classes for filter
-  const uniqueClasses = [...new Set(students.map(s => s.class))].sort();
+  const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a, b) => a.localeCompare(b));
 
   // Filter students
   const filteredStudents = students.filter(student => {
@@ -74,6 +75,13 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
       emptyMessage={searchTerm || classFilter ? 'Không tìm thấy học sinh nào phù hợp' : 'Chưa có học sinh nào'}
     />
   );
+};
+
+StudentTable.propTypes = {
+  onAdd: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onView: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 export default StudentTable;

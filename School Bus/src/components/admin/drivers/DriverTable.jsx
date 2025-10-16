@@ -1,15 +1,12 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import Table from '../../common/Table';
-import { mockDrivers, routes } from '../../../data/mockData';
+import { mockDrivers } from '../../../data/mockData';
 
 const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
   const [drivers] = useState(mockDrivers);
   const [searchTerm, setSearchTerm] = useState('');
-  const [routeFilter, setRouteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-
-  // Get unique routes for filter
-  const uniqueRoutes = [...new Set(drivers.map(d => d.route))].sort();
 
   // Filter drivers
   const filteredDrivers = drivers.filter(driver => {
@@ -89,6 +86,13 @@ const DriverTable = ({ onAdd, onEdit, onView, onDelete }) => {
       emptyMessage={searchTerm || statusFilter ? 'Không tìm thấy tài xế nào phù hợp' : 'Chưa có tài xế nào'}
     />
   );
+};
+
+DriverTable.propTypes = {
+  onAdd: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onView: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 export default DriverTable;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
-import { routes, buses } from '../../../data/mockData';
 
 const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -11,8 +11,6 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
     email: '',
     licenseNumber: '',
     experience: '',
-    busNumber: '',
-    route: '',
     address: '',
     status: 'active'
   });
@@ -29,8 +27,6 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
         email: driver.email || '',
         licenseNumber: driver.licenseNumber || '',
         experience: driver.experience || '',
-        busNumber: driver.busNumber || '',
-        route: driver.route || '',
         address: driver.address || '',
         status: driver.status || 'active'
       });
@@ -72,7 +68,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
       newErrors.address = 'Địa chỉ là bắt buộc';
     }
 
-
+    // Don't validate busNumber and route anymore
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -184,7 +180,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           readOnly={isReadOnly}
         />
 
-    
+        {/* Only show bus and route info in view mode */}
 
         {!isReadOnly && (
           <FormInput
@@ -202,7 +198,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
 
       {isReadOnly && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Trạng thái</label>
+          <div className="block text-sm font-medium text-slate-700">Trạng thái</div>
           <div className="py-2">
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               formData.status === 'active' 
@@ -243,6 +239,13 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
       </div>
     </form>
   );
+};
+
+DriverForm.propTypes = {
+  driver: PropTypes.object,
+  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 export default DriverForm;

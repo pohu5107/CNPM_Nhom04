@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
-import { mockParents, classes, routes, pickupPoints } from '../../../data/mockData';
+import { mockParents, classes } from '../../../data/mockData';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -11,9 +12,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     parentId: '',
     parentName: '',
     dateOfBirth: '',
-    address: '',
-    busRoute: '',
-    pickupPoint: ''
+    address: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -28,9 +27,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         parentId: student.parentId || '',
         parentName: student.parentName || '',
         dateOfBirth: student.dateOfBirth || '',
-        address: student.address || '',
-        busRoute: student.busRoute || '',
-        pickupPoint: student.pickupPoint || ''
+        address: student.address || ''
       });
     }
   }, [student]);
@@ -50,7 +47,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.class = 'Lớp học là bắt buộc';
     }
 
-   
+    // Chỉ validate parentId khi thêm mới
     if (mode === 'add') {
       if (!formData.parentId) {
         newErrors.parentId = 'Phụ huynh là bắt buộc';
@@ -172,7 +169,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           readOnly={isReadOnly}
         />
 
-  
+        {/* Phụ huynh - Chỉ edit khi thêm mới, readonly khi edit/view */}
         <FormInput
           label="Phụ huynh"
           name="parentId"
@@ -217,6 +214,13 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       </div>
     </form>
   );
+};
+
+StudentForm.propTypes = {
+  student: PropTypes.object,
+  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 export default StudentForm;

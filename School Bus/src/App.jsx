@@ -1,23 +1,18 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AdminRoutes from './routes/adminRoutes';
-import AppRouter from './routes/AppRouter';
-import LayoutTester from './routes/LayoutTester';
+import { BrowserRouter } from "react-router-dom";
+import AppRouter from "./routes/AppRouter.jsx";
+import Navbar_Menu from "./components/admin/Navbar_Menu.jsx";
 
 // Main App Component
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Layout Test Route - để test responsive */}
-        <Route path="/test-layout/*" element={<LayoutTester />} />
-        
-        {/* Admin routes với /admin prefix */}
-        <Route path="/admin/*" element={<AdminRoutes />} />
-        
-        {/* Other routes */}
-        <Route path="/*" element={<AppRouter />} />
-      </Routes>
-    </Router>
+    <BrowserRouter>
+      <div className="flex min-h-screen">
+        <Navbar_Menu />
+        <main>
+          <AppRouter />
+        </main>
+      </div>
+    </BrowserRouter>
   );
 }
 

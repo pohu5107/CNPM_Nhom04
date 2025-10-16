@@ -1,5 +1,5 @@
 import AddBusForm from "./AddBusForm";
-import { Eye } from "lucide-react";
+import { Bold, Eye, Menu, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import DetailsBusForm from "./DetailsBusForm";
 
@@ -24,9 +24,16 @@ export default function BusesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <button className="h-10 items-center rounded-md bg-slate-900 px-4 text-white hover:bg-slate-800 hover:cursor-pointer" 
-        onClick={() => setIsCreateOpen(true)}>Thêm xe</button>
+      <div className="flex justify-between">
+        <div>
+            <button className="flex items-center gap-1 rounded-xl p-2  bg-green-200 text-green-700">
+            <SlidersHorizontal fontStyle={Bold}/> Lọc</button>
+        </div>
+        <div className="flex justify-end">
+          <input className="border-2 rounded-2xl p-2 mr-2 " type="text" placeholder="Tìm kiếm xe theo bản số" />
+          <button className="h-10 items-center rounded-md bg-slate-900 px-4 text-white hover:bg-slate-800 hover:cursor-pointer" 
+          onClick={() => setIsCreateOpen(true)}>Thêm xe</button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
