@@ -4,7 +4,7 @@ import DriverForm from '../../components/admin/drivers/DriverForm';
 import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import { mockDrivers } from '../../data/mockData';
-
+import Header from '../../components/admin/Header';
 const DriversPage = () => {
   const [drivers, setDrivers] = useState(mockDrivers);
   const [showForm, setShowForm] = useState(false);
@@ -59,6 +59,7 @@ const DriversPage = () => {
 
   return (
     <div>
+      <Header title="QUẢN LÝ TÀI XẾ" />
       <DriverTable
         onAdd={handleAdd}
         onEdit={handleEdit}

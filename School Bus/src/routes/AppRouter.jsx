@@ -10,10 +10,10 @@ import MapPage from "../pages/admin/MapPage.jsx";
 
 export default function AppRouter() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 w-full">
+    <div className="min-h-screen text-slate-900 w-full">
       <main className="w-full max-w-none px-3 sm:px-4 md:px-6 py-4">
         <Routes>
-          <Route path="/" element={<RoutePage />} />
+          <Route path="/routes" element={<RoutePage />} />
           <Route path="/buses" element={<BusesPage />} />
           <Route path="/schedule" element={<Schedule />} /> 
           <Route path="/drivers"  element={<DriverPage />} />
