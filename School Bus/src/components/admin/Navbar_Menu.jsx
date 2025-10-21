@@ -19,14 +19,14 @@ export default function Navbar_Menu() {
       {/* Các link menu */}
       <nav className="flex-1 space-y-4">
         {[
-          { path: "/", label: "Tuyến đường", exact: true },
-          { path: "/buses", label: "Xe buýt" },
-          { path: "/drivers", label: "Tài xế" },
-          { path: "/students", label: "Học sinh" },
-          { path: "/parents", label: "Phụ huynh" },
-          { path: "/schedule", label: "Lịch trình" },
-          { path: "/reports", label: "Báo cáo" },
-          { path: "/mapview", label: "Map" },
+          { path: "/admin/routes", label: "Tuyến đường" },
+          { path: "/admin/buses", label: "Xe buýt" },
+          { path: "/admin/drivers", label: "Tài xế" },
+          { path: "/admin/students", label: "Học sinh" },
+          { path: "/admin/parents", label: "Phụ huynh" },
+          { path: "/admin/schedule", label: "Lịch trình" },
+          { path: "/admin/reports", label: "Báo cáo" },
+          { path: "/admin/mapview", label: "Map" },
         ].map(({ path, label, exact }) => (
           <NavLink
             key={path}
