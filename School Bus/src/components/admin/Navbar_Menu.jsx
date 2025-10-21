@@ -9,7 +9,7 @@ export default function Navbar_Menu() {
       <div className="pb-4 items-center flex justify-center ">
         {/* 🚌 */}
         {/* download về */}
-        <NavLink to="/mapview">
+        <NavLink to="/admin/mapview">
           <img
             src="https://www.shutterstock.com/image-vector/illustration-yellow-school-bus-flat-600nw-2246845245.jpg"
             alt="Ảnh logo"
@@ -21,14 +21,14 @@ export default function Navbar_Menu() {
       {/* Các link menu */}
       <nav className="flex-1 space-y-4">
         {[
-          { path: "/mapview", label: "Map", exact: true },
-          { path: "/routes", label: "Tuyến đường" },
-          { path: "/buses", label: "Xe buýt" },
-          { path: "/drivers", label: "Tài xế" },
-          { path: "/students", label: "Học sinh" },
-          { path: "/parents", label: "Phụ huynh" },
-          { path: "/schedule", label: "Lịch trình" },
-          { path: "/reports", label: "Báo cáo" },
+          { path: "/admin/mapview", label: "Map", exact: true },
+          { path: "/admin/routes", label: "Tuyến đường" },
+          { path: "/admin/buses", label: "Xe buýt" },
+          { path: "/admin/drivers", label: "Tài xế" },
+          { path: "/admin/students", label: "Học sinh" },
+          { path: "/admin/parents", label: "Phụ huynh" },
+          { path: "/admin/schedule", label: "Lịch trình" },
+          { path: "/admin/reports", label: "Báo cáo" },
         ].map(({ path, label, exact }) => (
           <NavLink
             key={path}
