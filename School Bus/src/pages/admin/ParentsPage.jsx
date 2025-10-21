@@ -6,7 +6,7 @@ import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import Pagination from '../../components/UI/Pagination';
 import { mockParents } from '../../data/mockData';
-
+import Header from '../../components/admin/Header';
 const ParentsPage = () => {
   const [parents, setParents] = useState(mockParents);
   const [showForm, setShowForm] = useState(false);
@@ -69,16 +69,15 @@ const ParentsPage = () => {
   };
 
   return (
-    <div className="w-full h-full space-y-6">
-      <div className="w-full">
-        <ParentTable
-          onAdd={handleAdd}
-          onEdit={handleEdit}
-          onView={handleView}
-          onDelete={handleDelete}
-          onViewChildren={handleViewChildren}
-        />
-      </div>
+    <div>
+      <Header title="QUẢN LÝ PHỤ HUYNH" />
+      <ParentTable
+        onAdd={handleAdd}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={handleDelete}
+        onViewChildren={handleViewChildren}
+      />
 
       {/* Pagination - placeholder for future implementation */}
       {/* <Pagination

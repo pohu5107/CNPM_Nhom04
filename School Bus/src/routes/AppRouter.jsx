@@ -14,28 +14,16 @@ import DriverStudentsPage from "../pages/driver/DriverStudentsPage";
 
 export default function AppRouter() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 w-full">
+    <div className="min-h-screen text-slate-900 w-full">
       <main className="w-full max-w-none px-3 sm:px-4 md:px-6 py-4">
         <Routes>
-          {/* Redirect root to admin */}
-          <Route path="/" element={<Navigate to="/admin/routes" replace />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin" element={<Navigate to="/admin/routes" replace />} />
-          <Route path="/admin/routes" element={<RoutePage />} />
-          <Route path="/admin/buses" element={<BusesPage />} />
-          <Route path="/admin/schedule" element={<Schedule />} /> 
-          <Route path="/admin/drivers"  element={<DriverPage />} />
-          <Route path="/admin/students"  element={<StudentsPage />} />
-          <Route path="/admin/parents"  element={<ParentsPage />} />
-          <Route path="/admin/mapview" element={<MapPage />} />
-          
-          {/* Driver Routes */}
-          <Route path="/driver" element={<DriverSchedulePage />} />
-          <Route path="/driver/schedule" element={<DriverSchedulePage />} />
-          <Route path="/driver/schedule/:id" element={<DriverScheduleDetailPage />} />
-          <Route path="/driver/students" element={<DriverStudentsPage />} />
-          
+          <Route path="/routes" element={<RoutePage />} />
+          <Route path="/buses" element={<BusesPage />} />
+          <Route path="/schedule" element={<Schedule />} /> 
+          <Route path="/drivers"  element={<DriverPage />} />
+          <Route path="/students"  element={<StudentsPage />} />
+          <Route path="/parents"  element={<ParentsPage />} />
+          <Route path="/mapview" element={<MapPage />} />
           {/* <Route path="/reports"  element={<ReportsPage />} /> */}
         </Routes>
       </main>

@@ -1,7 +1,6 @@
 import { Search, Eye, Edit, Trash2 } from 'lucide-react';
 
 const Table = ({
-  title,
   data = [],
   columns = [],
   searchValue,
@@ -16,10 +15,9 @@ const Table = ({
   emptyMessage = "Không có dữ liệu"
 }) => {
   return (
-    <div className="w-full space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-        <div className="flex gap-3 items-center flex-wrap">
+    <div className="space-y-6 ">
+      <div className="flex justify-end items-center flex-wrap gap-4">
+        <div className="flex gap-3 items-center">
           {/* Search */}
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
@@ -53,7 +51,7 @@ const Table = ({
           {/* Add Button */}
           {onAdd && (
             <button 
-              className="h-10 px-4 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors flex items-center gap-2"
+              className="h-10 px-4 bg-bg text-white rounded-md hover:bg-bg2 hover:text-bg transition-colors flex items-center gap-2 font-semibold"
               onClick={onAdd}
             >
               {addButtonText}
@@ -63,8 +61,8 @@ const Table = ({
       </div>
 
       {/* Table */}
-      <div className="w-full overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-full divide-y divide-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border ">
+        <table className="min-w-full divide-y divide-slate-200 bg-white">
           <thead>
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>

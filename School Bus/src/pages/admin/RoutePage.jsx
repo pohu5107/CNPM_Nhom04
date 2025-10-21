@@ -1,114 +1,169 @@
 import AddRouteForm from "./AddRouteForm";
 import { Eye , SlidersHorizontal} from "lucide-react";
 import DetailsBusForm from "./DetailsBusForm";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "../../components/admin/Header";
+import Table from "../../components/common/Table";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import axios from "axios";
 
-const initial = [
-    { id: 1, name: "Điện Biên Phủ - 3/2", stops: "Bến xe Miền Đông - Ngã tư Hàng Xanh - Vòng xoay Dân Chủ" },
-    { id: 2, name: "An Dương Vương - Hồng Bàng", stops: "Chợ Lớn - Đại học Sư phạm - Vòng xoay Cộng Hòa" },
-    { id: 3, name: "Nguyễn Văn Linh - Huỳnh Tấn Phát", stops: "Phú Mỹ Hưng - Cầu Tân Thuận - Quận 4" },
-    { id: 4, name: "Lê Lợi - Nguyễn Huệ", stops: "Bến Thành - Nhà hát Thành phố - Phố đi bộ Nguyễn Huệ" },
-    { id: 5, name: "Cách Mạng Tháng 8 - Trường Chinh", stops: "Công viên Lê Thị Riêng - Bảy Hiền - Âu Cơ" },
-    { id: 6, name: "Phan Xích Long - Phan Đăng Lưu", stops: "Phú Nhuận - Ngã tư Phú Nhuận - Nguyễn Kiệm" },
-    { id: 7, name: "Lý Thường Kiệt - Tô Hiến Thành", stops: "Nhà thi đấu Phú Thọ - Đại học Bách Khoa - CMT8" },
-    { id: 8, name: "Trường Sa - Hoàng Sa", stops: "Kênh Nhiêu Lộc - Cầu Bông - Cầu Thị Nghè" },
-    { id: 9, name: "Nguyễn Thị Minh Khai - Võ Văn Tần", stops: "Hồ Con Rùa - Dinh Độc Lập - Bệnh viện Từ Dũ" },
-    { id: 10, name: "Phạm Văn Đồng - Quốc lộ 13", stops: "Công viên Gia Định - Ngã tư Bình Triệu - Linh Xuân" },
-  ];
-  
 
 export default function RoutePage() {
     const [isOpenFormAdd, setIsOpenFormAdd] = useState(false);
-    const [routes, setRoutes] = useState(initial);
+    const [routes, setRoutes] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [selectedRoute, setSelectedRoute] = useState(null);
 
-    const handleDelete = (id) => {
-      setRoutes(prev => prev.filter(route => route.id !== id));
-    };
+    useEffect(() => {
+      const fetchRoutes = async () => {
+        const response = await axios.get('http://localhost:5000/api/routes');
+        setRoutes(response.data.data);
+      };
+      fetchRoutes();
+    }, []);
 
+  // Tạo route mới
+  const handleCreateRoute = async (routeData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/routes', routeData);
+      
+      if (response.data.success) {
+        setRoutes(prev => [...prev, response.data.data]);
+        alert('Tạo route thành công!');
+        setIsOpenFormAdd(false); 
+      }
+    } catch (error) {
+      console.error('Lỗi khi tạo route:', error);
+      alert('Lỗi khi tạo route!');
+    }
+  };
+
+  // Xóa route
+  const handleDeleteRoute = async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/routes/${id}`);
+      
+      if (response.data.success) {
+        setRoutes(prev => prev.filter(route => route.id !== id));
+        alert('Xóa route thành công!');
+      }
+    } catch (error) {
+      console.error('Lỗi khi xóa route:', error);
+      alert('Lỗi khi xóa route!');
+    }
+  };
+
+  // xóa
+  const handleDeleteClick = (route) => {
+    setSelectedRoute(route);
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedRoute) {
+      await handleDeleteRoute(selectedRoute.id);
+      setSelectedRoute(null);
+    }
+  };
+
+  // Filter routes
+  const filteredRoutes = routes.filter(route => {
+    const matchesSearch = 
+      route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      route.id.toString().includes(searchTerm);
+    
+    const matchesStatus = !statusFilter || route.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns = [
+    { 
+      key: 'id', 
+      header: 'Mã tuyến đường' 
+    },
+    { 
+      key: 'name', 
+      header: 'Tên tuyến đường' 
+    },
+    { 
+      key: 'distance', 
+      header: 'Khoảng cách' 
+    },
+    { 
+      key: 'status', 
+      header: 'Trạng thái',
+      render: (item) => (
+        <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
+          item.status === "active"
+            ? "bg-green-100 text-green-700"
+            : item.status === "maintenance"
+            ? "bg-yellow-100 text-yellow-700"
+            : "bg-slate-200 text-slate-600"
+        }`}>
+          {item.status === "active"
+            ? "Đang hoạt động"
+            : item.status === "maintenance"
+            ? "Đang bảo trì"
+            : "Không xác định"}
+        </span>
+      )
+    },
+    { 
+      key: 'created_at', 
+      header: 'Thời gian tạo' 
+    }
+  ];
+
+  const filters = [
+    {
+      placeholder: 'Tất cả trạng thái',
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: 'active', label: 'Đang hoạt động' },
+        { value: 'maintenance', label: 'Đang bảo trì' },
+        { value: 'inactive', label: 'Không hoạt động' }
+      ],
+      minWidth: '130px'
+    }
+  ];
   return (
-    <div className="space-y-6">
-      <Header title="Quản lý tuyến đường" name="Hoàng Phong Vũ" />
-      <div className="flex justify-between">
-        <div>
-            <button className="flex items-center gap-1 rounded-xl p-2  bg-green-200 text-green-700">
-            <SlidersHorizontal/> Lọc</button>
-        </div>
-        <div className="flex justify-end">
-          <input className="border-2 rounded-2xl p-2 mr-2 " type="text" placeholder="Tìm kiếm tuyến đường" />
-          <button className="h-10 items-center rounded-md bg-slate-900 px-4 text-white hover:bg-slate-800 hover:cursor-pointer" 
-          onClick={() => setIsOpenFormAdd(true)}>Thêm tuyến đường</button>
-        </div>
-      </div>
-     
+    <div className="space-y-6 ">
+      <Header title="QUẢN LÝ TUYẾN ĐƯỜNG" />
+      
+      <Table
+        title="Danh sách tuyến đường"
+        data={filteredRoutes}
+        columns={columns}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAdd={() => setIsOpenFormAdd(true)}
+        onView={(route) => console.log('View route:', route)}
+        onEdit={(route) => console.log('Edit route:', route)}
+        onDelete={(route) => handleDeleteClick(route)}
+        addButtonText="Thêm tuyến đường"
+        filters={filters}
+        emptyMessage={searchTerm || statusFilter ? 'Không tìm thấy tuyến đường nào phù hợp' : 'Chưa có tuyến đường nào'}
+      />
 
-      <div className="overflow-x-auto rounded-lg border">
-        <div className="w-full h-[calc(70vh)] overflow-y-auto">
-          <table className="min-w-full divide-y divide-slate-200 rounded-lg shadow-sm bg-white">
-            <thead>
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 rounded-tl-lg">
-                  Mã tuyến đường
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
-                  Tên tuyến đường
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
-                  Điểm dừng
-                </th>
-               
-                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 rounded-tr-lg">
-                  Hành động
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {routes.map((route, idx) => (
-                <tr
-                  key={route.id}
-                  className={`transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-slate-100`}
-                >
-                  <td className="px-6 py-4 font-semibold text-slate-900">{route.id}</td>
-                  <td className="px-6 py-4 text-slate-700">{route.name}</td>
-                  <td className="px-6 py-4 text-slate-700">{route.stops}</td>
-                  
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      
-                      <button
-                        className="h-8 rounded-md border border-slate-300 px-4 text-slate-700 font-medium hover:bg-slate-200 transition flex items-center gap-2"
-                        
-                      >
-                        <Eye className="w-4 h-4" />
-                        Xem chi tiết
-                      </button>
-                      <button
-                        className="h-8 rounded-md border border-slate-300 px-4 text-slate-700 font-medium hover:bg-slate-200 transition"
-                       
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className="h-8 rounded-md bg-red-500 px-4 text-white font-medium hover:bg-red-600 transition"
-                        onClick={() => handleDelete(route.id)}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {routes.length === 0 && (
-          <div className="p-6 text-center text-slate-500">Chưa có tuyến đường nào</div>
-        )}
-      </div>
       <AddRouteForm
-        visible = {isOpenFormAdd} 
-        onCancel = {()=>{setIsOpenFormAdd(false)}}
+        visible={isOpenFormAdd} 
+        onCancel={() => setIsOpenFormAdd(false)}
+        onSubmit={handleCreateRoute}
+      />
 
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa tuyến đường "${selectedRoute?.name}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
       />
     </div>
   );
