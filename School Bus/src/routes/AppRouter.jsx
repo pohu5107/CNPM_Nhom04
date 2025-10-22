@@ -9,7 +9,7 @@ import MapPage from "../pages/admin/MapPage.jsx";
 // Driver pages
 import DriverSchedulePage from "../pages/driver/DriverSchedulePage";
 import DriverScheduleDetailPage from "../pages/driver/DriverScheduleDetailPage";
-import DriverStudentsPage from "../pages/driver/DriverStudentsPage";
+
 // import ReportsPage  from "../pages/admin/ReportsPage.jsx";
 
 export default function AppRouter() {
@@ -34,7 +34,7 @@ export default function AppRouter() {
           <Route path="/driver" element={<DriverSchedulePage />} />
           <Route path="/driver/schedule" element={<DriverSchedulePage />} />
           <Route path="/driver/schedule/:id" element={<DriverScheduleDetailPage />} />
-          <Route path="/driver/students" element={<DriverStudentsPage />} />
+        
           
           {/* <Route path="/admin/reports"  element={<ReportsPage />} /> */}
         </Routes>

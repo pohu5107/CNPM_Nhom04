@@ -6,11 +6,8 @@ import Button from '../../common/Button';
 const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
-    driverCode: '',
     phone: '',
-    email: '',
-    licenseNumber: '',
-    experience: '',
+    license_number: '',
     address: '',
     status: 'active'
   });
@@ -22,11 +19,8 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
     if (driver) {
       setFormData({
         name: driver.name || '',
-        driverCode: driver.driverCode || '',
         phone: driver.phone || '',
-        email: driver.email || '',
-        licenseNumber: driver.licenseNumber || '',
-        experience: driver.experience || '',
+        license_number: driver.license_number || '',
         address: driver.address || '',
         status: driver.status || 'active'
       });
@@ -40,35 +34,20 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
       newErrors.name = 'Họ tên là bắt buộc';
     }
 
-    if (mode === 'add' && !formData.driverCode.trim()) {
-      newErrors.driverCode = 'Mã tài xế là bắt buộc';
-    }
-
     if (!formData.phone.trim()) {
       newErrors.phone = 'Số điện thoại là bắt buộc';
     } else if (!/^0\d{9}$/.test(formData.phone)) {
       newErrors.phone = 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email là bắt buộc';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
-    }
-
-    if (mode === 'add' && !formData.licenseNumber.trim()) {
-      newErrors.licenseNumber = 'Số bằng lái là bắt buộc';
-    }
-
-    if (!formData.experience.trim()) {
-      newErrors.experience = 'Kinh nghiệm là bắt buộc';
+    if (mode === 'add' && !formData.license_number.trim()) {
+      newErrors.license_number = 'Số bằng lái là bắt buộc';
     }
 
     if (!formData.address.trim()) {
       newErrors.address = 'Địa chỉ là bắt buộc';
     }
 
-    // Don't validate busNumber and route anymore
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -124,17 +103,6 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Mã tài xế"
-          name="driverCode"
-          value={formData.driverCode}
-          onChange={handleChange}
-          error={errors.driverCode}
-          placeholder="Nhập mã tài xế"
-          required
-          readOnly={isReadOnly}
-        />
-
-        <FormInput
           label="Số điện thoại"
           name="phone"
           type="tel"
@@ -147,40 +115,15 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          error={errors.email}
-          placeholder="Nhập địa chỉ email"
-          required
-          readOnly={isReadOnly}
-        />
-
-        <FormInput
           label="Số bằng lái"
-          name="licenseNumber"
-          value={formData.licenseNumber}
+          name="license_number"
+          value={formData.license_number}
           onChange={handleChange}
-          error={errors.licenseNumber}
+          error={errors.license_number}
           placeholder="Nhập số bằng lái xe"
           required={mode === 'add'}
           readOnly={isReadOnly || mode === 'edit'}
         />
-
-        <FormInput
-          label="Kinh nghiệm"
-          name="experience"
-          value={formData.experience}
-          onChange={handleChange}
-          error={errors.experience}
-          placeholder="VD: 10 năm"
-          required
-          readOnly={isReadOnly}
-        />
-
-        {/* Only show bus and route info in view mode */}
 
         {!isReadOnly && (
           <FormInput

@@ -7,18 +7,27 @@ import process from 'process';
 import pool from './config/db.js';
 import busRoutes from './routes/BusesRoutes.js';
 import routeRoutes from './routes/routeRoutes.js';
+import studentsRoutes from './routes/studentsRoutes.js';
+import driversRoutes from './routes/driversRoutes.js';
+import parentsRoutes from './routes/parentsRoutes.js';
+import classesRoutes from './routes/classesRoutes.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 5000;
 
-app.use(express.json()); //tạo ipa
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173'
 }));
-// Routes
+
+// API Routes
 app.use('/api/buses', busRoutes);
 app.use('/api/routes', routeRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/drivers', driversRoutes);
+app.use('/api/parents', parentsRoutes);
+app.use('/api/classes', classesRoutes);
 // check
 app.get('/api/health', async (req, res) => {
     try {

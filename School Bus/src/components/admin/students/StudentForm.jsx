@@ -2,31 +2,55 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
-import { mockParents, classes } from '../../../data/mockData';
+import { parentsService } from '../../../services/parentsService';
+import { classesService } from '../../../services/classesService';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
-    studentCode: '',
+    grade: '',
     class: '',
-    parentId: '',
-    parentName: '',
-    dateOfBirth: '',
+    parent_id: '',
+    phone: '',
     address: ''
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [parents, setParents] = useState([]);
+  const [classes, setClasses] = useState([]);
+
+  // Load parents and classes for dropdown
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [parentsData, classesData] = await Promise.all([
+          parentsService.getAllParents(),
+          classesService.getAllClasses()
+        ]);
+        console.log('📚 Loaded classes:', classesData); // Debug log
+        console.log('👨‍👩‍👧 Loaded parents:', parentsData); // Debug log
+        setParents(parentsData || []);
+        setClasses(classesData || []);
+      } catch (error) {
+        console.error('❌ Error fetching data:', error);
+        // Set empty arrays nếu lỗi để tránh undefined
+        setParents([]);
+        setClasses([]);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     if (student) {
+      console.log('🎯 Setting form data with student:', student);
       setFormData({
         name: student.name || '',
-        studentCode: student.studentCode || '',
-        class: student.class || '',
-        parentId: student.parentId || '',
-        parentName: student.parentName || '',
-        dateOfBirth: student.dateOfBirth || '',
+        grade: student.grade || '',
+        class: student.class_name || student.class || '', // Ưu tiên class_name từ API
+        parent_id: student.parent_id || '',
+        phone: student.phone || '',
         address: student.address || ''
       });
     }
@@ -39,30 +63,36 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.name = 'Họ tên là bắt buộc';
     }
 
-    if (!formData.studentCode.trim()) {
-      newErrors.studentCode = 'Mã học sinh là bắt buộc';
-    }
-
-    if (!formData.class) {
-      newErrors.class = 'Lớp học là bắt buộc';
-    }
-
-    // Chỉ validate parentId khi thêm mới
-    if (mode === 'add') {
-      if (!formData.parentId) {
-        newErrors.parentId = 'Phụ huynh là bắt buộc';
-      }
-    }
-
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Ngày sinh là bắt buộc';
+    if (!formData.grade.trim()) {
+      newErrors.grade = 'Khối là bắt buộc';
     } else {
-      const birthDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 6 || age > 18) {
-        newErrors.dateOfBirth = 'Tuổi học sinh phải từ 6 đến 18';
+      // Kiểm tra grade có tồn tại trong database không
+      const availableGrades = [...new Set(classes.map(cls => cls.grade))];
+      if (!availableGrades.includes(formData.grade)) {
+        newErrors.grade = `Khối ${formData.grade} không tồn tại. Chỉ có khối: ${availableGrades.join(', ')}`;
       }
+    }
+
+    if (!formData.class.trim()) {
+      newErrors.class = 'Lớp học là bắt buộc';
+    } else {
+      // Kiểm tra class có tồn tại trong database không
+      const classExists = classes.some(cls => cls.class_name === formData.class);
+      if (!classExists) {
+        newErrors.class = 'Lớp này không tồn tại trong hệ thống';
+      }
+      
+      // Kiểm tra grade và class có match nhau không
+      if (formData.grade && classExists) {
+        const selectedClass = classes.find(cls => cls.class_name === formData.class);
+        if (selectedClass && selectedClass.grade !== formData.grade) {
+          newErrors.grade = `Khối ${formData.grade} không khớp với lớp ${formData.class} (khối ${selectedClass.grade})`;
+        }
+      }
+    }
+
+    if (mode === 'add' && !formData.parent_id) {
+      newErrors.parent_id = 'Phụ huynh là bắt buộc';
     }
 
     if (!formData.address.trim()) {
@@ -76,21 +106,32 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Chỉ xử lý parentId khi mode là 'add'
-    if (name === 'parentId' && mode === 'add') {
-      const selectedParent = mockParents.find(p => p.id.toString() === value);
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        parentName: selectedParent ? selectedParent.name : '',
-        address: selectedParent ? selectedParent.address : prev.address
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+    // Auto-fill grade when class is selected
+    if (name === 'class' && value && classes.length > 0) {
+      const selectedClass = classes.find(cls => cls.class_name === value);
+      if (selectedClass) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          grade: selectedClass.grade // Tự động điền khối từ lớp được chọn
+        }));
+        
+        // Clear both class and grade errors
+        if (errors[name] || errors.grade) {
+          setErrors(prev => ({
+            ...prev,
+            [name]: '',
+            grade: ''
+          }));
+        }
+        return;
+      }
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -121,6 +162,13 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
   const isReadOnly = mode === 'view';
 
+  // Log để debug
+  console.log('🔍 Current state:', { 
+    classes: classes?.length, 
+    parents: parents?.length,
+    formData 
+  });
+
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -136,12 +184,18 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Mã học sinh"
-          name="studentCode"
-          value={formData.studentCode}
+          label="Khối"
+          name="grade"
+          type="select"
+          value={formData.grade}
           onChange={handleChange}
-          error={errors.studentCode}
-          placeholder="Nhập mã học sinh"
+          error={errors.grade}
+          options={[
+            { value: '', label: 'Chọn khối' },
+            ...[...new Set(classes.map(cls => cls.grade))]
+              .sort()
+              .map(grade => ({ value: grade, label: `Khối ${grade}` }))
+          ]}
           required
           readOnly={isReadOnly}
         />
@@ -153,41 +207,42 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           value={formData.class}
           onChange={handleChange}
           error={errors.class}
-          options={classes.map(cls => ({ value: cls, label: cls }))}
+          placeholder="Chọn lớp học"
+          options={(classes || []).map(cls => ({ 
+            value: cls.class_name, 
+            label: `${cls.class_name} (Khối ${cls.grade})` 
+          }))}
           required
           readOnly={isReadOnly}
         />
 
-        <FormInput
-          label="Ngày sinh"
-          name="dateOfBirth"
-          type="date"
-          value={formData.dateOfBirth}
-          onChange={handleChange}
-          error={errors.dateOfBirth}
-          required
-          readOnly={isReadOnly}
-        />
-
-        {/* Phụ huynh - Chỉ edit khi thêm mới, readonly khi edit/view */}
         <FormInput
           label="Phụ huynh"
-          name="parentId"
-          type={mode === 'add' ? 'select' : 'text'}
-          value={mode === 'add' ? formData.parentId : formData.parentName}
+          name="parent_id"
+          type="select"
+          value={formData.parent_id}
           onChange={handleChange}
-          error={errors.parentId}
-          options={mode === 'add' ? mockParents.filter(p => p.status === 'active').map(parent => ({
+          error={errors.parent_id}
+          placeholder="Chọn phụ huynh"
+          options={(parents || []).map(parent => ({
             value: parent.id,
-            label: `${parent.name} - ${parent.phone}`
-          })) : undefined}
-          required
-          readOnly={mode !== 'add'}
-          placeholder={mode === 'add' ? 'Chọn phụ huynh' : undefined}
+            label: `${parent.name} - ${parent.phone || 'N/A'}`
+          }))}
+          required={mode === 'add'}
+          readOnly={mode === 'view'}
+        />
+
+        <FormInput
+          label="Số điện thoại"
+          name="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          placeholder="Nhập số điện thoại"
+          readOnly={isReadOnly}
         />
       </div>
-
-      
 
       <FormInput
         label="Địa chỉ"

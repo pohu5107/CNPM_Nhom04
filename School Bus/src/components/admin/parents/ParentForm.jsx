@@ -7,8 +7,8 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
     name: '',
     email: '',
     phone: '',
-    address: '',
-    status: 'active'
+    relationship: '',
+    address: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -16,12 +16,13 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
   useEffect(() => {
     if (parent) {
+      console.log('🎯 Setting parent form data with:', parent);
       setFormData({
         name: parent.name || '',
         email: parent.email || '',
         phone: parent.phone || '',
-        address: parent.address || '',
-        status: parent.status || 'active'
+        relationship: parent.relationship || '',
+        address: parent.address || ''
       });
     }
   }, [parent]);
@@ -33,16 +34,14 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       newErrors.name = 'Họ tên là bắt buộc';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email là bắt buộc';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
-    }
-
     if (!formData.phone.trim()) {
       newErrors.phone = 'Số điện thoại là bắt buộc';
     } else if (!/^0\d{9}$/.test(formData.phone)) {
       newErrors.phone = 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)';
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Email không hợp lệ';
     }
 
     if (!formData.address.trim()) {
@@ -110,7 +109,6 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
         onChange={handleChange}
         error={errors.email}
         placeholder="Nhập địa chỉ email"
-        required
         readOnly={isReadOnly}
       />
 
@@ -127,6 +125,26 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       />
 
       <FormInput
+        label="Quan hệ"
+        name="relationship"
+        type="select"
+        value={formData.relationship}
+        onChange={handleChange}
+        error={errors.relationship}
+        placeholder="Chọn mối quan hệ"
+        options={[
+          { value: 'Ba', label: 'Ba' },
+          { value: 'Mẹ', label: 'Mẹ' },
+          { value: 'Ông', label: 'Ông' },
+          { value: 'Bà', label: 'Bà' },
+          { value: 'Anh', label: 'Anh' },
+          { value: 'Chị', label: 'Chị' },
+          { value: 'Khác', label: 'Khác' }
+        ]}
+        readOnly={isReadOnly}
+      />
+
+      <FormInput
         label="Địa chỉ"
         name="address"
         type="textarea"
@@ -138,35 +156,6 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
         readOnly={isReadOnly}
         rows={3}
       />
-
-      {!isReadOnly && (
-        <FormInput
-          label="Trạng thái"
-          name="status"
-          type="select"
-          value={formData.status}
-          onChange={handleChange}
-          options={[
-            { value: 'active', label: 'Hoạt động' },
-            { value: 'inactive', label: 'Không hoạt động' }
-          ]}
-        />
-      )}
-
-      {isReadOnly && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Trạng thái</label>
-          <div className="py-2">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              formData.status === 'active' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {formData.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-            </span>
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
         <Button variant="secondary" onClick={onCancel}>

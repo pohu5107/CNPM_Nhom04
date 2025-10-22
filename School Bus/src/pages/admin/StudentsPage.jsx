@@ -1,17 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StudentTable from '../../components/admin/students/StudentTable';
 import StudentForm from '../../components/admin/students/StudentForm';
 import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import Header from '../../components/admin/Header';
-import { mockStudents } from '../../data/mockData';
+import { studentsService } from '../../services/studentsService';
 
 const StudentsPage = () => {
-  const [students, setStudents] = useState(mockStudents);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
+
+  // Load students from API
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const data = await studentsService.getAllStudents();
+      setStudents(data);
+      setError(null);
+    } catch (err) {
+      setError('Lỗi khi tải danh sách học sinh: ' + err.message);
+      console.error('Error fetching students:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAdd = () => {
     setFormMode('add');
@@ -36,32 +57,46 @@ const StudentsPage = () => {
     setShowConfirm(true);
   };
 
-  const confirmDelete = () => {
-    setStudents(students.filter(s => s.id !== selectedStudent.id));
-    setSelectedStudent(null);
+  const confirmDelete = async () => {
+    try {
+      await studentsService.deleteStudent(selectedStudent.id);
+      await fetchStudents(); // Reload list
+      setSelectedStudent(null);
+      setShowConfirm(false);
+    } catch (err) {
+      setError('Lỗi khi xóa học sinh: ' + err.message);
+      console.error('Error deleting student:', err);
+    }
   };
 
-  const handleSubmit = (studentData) => {
-    if (formMode === 'add') {
-      const newStudent = {
-        ...studentData,
-        id: Math.max(...students.map(s => s.id)) + 1,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setStudents([...students, newStudent]);
-    } else if (formMode === 'edit') {
-      setStudents(students.map(s => 
-        s.id === selectedStudent.id ? { ...s, ...studentData } : s
-      ));
+  const handleSubmit = async (studentData) => {
+    try {
+      if (formMode === 'add') {
+        await studentsService.createStudent(studentData);
+      } else if (formMode === 'edit') {
+        await studentsService.updateStudent(selectedStudent.id, studentData);
+      }
+      await fetchStudents(); // Reload list
+      setShowForm(false);
+      setSelectedStudent(null);
+      setError(null);
+    } catch (err) {
+      setError('Lỗi khi lưu học sinh: ' + err.message);
+      console.error('Error saving student:', err);
     }
-    setShowForm(false);
-    setSelectedStudent(null);
   };
 
   return (
     <div>
       <Header title="QUẢN LÝ HỌC SINH" />
+      {error && (
+        <div className="mx-8 mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
       <StudentTable
+        students={students}
+        loading={loading}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onView={handleView}

@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockDrivers } from "../../data/mockData";
+// Sử dụng API thay vì mockData
 
 const CURRENT_DRIVER_ID = 1;
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const currentDriver = mockDrivers.find(d => d.id === CURRENT_DRIVER_ID);
+  // TODO: Fetch driver from API
+  const currentDriver = { id: 1, name: "Driver Demo" };
 
   // Mock data cho chuyến chi tiết theo thiết kế của bạn
   const scheduleDetail = {

@@ -1,33 +1,50 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import Table from '../../common/Table';
-import { mockStudents } from '../../../data/mockData';
 
-const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
-  const [students] = useState(mockStudents);
+const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [classFilter, setClassFilter] = useState('');
 
 
 
   // Get unique classes for filter
-  const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a, b) => a.localeCompare(b));
+  const uniqueClasses = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="mx-8">
+        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+          <p className="text-gray-500 mt-4">Đang tải danh sách học sinh...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Filter students
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.id?.toString().includes(searchTerm.toLowerCase()) ||
+      student.parent_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesClass = !classFilter || student.class === classFilter;
+    const matchesClass = !classFilter || student.class_name === classFilter;
 
     return matchesSearch && matchesClass;
   });
 
   const columns = [
     { 
-      key: 'studentCode', 
+      key: 'id', 
       header: 'Mã HS' 
     },
     { 
@@ -35,17 +52,21 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
       header: 'Họ tên' 
     },
     { 
-      key: 'class', 
+      key: 'grade', 
+      header: 'Khối' 
+    },
+    { 
+      key: 'class_name', 
       header: 'Lớp' 
     },
     { 
-      key: 'parentName', 
+      key: 'parent_name', 
       header: 'Phụ huynh' 
     },
     { 
-      key: 'dateOfBirth', 
-      header: 'Ngày sinh',
-      render: (item) => new Date(item.dateOfBirth).toLocaleDateString('vi-VN')
+      key: 'phone', 
+      header: 'SĐT',
+      render: (item) => item.phone || item.parent_phone || '-'
     }
   ];
 
@@ -78,6 +99,8 @@ const StudentTable = ({ onAdd, onEdit, onView, onDelete }) => {
 };
 
 StudentTable.propTypes = {
+  students: PropTypes.array.isRequired,
+  loading: PropTypes.bool,
   onAdd: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onView: PropTypes.func.isRequired,

@@ -1,26 +1,35 @@
 import { useState } from 'react';
 import Table from '../../common/Table';
-import { mockParents, mockStudents } from '../../../data/mockData';
 
-const ParentTable = ({ onAdd, onEdit, onView, onDelete, onViewChildren }) => {
-  const [parents] = useState(mockParents);
+const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onDelete, onViewChildren }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Get children names for a parent
-  const getChildrenNames = (childrenIds) => {
-    return childrenIds.map(childId => {
-      const student = mockStudents.find(s => s.id.toString() === childId);
-      return student ? student.name : '';
-    }).filter(name => name).join(', ');
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="mx-8">
+        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+          <p className="text-gray-500 mt-4">Đang tải danh sách phụ huynh...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Filter parents
   const filteredParents = parents.filter(parent => {
     const matchesSearch = 
-      parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      parent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      parent.phone.includes(searchTerm);
+      parent.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      parent.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      parent.phone?.includes(searchTerm);
     
     const matchesStatus = !statusFilter || parent.status === statusFilter;
     
@@ -34,7 +43,12 @@ const ParentTable = ({ onAdd, onEdit, onView, onDelete, onViewChildren }) => {
     },
     { 
       key: 'email', 
-      header: 'Email' 
+      header: 'Email',
+      render: (item) => (
+        <div style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {item.email || 'Chưa có'}
+        </div>
+      )
     },
     { 
       key: 'phone', 
@@ -53,7 +67,7 @@ const ParentTable = ({ onAdd, onEdit, onView, onDelete, onViewChildren }) => {
       key: 'children', 
       header: 'Con em',
       render: (item) => {
-        const childrenCount = item.children.length;
+        const childrenCount = item.children_count || 0;
         
         if (childrenCount === 0) {
           return <span style={{ color: '#64748b', fontStyle: 'italic' }}>Chưa có</span>;

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockDrivers, mockStudents } from "../../data/mockData";
+// Sử dụng API thay vì mockData
 
-// Giả sử driver hiện tại có ID = 1
+// Giả sử driver hiện tại có ID = 1  
 const CURRENT_DRIVER_ID = 1;
 
 export default function DriverSchedulePage() {
