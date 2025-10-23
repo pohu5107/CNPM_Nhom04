@@ -94,10 +94,35 @@ router.post('/', async (req, res) => {
             });
         }
         
+        // Tạo username từ license_number (đảm bảo unique)
+        const username = `driver_${license_number}`;
+        const email = `${username}@schoolbus.com`;
+        const defaultPassword = license_number; // Sử dụng số bằng lái làm mật khẩu mặc định
+        
+        // Tạo user account trước
+        let user_id = null;
+        try {
+            const [userResult] = await pool.execute(`
+                INSERT INTO users (username, email, password, role)
+                VALUES (?, ?, ?, 'driver')
+            `, [username, email, defaultPassword]);
+            
+            user_id = userResult.insertId;
+        } catch (userError) {
+            // Nếu username đã tồn tại, kiểm tra xem có phải user của driver khác không
+            if (userError.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tài khoản với số bằng lái này đã tồn tại'
+                });
+            }
+            throw userError;
+        }
+        
         const [result] = await pool.execute(`
-            INSERT INTO drivers (name, phone, license_number, address, status)
-            VALUES (?, ?, ?, ?, ?)
-        `, [name, phone, license_number, address || null, status]);
+            INSERT INTO drivers (name, phone, license_number, address, status, user_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [name, phone, license_number, address || null, status, user_id]);
         
         // Get the created driver
         const [newDriver] = await pool.execute(`
@@ -131,14 +156,19 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { name, phone, license_number, address, status } = req.body;
         
-        // Check if driver exists
-        const [existing] = await pool.execute('SELECT id FROM drivers WHERE id = ?', [id]);
+        // Check if driver exists và lấy thông tin user_id hiện tại
+        const [existing] = await pool.execute(
+            'SELECT id, user_id, license_number FROM drivers WHERE id = ?', 
+            [id]
+        );
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy tài xế'
             });
         }
+        
+        const currentDriver = existing[0];
         
         // Check if license_number already exists for other drivers
         const [licenseExists] = await pool.execute(
@@ -153,11 +183,47 @@ router.put('/:id', async (req, res) => {
             });
         }
         
+        // Nếu driver chưa có user_id, tạo mới
+        let user_id = currentDriver.user_id;
+        
+        if (!user_id) {
+            const username = `driver_${license_number}`;
+            const email = `${username}@schoolbus.com`;
+            const defaultPassword = license_number;
+            
+            try {
+                const [userResult] = await pool.execute(`
+                    INSERT INTO users (username, email, password, role)
+                    VALUES (?, ?, ?, 'driver')
+                `, [username, email, defaultPassword]);
+                
+                user_id = userResult.insertId;
+            } catch (userError) {
+                if (userError.code === 'ER_DUP_ENTRY') {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Tài khoản với số bằng lái này đã tồn tại'
+                    });
+                }
+                throw userError;
+            }
+        } else if (license_number !== currentDriver.license_number) {
+            // Nếu số bằng lái thay đổi, cập nhật username và email
+            const newUsername = `driver_${license_number}`;
+            const newEmail = `${newUsername}@schoolbus.com`;
+            
+            await pool.execute(`
+                UPDATE users 
+                SET username = ?, email = ?, password = ?
+                WHERE id = ?
+            `, [newUsername, newEmail, license_number, user_id]);
+        }
+        
         await pool.execute(`
             UPDATE drivers 
-            SET name = ?, phone = ?, license_number = ?, address = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            SET name = ?, phone = ?, license_number = ?, address = ?, status = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [name, phone, license_number, address || null, status, id]);
+        `, [name, phone, license_number, address || null, status, user_id, id]);
         
         // Get updated driver
         const [updatedDriver] = await pool.execute(`
@@ -190,8 +256,11 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Check if driver exists
-        const [existing] = await pool.execute('SELECT id FROM drivers WHERE id = ?', [id]);
+        // Check if driver exists and get user_id
+        const [existing] = await pool.execute(
+            'SELECT id, user_id FROM drivers WHERE id = ?', 
+            [id]
+        );
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -199,7 +268,15 @@ router.delete('/:id', async (req, res) => {
             });
         }
         
+        const driver = existing[0];
+        
+        // Xóa driver trước
         await pool.execute('DELETE FROM drivers WHERE id = ?', [id]);
+        
+        // Nếu driver có user_id, xóa luôn user account tương ứng
+        if (driver.user_id) {
+            await pool.execute('DELETE FROM users WHERE id = ?', [driver.user_id]);
+        }
         
         res.json({
             success: true,

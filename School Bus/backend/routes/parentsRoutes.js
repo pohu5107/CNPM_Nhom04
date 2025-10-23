@@ -159,10 +159,12 @@ router.post('/', async (req, res) => {
             });
         }
         
-        // Check if email already exists
+        // Tạo user account trước nếu có email
+        let user_id = null;
         if (email) {
+            // Check if email already exists in users table
             const [emailExists] = await pool.execute(
-                'SELECT id FROM parents WHERE email = ?',
+                'SELECT id FROM users WHERE email = ?',
                 [email]
             );
             
@@ -172,25 +174,48 @@ router.post('/', async (req, res) => {
                     message: 'Email đã tồn tại'
                 });
             }
+            
+            // Tạo username từ phone number
+            const username = `parent_${phone}`;
+            const defaultPassword = phone; // Sử dụng số điện thoại làm mật khẩu mặc định
+            
+            try {
+                const [userResult] = await pool.execute(`
+                    INSERT INTO users (username, email, password, role)
+                    VALUES (?, ?, ?, 'parent')
+                `, [username, email, defaultPassword]);
+                
+                user_id = userResult.insertId;
+            } catch (userError) {
+                if (userError.code === 'ER_DUP_ENTRY') {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Tài khoản với số điện thoại này đã tồn tại'
+                    });
+                }
+                throw userError;
+            }
         }
         
         const [result] = await pool.execute(`
-            INSERT INTO parents (name, email, phone, relationship, address, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [name, email || null, phone, relationship || null, address || null, status]);
+            INSERT INTO parents (user_id, name, phone, relationship, address)
+            VALUES (?, ?, ?, ?, ?)
+        `, [user_id, name, phone, relationship || null, address || null]);
         
         // Get the created parent
         const [newParent] = await pool.execute(`
             SELECT 
                 p.id,
+                p.user_id,
                 p.name,
-                p.email,
+                u.email,
                 p.phone,
                 p.relationship,
                 p.address,
-                p.status,
+                'active' as status,
                 0 as children_count
             FROM parents p
+            LEFT JOIN users u ON p.user_id = u.id
             WHERE p.id = ?
         `, [result.insertId]);
         
@@ -215,14 +240,19 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { name, email, phone, relationship, address, status } = req.body;
         
-        // Check if parent exists
-        const [existing] = await pool.execute('SELECT id FROM parents WHERE id = ?', [id]);
+        // Check if parent exists and get user_id
+        const [existing] = await pool.execute(
+            'SELECT id, user_id FROM parents WHERE id = ?', 
+            [id]
+        );
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy phụ huynh'
             });
         }
+        
+        const currentParent = existing[0];
         
         // Check if phone already exists for other parents
         const [phoneExists] = await pool.execute(
@@ -237,11 +267,14 @@ router.put('/:id', async (req, res) => {
             });
         }
         
-        // Check if email already exists for other parents
+        // Handle user account logic
+        let user_id = currentParent.user_id;
+        
         if (email) {
+            // Check if email already exists for other users
             const [emailExists] = await pool.execute(
-                'SELECT id FROM parents WHERE email = ? AND id != ?',
-                [email, id]
+                'SELECT id FROM users WHERE email = ? AND id != ?',
+                [email, user_id || 0]
             );
             
             if (emailExists.length > 0) {
@@ -250,29 +283,66 @@ router.put('/:id', async (req, res) => {
                     message: 'Email đã tồn tại'
                 });
             }
+            
+            if (!user_id) {
+                // Tạo user account mới nếu chưa có
+                const username = `parent_${phone}`;
+                const defaultPassword = phone;
+                
+                try {
+                    const [userResult] = await pool.execute(`
+                        INSERT INTO users (username, email, password, role)
+                        VALUES (?, ?, ?, 'parent')
+                    `, [username, email, defaultPassword]);
+                    
+                    user_id = userResult.insertId;
+                } catch (userError) {
+                    if (userError.code === 'ER_DUP_ENTRY') {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Tài khoản với số điện thoại này đã tồn tại'
+                        });
+                    }
+                    throw userError;
+                }
+            } else {
+                // Cập nhật user account hiện tại
+                const newUsername = `parent_${phone}`;
+                await pool.execute(`
+                    UPDATE users 
+                    SET username = ?, email = ?, password = ?
+                    WHERE id = ?
+                `, [newUsername, email, phone, user_id]);
+            }
+        } else if (user_id) {
+            // Nếu xóa email, xóa luôn user account
+            await pool.execute('DELETE FROM users WHERE id = ?', [user_id]);
+            user_id = null;
         }
         
         await pool.execute(`
             UPDATE parents 
-            SET name = ?, email = ?, phone = ?, relationship = ?, address = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            SET user_id = ?, name = ?, phone = ?, relationship = ?, address = ?
             WHERE id = ?
-        `, [name, email || null, phone, relationship || null, address || null, status || 'active', id]);
+        `, [user_id, name, phone, relationship || null, address || null, id]);
         
         // Get updated parent
         const [updatedParent] = await pool.execute(`
             SELECT 
                 p.id,
+                p.user_id,
                 p.name,
-                p.email,
+                COALESCE(u.email, 'Chưa có') as email,
                 p.phone,
                 p.relationship,
                 p.address,
-                p.status,
+                'active' as status,
                 COUNT(s.id) as children_count
             FROM parents p
+            LEFT JOIN users u ON p.user_id = u.id
             LEFT JOIN students s ON p.id = s.parent_id
             WHERE p.id = ?
-            GROUP BY p.id, p.name, p.email, p.phone, p.relationship, p.address, p.status
+            GROUP BY p.id, p.user_id, p.name, u.email, p.phone, p.relationship, p.address
         `, [id]);
         
         res.json({
@@ -295,14 +365,19 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Check if parent exists
-        const [existing] = await pool.execute('SELECT id FROM parents WHERE id = ?', [id]);
+        // Check if parent exists and get user_id
+        const [existing] = await pool.execute(
+            'SELECT id, user_id FROM parents WHERE id = ?', 
+            [id]
+        );
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy phụ huynh'
             });
         }
+        
+        const parent = existing[0];
         
         // Check if parent has children
         const [children] = await pool.execute('SELECT id FROM students WHERE parent_id = ?', [id]);
@@ -313,7 +388,13 @@ router.delete('/:id', async (req, res) => {
             });
         }
         
+        // Xóa parent trước
         await pool.execute('DELETE FROM parents WHERE id = ?', [id]);
+        
+        // Nếu có user_id, xóa luôn user account
+        if (parent.user_id) {
+            await pool.execute('DELETE FROM users WHERE id = ?', [parent.user_id]);
+        }
         
         res.json({
             success: true,
