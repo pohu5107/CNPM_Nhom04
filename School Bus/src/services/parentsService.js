@@ -10,7 +10,7 @@ export const parentsService = {
         try {
             const response = await apiClient.get(ENDPOINT);
             console.log('🔵 Parents response from API:', response);
-            return response.data || [];  // response đã được interceptor xử lý
+            return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching parents:', error);
             throw error;
@@ -21,7 +21,7 @@ export const parentsService = {
     getParentById: async (id) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error fetching parent:', error);
             throw error;
@@ -34,7 +34,7 @@ export const parentsService = {
             console.log('🔵 Getting children for parent:', id);
             const response = await apiClient.get(`${ENDPOINT}/${id}/children`);
             console.log('✅ Children response:', response);
-            return response.data || [];  // response đã được interceptor xử lý
+            return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching parent children:', error);
             throw error;
@@ -46,7 +46,7 @@ export const parentsService = {
         try {
             console.log('🔵 Creating parent with data:', parentData);
             const response = await apiClient.post(ENDPOINT, parentData);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error creating parent:', error);
             throw error;
@@ -58,7 +58,7 @@ export const parentsService = {
         try {
             console.log('🔵 Updating parent with data:', parentData);
             const response = await apiClient.put(`${ENDPOINT}/${id}`, parentData);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error updating parent:', error);
             throw error;
@@ -69,7 +69,7 @@ export const parentsService = {
     deleteParent: async (id) => {
         try {
             const response = await apiClient.delete(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error deleting parent:', error);
             throw error;

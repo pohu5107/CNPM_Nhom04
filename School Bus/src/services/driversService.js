@@ -10,7 +10,7 @@ export const driversService = {
         try {
             const response = await apiClient.get(ENDPOINT);
             console.log('🔵 Drivers response from API:', response);
-            return response.data || [];  // response đã được interceptor xử lý
+            return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching drivers:', error);
             throw error;
@@ -21,7 +21,7 @@ export const driversService = {
     getDriverById: async (id) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error fetching driver:', error);
             throw error;
@@ -32,7 +32,7 @@ export const driversService = {
     createDriver: async (driverData) => {
         try {
             const response = await apiClient.post(ENDPOINT, driverData);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error creating driver:', error);
             throw error;
@@ -43,7 +43,7 @@ export const driversService = {
     updateDriver: async (id, driverData) => {
         try {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, driverData);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error updating driver:', error);
             throw error;
@@ -54,7 +54,7 @@ export const driversService = {
     deleteDriver: async (id) => {
         try {
             const response = await apiClient.delete(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response || null;
         } catch (error) {
             console.error('Error deleting driver:', error);
             throw error;

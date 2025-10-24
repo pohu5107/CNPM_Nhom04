@@ -10,11 +10,9 @@ export const studentsService = {
         try {
             console.log('🔵 Calling GET /students...');
             const response = await apiClient.get(ENDPOINT);
-            console.log('✅ Raw response from interceptor:', response);
-            console.log('✅ Response.success:', response.success);
-            console.log('✅ Response.data (students array):', response.data);
-            // Vì interceptor đã xử lý response.data rồi, nên response chính là {success, data}
-            return response.data || [];
+            console.log('✅ Response from interceptor:', response);
+            // Interceptor đã xử lý và trả về data trực tiếp
+            return Array.isArray(response) ? response : [];
         } catch (error) {
             console.error('❌ Error fetching students:', error);
             throw error;
@@ -25,7 +23,7 @@ export const studentsService = {
     getStudentById: async (id) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error fetching student:', error);
             throw error;
@@ -36,7 +34,7 @@ export const studentsService = {
     createStudent: async (studentData) => {
         try {
             const response = await apiClient.post(ENDPOINT, studentData);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error creating student:', error);
             throw error;
@@ -47,7 +45,7 @@ export const studentsService = {
     updateStudent: async (id, studentData) => {
         try {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, studentData);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error updating student:', error);
             throw error;
@@ -58,7 +56,7 @@ export const studentsService = {
     deleteStudent: async (id) => {
         try {
             const response = await apiClient.delete(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error deleting student:', error);
             throw error;

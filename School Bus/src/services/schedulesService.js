@@ -13,7 +13,8 @@ export const schedulesService = {
             
             const response = await apiClient.get(url);
             console.log('🔵 Driver schedules response:', response);
-            return response.data || [];
+            // Response đã được interceptor xử lý, trả về trực tiếp
+            return Array.isArray(response) ? response : [];
         } catch (error) {
             console.error('Error fetching driver schedules:', error);
             throw error;
@@ -24,7 +25,7 @@ export const schedulesService = {
     getScheduleById: async (id) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error fetching schedule detail:', error);
             throw error;
@@ -38,7 +39,7 @@ export const schedulesService = {
                 status,
                 notes
             });
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error updating schedule status:', error);
             throw error;
@@ -50,7 +51,7 @@ export const schedulesService = {
         try {
             const params = date ? `?date=${date}` : '';
             const response = await apiClient.get(`${ENDPOINT}/driver/${driverId}/summary${params}`);
-            return response.data;
+            return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error fetching driver summary:', error);
             throw error;
@@ -62,7 +63,14 @@ export const schedulesService = {
         try {
             const response = await apiClient.get(`${ENDPOINT}/driver/${driverId}/stops/${scheduleId}`);
             console.log('🔵 Schedule stops response:', response);
-            return response.data;
+            
+            // Interceptor đã xử lý response, trả về data object
+            // Backend trả về: {scheduleId, routeId, routeName, totalStops, stops}
+            if (response && response.stops && Array.isArray(response.stops)) {
+                return response; // Trả về toàn bộ object chứa thông tin route và stops
+            }
+            
+            return { stops: [] }; // Fallback với empty stops array
         } catch (error) {
             console.error('Error fetching schedule stops:', error);
             throw error;

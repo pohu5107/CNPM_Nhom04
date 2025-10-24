@@ -26,13 +26,11 @@ export default function DriverScheduleDetailPage() {
       console.log('🔵 Schedule data received:', response);
       console.log('🔵 Schedule data type:', typeof response, 'Keys:', Object.keys(response || {}));
       
-      // Service đã unwrap response.data từ backend
-      if (response && response.data) {
-        setSchedule(response.data);
-      } else if (response && response.id) {
-        // Nếu response trực tiếp là schedule object  
+      // Interceptor đã xử lý response, trả về data trực tiếp
+      if (response && (response.id || response.schedule_id)) {
         setSchedule(response);
       } else {
+        console.log('❌ No valid schedule data found');
         setSchedule(null);
       }
       setError(null);
@@ -48,12 +46,24 @@ export default function DriverScheduleDetailPage() {
     try {
       const stopsData = await schedulesService.getScheduleStops(CURRENT_DRIVER_ID, id);
       console.log('🔵 Stops data received:', stopsData);
-      console.log('🔵 Stops array:', stopsData.stops);
-      // Service đã unwrap response.data, stopsData = {scheduleId, routeId, routeName, stops}
-      setStops(stopsData.stops || []);
+      console.log('🔵 Stops data structure:', {
+        type: typeof stopsData,
+        isArray: Array.isArray(stopsData),
+        hasStops: stopsData?.stops ? 'yes' : 'no',
+        stopsLength: stopsData?.stops?.length || 0,
+        keys: Object.keys(stopsData || {})
+      });
+      
+      // Service đã xử lý để trả về object {scheduleId, routeId, routeName, stops}
+      if (stopsData && stopsData.stops && Array.isArray(stopsData.stops)) {
+        console.log('✅ Valid stops data found:', stopsData.stops.length, 'stops');
+        setStops(stopsData.stops);
+      } else {
+        console.log('❌ No valid stops data found in response');
+        setStops([]);
+      }
     } catch (err) {
       console.error('Error fetching stops:', err);
-      // Không có fallback mock data - để trống nếu không có dữ liệu
       setStops([]);
     }
   };

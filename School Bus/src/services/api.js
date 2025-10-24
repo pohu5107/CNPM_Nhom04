@@ -32,7 +32,16 @@ apiClient.interceptors.request.use(
 // Response interceptor để handle errors
 apiClient.interceptors.response.use(
     (response) => {
-        return response.data;
+        // Chuẩn hóa response - luôn trả về data array/object
+        const responseBody = response.data;
+        
+        // Nếu backend trả về format { success: true, data: [...] }
+        if (responseBody && typeof responseBody === 'object' && 'success' in responseBody) {
+            return responseBody.data || responseBody;
+        }
+        
+        // Nếu backend trả về trực tiếp array/object
+        return responseBody;
     },
     (error) => {
         console.error('API Error:', error.response?.data || error.message);
