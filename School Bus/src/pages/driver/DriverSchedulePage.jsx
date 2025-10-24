@@ -4,7 +4,7 @@ import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
 // Giả sử driver hiện tại có ID = 1  
-const CURRENT_DRIVER_ID = 1;
+const CURRENT_DRIVER_ID = 1; // Đổi sang driver khác để test nếu chưa có đăng nhập
 
 export default function DriverSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("2025-10-23");
@@ -53,10 +53,13 @@ export default function DriverSchedulePage() {
   // Lấy thông tin driver hiện tại từ localStorage hoặc context
   useEffect(() => {
     // Giả lập thông tin driver - trong thực tế sẽ lấy từ authentication context
-    setCurrentDriver({
-      name: 'Nguyễn Văn A',
-      driverCode: 'TX001'
-    });
+    const driverInfo = {
+      1: { name: 'Nguyễn Văn A', driverCode: 'TX001' },
+      2: { name: 'Trần Thị B', driverCode: 'TX002' },
+      3: { name: 'Lê Văn C', driverCode: 'TX003' }
+    };
+    
+    setCurrentDriver(driverInfo[CURRENT_DRIVER_ID] || { name: 'Unknown Driver', driverCode: 'TX???' });
   }, []);
   
   const handleDateChange = (newDate) => {
