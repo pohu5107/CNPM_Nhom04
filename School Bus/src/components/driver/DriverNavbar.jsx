@@ -3,31 +3,34 @@ import { NavLink } from "react-router-dom";
 export default function DriverNavbar() {
   return (
     <aside
-      className="w-64 min-h-screen text-white flex flex-col p-4 flex-shrink-0"
-      style={{ backgroundColor: "#174D2C" }}
+      className="h-screen w-56 sm:w-60 md:w-64 lg:w-72 flex-shrink-0 text-white flex flex-col p-4 bg-bg overflow-y-auto overflow-x-hidden"
     >
-      {/* Logo / Tiêu đề */}
-      <div className="text-3xl rounded-[15px] font-semibold mb-8 text-center tracking-wide mt-4 bg-white text-[#174D2C] rounded-[50px] py-6 shadow-md">
-        <div className="text-3xl mb-2">🚌</div>
-        <div className="text-lg">DRIVER</div>
+      {/* Logo / Tiêu đề - Match Admin style */}
+      <div className="pb-4 items-center flex justify-center">
+        <div className="w-24 h-24 rounded-full bg-[#D8E359] flex items-center justify-center border cursor-pointer shadow-lg">
+          <div className="text-center">
+            <div className="text-3xl text-[#174D2C]">�</div>
+            <div className="text-sm font-bold text-[#174D2C]">DRIVER</div>
+          </div>
+        </div>
       </div>
 
-      {/* Các link menu */}
+      {/* Các link menu - Match Admin style */}
       <nav className="flex-1 space-y-4">
         {[
-          { path: "/driver/schedule", label: "📅 Lịch làm việc", exact: true },
-          { path: "/driver/students", label: "👨‍🎓 Học sinh phụ trách" },
-        
+          { path: "/driver/schedule", label: "Lịch làm việc", exact: true },
+          { path: "/driver/students", label: "Học sinh phụ trách" },
         ].map(({ path, label, exact }) => (
           <NavLink
             key={path}
             to={path}
             end={exact}
             className={({ isActive }) =>
-              `block px-4 py-3 rounded-lg transition-all duration-200 font-medium ${
+              `block p-1 rounded-[10px] text-lg font-medium text-center transition-all duration-100
+              ${
                 isActive
-                  ? "bg-lime-400 text-[#174D2C] shadow-lg"
-                  : "text-white hover:bg-white/10 hover:text-lime-300"
+                  ? "bg-[#D8E359] text-[#174D2C] font-semibold scale-[1.02]"
+                  : "hover:bg-white hover:text-[#174D2C] hover:scale-[1.02]"
               }`
             }
           >
@@ -36,9 +39,9 @@ export default function DriverNavbar() {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="pt-4 border-t border-white/20">
-        <button className="w-full px-4 py-3 bg-lime-400 text-[#174D2C] rounded-lg font-semibold hover:bg-lime-300 transition-colors">
+      {/* Footer - Match Admin style */}
+      <div className="border-t border-[#D8E359]/50 pt-5 text-center mt-auto">
+        <button className="bg-[#D8E359] hover:bg-[#c6d93a] text-[#174D2C] px-4 py-2 rounded-md text-lg font-semibold transition-colors duration-200 border border-black">
           Đăng xuất
         </button>
       </div>
