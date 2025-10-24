@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
-const CURRENT_DRIVER_ID = 1;
+const CURRENT_DRIVER_ID =1;
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
@@ -171,7 +171,28 @@ export default function DriverScheduleDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Ca:</span>
-                <span className="font-bold text-xl text-[#174D2C]">Ca {schedule.shift_number}</span>
+                <span className="font-bold text-xl text-[#174D2C]">
+                  {(() => {
+                    // Xác định loại ca dựa trên thời gian nếu không có shift_type
+                    if (schedule.shift_type) {
+                      const shiftTypeText = schedule.shift_type === 'morning' ? 'Sáng' : 
+                                           schedule.shift_type === 'afternoon' ? 'Chiều' : 'Tối';
+                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
+                    } else {
+                      // Fallback: dựa vào thời gian
+                      const startHour = schedule.start_time ? parseInt(schedule.start_time.split(':')[0]) : 0;
+                      let shiftTypeText = '';
+                      if (startHour >= 6 && startHour < 12) {
+                        shiftTypeText = 'Sáng';
+                      } else if (startHour >= 12 && startHour < 18) {
+                        shiftTypeText = 'Chiều';
+                      } else {
+                        shiftTypeText = 'Tối';
+                      }
+                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
+                    }
+                  })()}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Thời gian:</span>

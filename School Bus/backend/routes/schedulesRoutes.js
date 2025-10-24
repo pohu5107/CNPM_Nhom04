@@ -66,23 +66,46 @@ router.get('/driver/:driverId', async (req, res) => {
         `, params);
         
         // Format dữ liệu cho frontend
-        const formattedSchedules = rows.map(schedule => ({
-            id: `CH${String(schedule.id).padStart(3, '0')}`,
-            ca: schedule.shift_number,
-            time: `${schedule.start_time.substring(0, 5)} - ${schedule.end_time.substring(0, 5)}`,
-            route: schedule.route_name,
-            busNumber: schedule.license_plate,
-            startPoint: schedule.start_point,
-            endPoint: schedule.end_point,
-            stopCount: schedule.actual_stop_count || 0, // Số điểm dừng thực tế từ route_stops
-            studentCount: `${schedule.student_count}/${schedule.max_capacity}`,
-            status: schedule.status,
-            statusText: getStatusText(schedule.status),
-            statusColor: getStatusColor(schedule.status),
-            date: schedule.date,
-            notes: schedule.notes,
-            estimatedDuration: schedule.estimated_duration
-        }));
+        const formattedSchedules = rows.map(schedule => {
+            // Xác định loại ca dựa trên thời gian và shift_type
+            let caText = '';
+            if (schedule.shift_type) {
+                // Nếu có shift_type trong database
+                caText = schedule.shift_type === 'morning' ? `Ca ${schedule.shift_number} - Sáng` : 
+                        schedule.shift_type === 'afternoon' ? `Ca ${schedule.shift_number} - Chiều` :
+                        `Ca ${schedule.shift_number}`;
+            } else {
+                // Fallback: dựa vào thời gian để xác định
+                const startHour = parseInt(schedule.start_time.split(':')[0]);
+                if (startHour >= 6 && startHour < 12) {
+                    caText = `Ca ${schedule.shift_number} - Sáng`;
+                } else if (startHour >= 12 && startHour < 18) {
+                    caText = `Ca ${schedule.shift_number} - Chiều`;
+                } else {
+                    caText = `Ca ${schedule.shift_number} - Tối`;
+                }
+            }
+            
+            return {
+                id: `CH${String(schedule.id).padStart(3, '0')}`,
+                ca: caText, // Hiển thị ca với loại (sáng/chiều)
+                caNumber: schedule.shift_number, // Giữ số ca để sort
+                shiftType: schedule.shift_type, // Thêm thông tin loại ca
+                time: `${schedule.start_time.substring(0, 5)} - ${schedule.end_time.substring(0, 5)}`,
+                route: schedule.route_name,
+                busNumber: schedule.license_plate,
+                startPoint: schedule.start_point,
+                endPoint: schedule.end_point,
+                stopCount: schedule.actual_stop_count || 0, // Số điểm dừng thực tế từ route_stops
+                studentCount: `${schedule.student_count}/${schedule.max_capacity}`,
+                status: schedule.status,
+                statusText: getStatusText(schedule.status),
+                statusColor: getStatusColor(schedule.status),
+                date: schedule.date,
+                notes: schedule.notes,
+                estimatedDuration: schedule.estimated_duration
+            };
+        });
         
         res.json({
             success: true,
@@ -268,12 +291,11 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         
         const schedule = scheduleRows[0];
         
-        // Lấy danh sách điểm dừng thực tế từ route_stops và stops
-        // Điểm dừng chỉ là các điểm trung gian, không phải điểm bắt đầu/kết thúc chuyến
+        // Lấy danh sách điểm dừng và tính thời gian động dựa trên schedule start_time
         const [stops] = await pool.execute(`
             SELECT 
                 rs.stop_order,
-                rs.estimated_arrival_time,
+                rs.estimated_arrival_time as template_time,
                 rs.student_pickup_count,
                 s.name as stop_name,
                 s.address as stop_address,
@@ -286,16 +308,32 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
         
-        // Format dữ liệu cho frontend
+        // Tính thời gian động cho điểm dừng dựa trên schedule start_time
+        const scheduleStartTime = schedule.start_time;
+        const [startHour, startMinute] = scheduleStartTime.split(':').map(Number);
+        
+        // Format dữ liệu cho frontend với thời gian được tính từ offset trong DB
         const formattedStops = stops.map((stop, index) => {
+            // Lấy offset từ database (format HH:MM:SS được chuyển thành phút)
+            const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
+            const offsetMinutes = offsetHour * 60 + offsetMinute; // Chuyển offset thành phút
+            
+            // Tính thời gian thực tế = schedule start_time + offset từ DB
+            const scheduleStartTotal = startHour * 60 + startMinute;
+            const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
+            
+            const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
+            const actualMinute = actualArrivalTotal % 60;
+            const actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
+            
             return {
                 order: stop.stop_order,
                 name: stop.stop_name,
                 address: stop.stop_address,
-                type: stop.stop_type, // Luôn là "Đón học sinh"
-                estimatedTime: stop.estimated_arrival_time.substring(0, 5),
+                type: stop.stop_type,
+                estimatedTime: actualTimeString, // Thời gian = start_time + offset từ DB
                 studentCount: stop.student_pickup_count > 0 ? `${stop.student_pickup_count} học sinh` : '-',
-                status: index === 0 ? 'current' : 'pending', // Mặc định điểm đầu là current
+                status: index === 0 ? 'current' : 'pending',
                 coordinates: {
                     latitude: parseFloat(stop.latitude),
                     longitude: parseFloat(stop.longitude)
