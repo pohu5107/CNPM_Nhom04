@@ -60,9 +60,14 @@ mysql -u root -p school_bus_db < database_updates_fix_timing_logic.sql
 -  `route_stops` - Trạm dừng trên tuyến đường
 
 ### **Cập nhật mới (database_updates_fix_timing_logic.sql - 2025-10-24):**
-- **Thêm route mới**: "Tuyến Gò Vấp - Chiều" (tách riêng ca chiều)
+- **Thêm 3 routes mới**: 
+  - "Tuyến Gò Vấp - Chiều" (tách riêng ca chiều)
+  - "Tuyến Quận 1 - Chiều" (bổ sung ca chiều)  
+  - "Tuyến Thủ Đức - Sáng" (bổ sung ca sáng)
+- **6 routes hoàn chỉnh**: 3 tuyến x 2 ca (sáng/chiều)
 - **Sửa `route_stops`**: Chuyển từ thời gian tuyệt đối sang offset pattern
 - **Logic mới**: `estimated_arrival_time` = offset từ `schedule.start_time`
+- **Sửa schedule mapping**: Driver dùng đúng route theo ca làm việc
 - **Ví dụ**: `00:10:00` = +10 phút từ thời gian bắt đầu chuyến
 
 ### **Sửa lỗi:**  
@@ -85,7 +90,15 @@ SELECT COUNT(*) FROM view_students_with_parents; -- Phải có 3 học sinh
 
 -- Test 3: Kiểm tra bảng schedules (nếu đã chạy complete_schedules_setup.sql)
 SELECT COUNT(*) FROM schedules; -- Phải có 10 lịch trình
-SELECT COUNT(*) FROM route_stops; -- Phải có 9 trạm dừng
+SELECT COUNT(*) FROM route_stops; -- Phải có 18 trạm dừng (6 routes x 3 stops)
+SELECT COUNT(*) FROM routes; -- Phải có 6 routes (3 tuyến x 2 ca)
+
+-- Test 5: Kiểm tra routes hoàn chỉnh (sau khi chạy database_updates_fix_timing_logic.sql)
+SELECT route_name FROM routes ORDER BY route_name; 
+-- Phải có đầy đủ:
+-- Tuyến Gò Vấp - Chiều, Tuyến Gò Vấp - Sáng
+-- Tuyến Quận 1 - Chiều, Tuyến Quận 1 - Sáng  
+-- Tuyến Thủ Đức - Chiều, Tuyến Thủ Đức - Sáng
 
 -- Test 4: Kiểm tra foreign key
 SHOW CREATE TABLE students; -- Phải có constraint đúng
@@ -105,17 +118,28 @@ SHOW CREATE TABLE students; -- Phải có constraint đúng
 - `complete_schedules_setup.sql` - Tạo lại lịch trình xe buýt (chạy thứ 3)
 - `database_updates_fix_timing_logic.sql` - **MỚI**: Sửa logic thời gian điểm dừng (chạy thứ 4 - bắt buộc)
 
-## ** Giải thích thay đổi mới :**
+## ** Giải thích thay đổi mới (2025-10-24):**
 
 ### **Vấn đề trước đây:**
 - Route stops có thời gian tuyệt đối (06:45, 07:00, 07:15)
 - Schedule có thời gian khác (07:00-08:00) 
-- Kết quả: Điểm dừng 06:45 trước thời gian bắt đầu chuyến 07:00 
+- Thiếu routes: chỉ có 4 routes thay vì 6 (3 tuyến x 2 ca)
+- Driver 3 ca sáng phải dùng route chiều vì thiếu "Tuyến Thủ Đức - Sáng"
+- Kết quả: Điểm dừng 06:45 trước thời gian bắt đầu chuyến 07:00 ❌
 
 ### **Giải pháp mới:**
-- Route stops dùng offset pattern (00:10:00, 00:25:00, 00:40:00)
-- Backend tính: `actual_time = schedule.start_time + offset`
-- Kết quả: Thời gian nhất quán và hợp lý 
+- **Bổ sung routes**: Tạo đủ 6 routes (3 tuyến x 2 ca)
+- **Route stops dùng offset**: (00:10:00, 00:25:00, 00:40:00)
+- **Backend tính động**: `actual_time = schedule.start_time + offset`
+- **Schedule mapping đúng**: Mỗi driver dùng route phù hợp với ca làm việc
+- **Kết quả**: Thời gian nhất quán và logic ✅
+
+### **Routes hoàn chỉnh sau khi update:**
+```
+1. Tuyến Quận 1 - Sáng    4. Tuyến Gò Vấp - Chiều
+2. Tuyến Quận 1 - Chiều   5. Tuyến Thủ Đức - Sáng  
+3. Tuyến Gò Vấp - Sáng    6. Tuyến Thủ Đức - Chiều
+```
 
 ### **Ví dụ thực tế:**
 ```
