@@ -32,7 +32,7 @@ mysql -u root -p school_bus_db < database_updates_fix_timing_logic.sql
 1. **Luôn chạy `database_simple_fix.sql` sau khi import `school_bus_db.sql`**
 2. **Không skip bước 2** - Backend sẽ lỗi nếu thiếu bảng `classes` và VIEWs
 3. **Bước 3 chạy khi cần cập nhật lịch trình** - Script sẽ XÓA và tạo lại bảng `schedules` + `route_stops`
-4. **⚠️ QUAN TRỌNG: Phải chạy Bước 4** - Sửa lỗi thời gian điểm dừng (2025-10-24)
+4. ** QUAN TRỌNG: Phải chạy Bước 4** - Sửa lỗi thời gian điểm dừng (2025-10-24)
 5. **Nếu đã có database cũ:** Backup trước khi update
 
 ## ** Thứ tự chạy scripts (QUAN TRỌNG):**
@@ -125,14 +125,14 @@ SHOW CREATE TABLE students; -- Phải có constraint đúng
 - Schedule có thời gian khác (07:00-08:00) 
 - Thiếu routes: chỉ có 4 routes thay vì 6 (3 tuyến x 2 ca)
 - Driver 3 ca sáng phải dùng route chiều vì thiếu "Tuyến Thủ Đức - Sáng"
-- Kết quả: Điểm dừng 06:45 trước thời gian bắt đầu chuyến 07:00 ❌
+- Kết quả: Điểm dừng 06:45 trước thời gian bắt đầu chuyến 07:00 
 
 ### **Giải pháp mới:**
 - **Bổ sung routes**: Tạo đủ 6 routes (3 tuyến x 2 ca)
 - **Route stops dùng offset**: (00:10:00, 00:25:00, 00:40:00)
 - **Backend tính động**: `actual_time = schedule.start_time + offset`
 - **Schedule mapping đúng**: Mỗi driver dùng route phù hợp với ca làm việc
-- **Kết quả**: Thời gian nhất quán và logic ✅
+- **Kết quả**: Thời gian nhất quán và logic 
 
 ### **Routes hoàn chỉnh sau khi update:**
 ```
