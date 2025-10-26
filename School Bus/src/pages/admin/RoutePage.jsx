@@ -11,6 +11,8 @@ import axios from "axios";
 export default function RoutePage() {
     const [isOpenFormAdd, setIsOpenFormAdd] = useState(false);
     const [routes, setRoutes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -18,8 +20,33 @@ export default function RoutePage() {
 
     useEffect(() => {
       const fetchRoutes = async () => {
-        const response = await axios.get('http://localhost:5000/api/routes');
-        setRoutes(response.data.data);
+        try {
+          setLoading(true);
+          setError(null);
+          console.log('🔵 Fetching routes from API...');
+          const response = await axios.get('http://localhost:5000/api/routes', {
+            timeout: 15000 // 15 giây thay vì 10 giây
+          });
+          console.log('✅ Routes response:', response.data);
+          
+          if (response.data && response.data.data) {
+            // Map backend data to frontend format
+            const mappedRoutes = response.data.data.map(route => ({
+              ...route,
+              name: route.route_name || route.name, // Backend trả về route_name
+            }));
+            setRoutes(mappedRoutes);
+          } else {
+            console.warn('⚠️ No routes data in response');
+            setRoutes([]);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching routes:', error);
+          setError('Không thể tải danh sách tuyến đường. Vui lòng thử lại.');
+          setRoutes([]); // Set empty array nếu lỗi
+        } finally {
+          setLoading(false);
+        }
       };
       fetchRoutes();
     }, []);
@@ -70,11 +97,15 @@ export default function RoutePage() {
 
   // Filter routes
   const filteredRoutes = routes.filter(route => {
-    const matchesSearch = 
-      route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      route.id.toString().includes(searchTerm);
+    // Kiểm tra null/undefined để tránh lỗi
+    const routeName = route?.name || '';
+    const routeId = route?.id?.toString() || '';
     
-    const matchesStatus = !statusFilter || route.status === statusFilter;
+    const matchesSearch = 
+      routeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      routeId.includes(searchTerm);
+    
+    const matchesStatus = !statusFilter || route?.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -134,20 +165,38 @@ export default function RoutePage() {
     <div className="space-y-6 ">
       <Header title="QUẢN LÝ TUYẾN ĐƯỜNG" />
       
-      <Table
-        title="Danh sách tuyến đường"
-        data={filteredRoutes}
-        columns={columns}
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        onAdd={() => setIsOpenFormAdd(true)}
-        onView={(route) => console.log('View route:', route)}
-        onEdit={(route) => console.log('Edit route:', route)}
-        onDelete={(route) => handleDeleteClick(route)}
-        addButtonText="Thêm tuyến đường"
-        filters={filters}
-        emptyMessage={searchTerm || statusFilter ? 'Không tìm thấy tuyến đường nào phù hợp' : 'Chưa có tuyến đường nào'}
-      />
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚠️</span>
+            <span className="font-medium">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Đang tải danh sách tuyến đường...</p>
+        </div>
+      ) : (
+        <Table
+          title="Danh sách tuyến đường"
+          data={filteredRoutes}
+          columns={columns}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          onAdd={() => setIsOpenFormAdd(true)}
+          onView={(route) => console.log('View route:', route)}
+          onEdit={(route) => console.log('Edit route:', route)}
+          onDelete={(route) => handleDeleteClick(route)}
+          addButtonText="Thêm tuyến đường"
+          filters={filters}
+          emptyMessage={searchTerm || statusFilter ? 'Không tìm thấy tuyến đường nào phù hợp' : 'Chưa có tuyến đường nào'}
+        />
+      )}
 
       <AddRouteForm
         visible={isOpenFormAdd} 
