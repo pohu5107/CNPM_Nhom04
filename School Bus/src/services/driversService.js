@@ -28,6 +28,17 @@ export const driversService = {
         }
     },
 
+    // Lấy thông tin chi tiết đầy đủ của tài xế
+    getDriverDetails: async (id) => {
+        try {
+            const response = await apiClient.get(`${ENDPOINT}/${id}/details`);
+            return response || null;
+        } catch (error) {
+            console.error('Error fetching driver details:', error);
+            throw error;
+        }
+    },
+
     // Tạo tài xế mới
     createDriver: async (driverData) => {
         try {

@@ -46,10 +46,22 @@ const DriversPage = () => {
     setShowForm(true);
   };
 
-  const handleView = (driver) => {
-    setFormMode('view');
-    setSelectedDriver(driver);
-    setShowForm(true);
+  const handleView = async (driver) => {
+    try {
+      setFormMode('view');
+      
+      // Lấy thông tin chi tiết đầy đủ cho mode view
+      const driverDetails = await driversService.getDriverDetails(driver.id);
+      setSelectedDriver(driverDetails);
+      setShowForm(true);
+    } catch (err) {
+      setError('Lỗi khi lấy thông tin chi tiết tài xế: ' + err.message);
+      console.error('Error fetching driver details:', err);
+      
+      // Fallback to basic info if detailed info fails
+      setSelectedDriver(driver);
+      setShowForm(true);
+    }
   };
 
   const handleDelete = (driver) => {
@@ -110,9 +122,9 @@ const DriversPage = () => {
         title={
           formMode === 'add' ? 'Thêm tài xế mới' :
           formMode === 'edit' ? 'Chỉnh sửa thông tin tài xế' :
-          'Thông tin tài xế'
+          'Thông tin chi tiết tài xế'
         }
-        size="lg"
+        size={formMode === 'view' ? '2xl' : 'lg'}
       >
         <DriverForm
           driver={selectedDriver}
