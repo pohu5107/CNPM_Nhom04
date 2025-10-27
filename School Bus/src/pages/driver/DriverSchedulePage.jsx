@@ -75,11 +75,11 @@ export default function DriverSchedulePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header chuẩn Admin style */}
       <Header title="QUẢN LÝ LỊCH LÀM VIỆC" name={currentDriver?.name || 'Tài xế'} />
       
-      <div className="w-full px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {/* Driver Info Card */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 p-6 mb-6">
           <div className="flex items-center justify-between">
