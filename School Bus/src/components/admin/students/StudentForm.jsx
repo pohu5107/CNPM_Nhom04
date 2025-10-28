@@ -169,6 +169,147 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     formData 
   });
 
+  // Render detailed view for student information
+  if (mode === 'view' && student) {
+    return (
+      <div className="space-y-6">
+        {/* Student Basic Info */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl font-bold text-blue-600">
+                {student.name.split(' ').slice(-1)[0].charAt(0)}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-800">{student.name}</h3>
+              <p className="text-gray-600">Mã học sinh: #{student.id}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{student.grade}</div>
+              <div className="text-sm text-gray-500">Khối</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800">{student.class_name || student.class}</div>
+              <div className="text-sm text-gray-500">Lớp học</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800">{student.homeroom_teacher || 'Chưa có'}</div>
+              <div className="text-sm text-gray-500">GVCN</div>
+            </div>
+            <div className="text-center">
+              <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
+              </div>
+              <div className="text-sm text-gray-500">Trạng thái</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Contact Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                📞
+              </span>
+              Thông tin liên hệ
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">SĐT học sinh</label>
+                <p className="text-gray-800">{student.phone || student.student_phone || 'Chưa có'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Địa chỉ</label>
+                <p className="text-gray-800">{student.address || 'Chưa có'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Parent Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                👨‍👩‍👧
+              </span>
+              Thông tin phụ huynh
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Họ tên</label>
+                <p className="text-gray-800">{student.parent_name || 'Chưa có'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Mối quan hệ</label>
+                <p className="text-gray-800">{student.relationship || 'Chưa có'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">SĐT phụ huynh</label>
+                <p className="text-gray-800">{student.parent_phone || 'Chưa có'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Địa chỉ phụ huynh</label>
+                <p className="text-gray-800">{student.parent_address || 'Chưa có'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transportation Info */}
+        {(student.route_name || student.bus_number) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center mr-2">
+                🚌
+              </span>
+              Thông tin xe buýt
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center bg-orange-50 rounded-lg p-4">
+                <div className="text-lg font-semibold text-gray-800">{student.route_name || 'Chưa có'}</div>
+                <div className="text-sm text-gray-500">Tuyến đường</div>
+              </div>
+              <div className="text-center bg-blue-50 rounded-lg p-4">
+                <div className="text-lg font-semibold text-gray-800">{student.bus_number || 'Chưa có'}</div>
+                <div className="text-sm text-gray-500">Số xe</div>
+              </div>
+              <div className="text-center bg-green-50 rounded-lg p-4">
+                <div className="text-lg font-semibold text-gray-800">{student.pickup_time || 'Chưa có'}</div>
+                <div className="text-sm text-gray-500">Giờ đón</div>
+              </div>
+              <div className="text-center bg-purple-50 rounded-lg p-4">
+                <div className="text-lg font-semibold text-gray-800">{student.dropoff_time || 'Chưa có'}</div>
+                <div className="text-sm text-gray-500">Giờ trả</div>
+              </div>
+            </div>
+            {student.license_plate && (
+              <div className="mt-4 text-center">
+                <span className="inline-block bg-gray-100 px-4 py-2 rounded-lg font-mono text-lg font-bold text-gray-800">
+                  🚗 {student.license_plate}
+                </span>
+                <div className="text-sm text-gray-500 mt-1">Biển số xe</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 justify-end pt-6 border-t border-gray-200">
+          <Button variant="secondary" onClick={onCancel}>
+            Đóng
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular form for add/edit modes
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

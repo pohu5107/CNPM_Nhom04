@@ -46,6 +46,36 @@ export const schedulesService = {
         }
     },
 
+    // Lấy schedules cho admin
+    getAdminSchedules: async (params = {}) => {
+        try {
+            const queryString = new URLSearchParams(params).toString();
+            const url = `${ENDPOINT}/admin${queryString ? `?${queryString}` : ''}`;
+            
+            const response = await apiClient.get(url);
+            console.log('🔵 Admin schedules response:', response);
+            return Array.isArray(response) ? response : [];
+        } catch (error) {
+            console.error('Error fetching admin schedules:', error);
+            throw error;
+        }
+    },
+
+    // Lấy students của schedule theo route từ database  
+    getScheduleStudentsByRoute: async (scheduleId) => {
+        try {
+            const response = await apiClient.get(`${ENDPOINT}/${scheduleId}/students-by-route`);
+            console.log('🔵 Schedule students response:', response);
+            return {
+                students: Array.isArray(response.data) ? response.data : [],
+                route_info: response.route_info || {}
+            };
+        } catch (error) {
+            console.error('Error fetching schedule students:', error);
+            throw error;
+        }
+    },
+
     // Lấy thống kê tổng quan
     getDriverSummary: async (driverId, date = null) => {
         try {

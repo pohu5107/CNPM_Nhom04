@@ -53,25 +53,29 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         const [rows] = await pool.execute(`
             SELECT 
-                s.id,
-                s.name,
-                s.grade,
-                s.class_id,
-                c.class_name,
-                s.address,
-                s.phone,
-                s.parent_id,
-                p.name as parent_name,
-                p.phone as parent_phone,
-                s.route_id,
-                s.bus_id,
-                s.pickup_time,
-                s.dropoff_time,
-                s.status
-            FROM students s
-            LEFT JOIN parents p ON s.parent_id = p.id
-            LEFT JOIN classes c ON s.class_id = c.id
-            WHERE s.id = ?
+                id,
+                student_name as name,
+                grade,
+                class,
+                class_name,
+                homeroom_teacher,
+                address,
+                student_phone as phone,
+                status,
+                pickup_time,
+                dropoff_time,
+                parent_id,
+                parent_name,
+                parent_phone,
+                parent_address,
+                relationship,
+                route_id,
+                route_name,
+                bus_id,
+                bus_number,
+                license_plate
+            FROM view_students_with_parents
+            WHERE id = ?
         `, [id]);
         
         if (rows.length === 0) {

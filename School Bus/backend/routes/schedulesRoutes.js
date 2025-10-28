@@ -386,4 +386,134 @@ function getStatusColor(status) {
     return colorMap[status] || 'bg-gray-100 text-gray-700';
 }
 
+// GET /api/schedules/admin - Lấy schedules cho admin với thông tin students thật từ database
+router.get('/admin', async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        let dateCondition = '';
+        const params = [];
+        
+        if (date) {
+            dateCondition = 'WHERE s.date = ?';
+            params.push(date);
+        } else {
+            // Mặc định lấy schedules từ ngày hiện tại
+            dateCondition = 'WHERE s.date >= CURDATE()';
+        }
+        
+        const [rows] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.date,
+                s.shift_type,
+                s.shift_number,
+                s.start_time,
+                s.end_time,
+                s.start_point,
+                s.end_point,
+                s.status,
+                d.name as driver_name,
+                b.bus_number,
+                b.license_plate,
+                r.route_name,
+                s.student_count,
+                s.max_capacity
+            FROM schedules s
+            INNER JOIN drivers d ON s.driver_id = d.id
+            INNER JOIN buses b ON s.bus_id = b.id
+            INNER JOIN routes r ON s.route_id = r.id
+            ${dateCondition}
+            ORDER BY s.date ASC, s.start_time ASC
+        `, params);
+        
+        res.json({
+            success: true,
+            data: rows,
+            count: rows.length
+        });
+    } catch (error) {
+        console.error('Error fetching admin schedules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách lịch trình',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/schedules/:id/students-by-route - Lấy students của schedule theo route từ database
+router.get('/:id/students-by-route', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Lấy thông tin schedule trước
+        const [scheduleInfo] = await pool.execute(`
+            SELECT s.route_id, r.route_name, s.shift_type, s.shift_number
+            FROM schedules s
+            INNER JOIN routes r ON s.route_id = r.id
+            WHERE s.id = ?
+        `, [id]);
+        
+        if (scheduleInfo.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lịch trình'
+            });
+        }
+        
+        const routeId = scheduleInfo[0].route_id;
+        
+        // Lấy students thuộc route này từ database
+        const [students] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.name,
+                s.grade,
+                s.class,
+                c.class_name,
+                s.pickup_time,
+                s.dropoff_time,
+                r.route_name,
+                b.bus_number,
+                b.license_plate,
+                'Chưa đón' as status -- Mặc định status
+            FROM students s
+            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN routes r ON s.route_id = r.id
+            LEFT JOIN buses b ON s.bus_id = b.id
+            WHERE s.route_id = ? AND s.status = 'active'
+            ORDER BY s.pickup_time, s.name
+        `, [routeId]);
+        
+        // Format dữ liệu cho frontend
+        const formattedStudents = students.map(student => ({
+            id: student.id,
+            name: student.name,
+            class: student.class_name || student.class,
+            pickup: `Điểm đón ${student.pickup_time?.substring(0,5) || '06:30'}`, // Dùng thời gian làm điểm đón tạm
+            drop: `Điểm trả ${student.dropoff_time?.substring(0,5) || '16:30'}`, // Dùng thời gian làm điểm trả tạm
+            status: student.status
+        }));
+        
+        res.json({
+            success: true,
+            data: formattedStudents,
+            count: formattedStudents.length,
+            route_info: {
+                route_name: scheduleInfo[0].route_name,
+                shift_type: scheduleInfo[0].shift_type,
+                shift_number: scheduleInfo[0].shift_number
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching schedule students:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách học sinh',
+            error: error.message
+        });
+    }
+});
+
 export default router;
