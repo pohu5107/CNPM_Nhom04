@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Modal from "../../components/UI/Modal";
 import FormInput from "../../components/common/FormInput";
 import Button from "../../components/common/Button";
-import boxDialog from "../../components/UI/BoxDialog";
 
 export default function AddBusForm({ visible, onCancel, title, onSubmit, mode = "add", bus = null }) {
   const [formData, setFormData] = useState({
@@ -66,7 +65,6 @@ export default function AddBusForm({ visible, onCancel, title, onSubmit, mode = 
     
     try {
       await onSubmit(formData);
-      boxDialog("Thêm thành công","success")
       // Reset form only on success
       setFormData({
         bus_number: "",
@@ -75,7 +73,6 @@ export default function AddBusForm({ visible, onCancel, title, onSubmit, mode = 
       });
       setErrors({});
     } catch (error) {
-      boxDialog("Thêm thất bại","success")
       console.error('Form submission error:', error);
     } finally {
       setIsSubmitting(false);
