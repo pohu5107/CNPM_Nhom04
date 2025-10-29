@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 27, 2025 lúc 01:41 AM
+-- Thời gian đã tạo: Th10 29, 2025 lúc 04:55 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -67,9 +67,9 @@ CREATE TABLE `buses` (
 --
 
 INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `status`, `created_at`) VALUES
-(1, 'BUS-01', '51K-123.45', 'active', '2025-10-20 13:44:19'),
+(1, 'BUS-04', '51K-123.45', 'active', '2025-10-20 13:44:19'),
 (2, 'BUS-02', '51K-678.90', 'active', '2025-10-20 13:44:19'),
-(3, 'BUS-03', '51K-111.22', 'maintenance', '2025-10-20 13:44:19');
+(3, 'BUS-03', '51K-111.22', 'active', '2025-10-20 13:44:19');
 
 -- --------------------------------------------------------
 
@@ -279,7 +279,7 @@ CREATE TABLE `schedules` (
 
 INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift_type`, `shift_number`, `start_time`, `end_time`, `start_point`, `end_point`, `estimated_duration`, `student_count`, `max_capacity`, `status`, `notes`, `created_at`, `updated_at`) VALUES
 (1, 1, 1, 1, '2025-10-23', 'morning', 1, '06:30:00', '07:30:00', '120 Nguyễn Trãi', '273 An Dương Vương', 60, 15, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-25 15:15:12'),
-(2, 1, 1, 2, '2025-10-23', 'morning', 2, '10:00:00', '11:00:00', '273 An Dương Vương', '120 Nguyễn Trãi', 60, 12, 18, 'in_progress', NULL, '2025-10-24 05:00:15', '2025-10-25 15:15:41'),
+(2, 1, 1, 2, '2025-10-23', 'morning', 2, '10:00:00', '11:00:00', '273 An Dương Vương', '120 Nguyễn Trãi', 60, 12, 18, 'in_progress', NULL, '2025-10-24 05:00:15', '2025-10-29 03:41:48'),
 (3, 1, 2, 3, '2025-10-23', 'afternoon', 3, '17:00:00', '18:00:00', '134 Lê Đại Hành', '273 An Dương Vương', 60, 18, 22, 'completed', NULL, '2025-10-24 05:00:15', '2025-10-25 15:16:40'),
 (4, 2, 2, 1, '2025-10-23', 'morning', 1, '07:00:00', '08:00:00', '50 Lê Lợi', '100 Nguyễn Huệ', 60, 14, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-25 15:17:19'),
 (5, 2, 2, 4, '2025-10-23', 'afternoon', 2, '16:30:00', '17:30:00', '100 Nguyễn Huệ', '50 Lê Lợi', 60, 16, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-25 15:18:05'),
@@ -341,7 +341,7 @@ CREATE TABLE `students` (
 
 INSERT INTO `students` (`id`, `name`, `grade`, `class_id`, `class`, `address`, `phone`, `parent_id`, `route_id`, `bus_id`, `pickup_time`, `dropoff_time`, `status`) VALUES
 (1, 'Trần Dũng Minh', '6', 1, '6A1', '123 Nguyễn Văn Linh, Q.7, TP.HCM', '0123456789', 1, 1, 1, '06:30:00', '16:30:00', 'active'),
-(2, 'Lê Ngọc Anh', '7', 9, '7B2', '456 Lý Lãm, Q.1, TP.HCM', '0123456790', 2, 2, 2, '06:45:00', '16:45:00', 'active'),
+(2, 'Lê Ngọc Anh', '7', 9, '7B2', '456 Lý Lãm, Q.1, TP.HCM', '0123456790', 2, 2, 1, '06:45:00', '16:45:00', 'active'),
 (3, 'Phạm An Khang', '6', 1, '6A1', '789 Võ Văn Kiệt, Q.5, TP.HCM', '0123456791', 3, 1, 1, '06:40:00', '16:30:00', 'active');
 
 -- --------------------------------------------------------
@@ -445,7 +445,7 @@ CREATE TABLE `view_students_with_parents` (
 --
 DROP TABLE IF EXISTS `view_class_statistics`;
 
-CREATE VIEW `view_class_statistics` AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_class_statistics`  AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
 
 -- --------------------------------------------------------
 
@@ -454,7 +454,7 @@ CREATE VIEW `view_class_statistics` AS SELECT `c`.`id` AS `class_id`, `c`.`class
 --
 DROP TABLE IF EXISTS `view_parent_children_count`;
 
-CREATE VIEW `view_parent_children_count` AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_parent_children_count`  AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
 
 -- --------------------------------------------------------
 
@@ -463,7 +463,7 @@ CREATE VIEW `view_parent_children_count` AS SELECT `p`.`id` AS `parent_id`, `p`.
 --
 DROP TABLE IF EXISTS `view_students_with_parents`;
 
-CREATE VIEW `view_students_with_parents` AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name`, `b`.`id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `b`.`license_plate` AS `license_plate` FROM ((((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `buses` `b` on(`s`.`bus_id` = `b`.`id`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_students_with_parents`  AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name`, `b`.`id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `b`.`license_plate` AS `license_plate` FROM ((((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `buses` `b` on(`s`.`bus_id` = `b`.`id`)) ;
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -578,7 +578,7 @@ ALTER TABLE `attendance`
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `bus_routes`
