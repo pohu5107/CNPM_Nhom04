@@ -280,12 +280,24 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
                 <div className="text-sm text-gray-500">Số xe</div>
               </div>
               <div className="text-center bg-green-50 rounded-lg p-4">
-                <div className="text-lg font-semibold text-gray-800">{student.pickup_time || 'Chưa có'}</div>
-                <div className="text-sm text-gray-500">Giờ đón</div>
+                <div className="text-lg font-semibold text-gray-800">
+                  {student.schedule_start_time ? 
+                    student.schedule_start_time.substring(0,5) : 
+                    'Chưa có lịch'
+                  }
+                </div>
+                <div className="text-sm text-gray-500">Giờ đón (theo lịch)</div>
+            
               </div>
               <div className="text-center bg-purple-50 rounded-lg p-4">
-                <div className="text-lg font-semibold text-gray-800">{student.dropoff_time || 'Chưa có'}</div>
-                <div className="text-sm text-gray-500">Giờ trả</div>
+                <div className="text-lg font-semibold text-gray-800">
+                  {student.schedule_end_time ? 
+                    student.schedule_end_time.substring(0,5) : 
+                    'Chưa có lịch'
+                  }
+                </div>
+                <div className="text-sm text-gray-500">Giờ trả (theo lịch)</div>
+               
               </div>
             </div>
             {student.license_plate && (

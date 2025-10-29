@@ -1,77 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Header from "../../components/admin/Header";
 import { Calendar, Clock, Bus, MapPin, Users, ArrowLeft, Eye } from "lucide-react";
-import { schedulesService } from "../../services/schedulesService";
 
 export default function Schedule() {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [schedules, setSchedules] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("2025-10-23"); // Ngày có dữ liệu mẫu
 
-  // Load schedules from API
-  useEffect(() => {
-    fetchSchedules();
-  }, [selectedDate]);
+  const schedules = [
+    { ca: 1, time: "06:30 - 7:30", bus: "51B-12345", start: "120 Nguyễn Trãi", end: "273 An Dương Vương", driver: "Nguyễn Văn A", students: 15 },
+    { ca: 2, time: "10:30 - 11:30", bus: "51B-86901", start: "273 An Dương Vương", end: "120 Nguyễn Trãi", driver: "Trần Thị B", students: 12 },
+    { ca: 3, time: "13:00 - 14:00", bus: "51B-12345", start: "15 Nguyễn Huệ", end: "04 Tôn Đức Thắng", driver: "Lê Văn C", students: 18 },
+    { ca: 4, time: "17:30 - 18:30", bus: "51B-86901", start: "04 Tôn Đức Thắng", end: "15 Nguyễn Huệ", driver: "Nguyễn Văn A", students: 14 },
+  ];
 
-  const fetchSchedules = async () => {
-    try {
-      setLoading(true);
-      const data = await schedulesService.getAdminSchedules({ date: selectedDate });
-      
-      // Transform data để match với format cũ
-      const transformedSchedules = data.map(schedule => ({
-        id: schedule.id,
-        ca: schedule.shift_number,
-        shiftType: schedule.shift_type,
-        time: `${schedule.start_time?.substring(0,5)} - ${schedule.end_time?.substring(0,5)}`,
-        bus: schedule.license_plate || schedule.bus_number,
-        start: schedule.start_point,
-        end: schedule.end_point,
-        driver: schedule.driver_name,
-        students: schedule.student_count || 0,
-        route: schedule.route_name,
-        status: schedule.status
-      }));
-      
-      setSchedules(transformedSchedules);
-      setError(null);
-    } catch (err) {
-      setError('Lỗi khi tải lịch trình: ' + err.message);
-      console.error('Error fetching schedules:', err);
-      // Fallback to mock data if API fails
-      setSchedules([
-        { id: 1, ca: 1, time: "06:30 - 7:30", bus: "51B-12345", start: "120 Nguyễn Trãi", end: "273 An Dương Vương", driver: "Nguyễn Văn A", students: 15 },
-        { id: 2, ca: 2, time: "10:30 - 11:30", bus: "51B-86901", start: "273 An Dương Vương", end: "120 Nguyễn Trãi", driver: "Trần Thị B", students: 12 },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleScheduleClick = async (schedule) => {
-    try {
-      setSelectedSchedule(schedule);
-      setLoading(true);
-      
-      // Lấy students theo route từ database
-      const result = await schedulesService.getScheduleStudentsByRoute(schedule.id);
-      setStudents(result.students || []);
-      setError(null);
-    } catch (err) {
-      setError('Lỗi khi tải danh sách học sinh: ' + err.message);
-      console.error('Error fetching students:', err);
-      // Fallback to mock students
-      setStudents([
-        { id: 1, name: "Trần Dũng Minh", pickup: "Điểm đón 06:30", drop: "Điểm trả 16:30", status: "Chưa đón", class: "6A1" },
-        { id: 2, name: "Phạm An Khang", pickup: "Điểm đón 06:40", drop: "Điểm trả 16:30", status: "Chưa đón", class: "6A1" },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const students = [
+    { id: 1, name: "Nguyễn Văn A", pickup: "120 Nguyễn Trãi", drop: "273 An Dương Vương", status: "Đã đón", class: "6A1" },
+    { id: 2, name: "Nguyễn Văn B", pickup: "19 Lê Lợi", drop: "273 An Dương Vương", status: "Chưa đón", class: "6A2" },
+    { id: 3, name: "Nguyễn Văn C", pickup: "253 Nguyễn Thị Minh Khai", drop: "273 An Dương Vương", status: "Chưa đón", class: "7B1" },
+    { id: 4, name: "Nguyễn Văn D", pickup: "66 Lý Thường Kiệt", drop: "273 An Dương Vương", status: "Chưa đón", class: "7A1" },
+    { id: 5, name: "Nguyễn Văn E", pickup: "134 Lê Đại Hành", drop: "273 An Dương Vương", status: "Chưa đón", class: "8C1" },
+  ];
 
   // Giao diện 1 — LỊCH LÀM VIỆC
   if (!selectedSchedule) {
@@ -88,109 +35,92 @@ export default function Schedule() {
             </div>
             <input 
               type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              defaultValue="2025-09-30"
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600 text-sm">{error}</p>
+        {/* Schedule Table */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-800">Danh sách ca làm việc</h2>
           </div>
-        )}
-
-        {/* Loading State */}
-        {loading ? (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Đang tải lịch trình...</p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-semibold text-gray-800">Danh sách ca làm việc</h2>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <Clock className="w-4 h-4 inline mr-1" />
-                      Thời gian
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <Bus className="w-4 h-4 inline mr-1" />
-                      Xe buýt
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <MapPin className="w-4 h-4 inline mr-1" />
-                      Điểm bắt đầu
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <MapPin className="w-4 h-4 inline mr-1" />
-                      Điểm kết thúc
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tài xế</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <Users className="w-4 h-4 inline mr-1" />
-                      Học sinh
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Bus className="w-4 h-4 inline mr-1" />
+                    Xe buýt
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Điểm bắt đầu
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Điểm kết thúc
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tài xế</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Users className="w-4 h-4 inline mr-1" />
+                    Học sinh
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {schedules.map((item, index) => (
+                  <tr key={item.ca} className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                        {item.ca}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.time}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {item.bus}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {item.start}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {item.end}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.driver}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {item.students} học sinh
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => setSelectedSchedule(item)}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Xem chi tiết
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {schedules.map((item, index) => (
-                    <tr key={item.ca} className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                          {item.ca}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.time}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {item.bus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {item.start}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {item.end}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.driver}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {item.students} học sinh
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => setSelectedSchedule(item)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Xem chi tiết
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </div>
     );
   }

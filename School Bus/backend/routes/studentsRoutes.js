@@ -8,28 +8,48 @@ const router = express.Router();
 // GET /api/students - Lấy danh sách tất cả học sinh
 router.get('/', async (req, res) => {
     try {
-        // Sử dụng VIEW đã tạo trong database_fix.sql
+        // Lấy thông tin học sinh với thời gian template từ schedule (không phụ thuộc ngày)
         const [rows] = await pool.execute(`
             SELECT 
-                id,
-                student_name as name,
-                grade,
-                class_name,
-                address,
-                student_phone as phone,
-                parent_id,
-                parent_name,
-                parent_phone,
-                route_id,
-                route_name,
-                bus_id,
-                bus_number,
-                license_plate,
-                pickup_time,
-                dropoff_time,
-                status
-            FROM view_students_with_parents
-            ORDER BY id DESC
+                s.id,
+                s.student_name as name,
+                s.grade,
+                s.class_name,
+                s.address,
+                s.student_phone as phone,
+                s.parent_id,
+                s.parent_name,
+                s.parent_phone,
+                s.route_id,
+                s.route_name,
+                s.bus_id,
+                s.bus_number,
+                s.license_plate,
+                s.pickup_time,
+                s.dropoff_time,
+                s.status,
+                -- Lấy template thời gian cố định từ schedule cho route (bất kể ngày)
+                sch_template.start_time as schedule_start_time,
+                sch_template.end_time as schedule_end_time,
+                sch_template.shift_type as schedule_shift_type,
+                sch_template.date as schedule_date
+            FROM view_students_with_parents s
+            LEFT JOIN (
+                SELECT DISTINCT 
+                    route_id,
+                    driver_id,
+                    bus_id,
+                    start_time,
+                    end_time,
+                    shift_type,
+                    date,
+                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type, driver_id ORDER BY date DESC) as rn
+                FROM schedules 
+                WHERE status IN ('scheduled', 'in_progress', 'completed')
+            ) sch_template ON sch_template.route_id = s.route_id 
+                AND sch_template.bus_id = s.bus_id
+                AND sch_template.rn = 1
+            ORDER BY s.id DESC
         `);
         
         res.json({
@@ -53,29 +73,50 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         const [rows] = await pool.execute(`
             SELECT 
-                id,
-                student_name as name,
-                grade,
-                class,
-                class_name,
-                homeroom_teacher,
-                address,
-                student_phone as phone,
-                status,
-                pickup_time,
-                dropoff_time,
-                parent_id,
-                parent_name,
-                parent_phone,
-                parent_address,
-                relationship,
-                route_id,
-                route_name,
-                bus_id,
-                bus_number,
-                license_plate
-            FROM view_students_with_parents
-            WHERE id = ?
+                s.id,
+                s.student_name as name,
+                s.grade,
+                s.class,
+                s.class_name,
+                s.homeroom_teacher,
+                s.address,
+                s.student_phone as phone,
+                s.status,
+                s.pickup_time,
+                s.dropoff_time,
+                s.parent_id,
+                s.parent_name,
+                s.parent_phone,
+                s.parent_address,
+                s.relationship,
+                s.route_id,
+                s.route_name,
+                s.bus_id,
+                s.bus_number,
+                s.license_plate,
+                -- Lấy template thời gian cố định từ schedule cho route (bất kể ngày)
+                sch_template.start_time as schedule_start_time,
+                sch_template.end_time as schedule_end_time,
+                sch_template.shift_type as schedule_shift_type,
+                sch_template.date as schedule_date
+            FROM view_students_with_parents s
+            LEFT JOIN (
+                SELECT DISTINCT 
+                    route_id,
+                    driver_id,
+                    bus_id,
+                    start_time,
+                    end_time,
+                    shift_type,
+                    date,
+                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type, driver_id ORDER BY date DESC) as rn
+                FROM schedules 
+                WHERE status IN ('scheduled', 'in_progress', 'completed')
+            ) sch_template ON sch_template.route_id = s.route_id 
+                AND sch_template.bus_id = s.bus_id
+                AND sch_template.rn = 1
+            WHERE s.id = ?
+            LIMIT 1
         `, [id]);
         
         if (rows.length === 0) {

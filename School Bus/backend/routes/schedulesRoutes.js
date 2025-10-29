@@ -464,7 +464,7 @@ router.get('/:id/students-by-route', async (req, res) => {
         
         const routeId = scheduleInfo[0].route_id;
         
-        // Lấy students thuộc route này từ database
+        // Lấy students thuộc route này từ database với thời gian từ schedule
         const [students] = await pool.execute(`
             SELECT 
                 s.id,
@@ -472,8 +472,8 @@ router.get('/:id/students-by-route', async (req, res) => {
                 s.grade,
                 s.class,
                 c.class_name,
-                s.pickup_time,
-                s.dropoff_time,
+                sch.start_time as pickup_time,  -- Dùng thời gian bắt đầu schedule làm giờ đón
+                sch.end_time as dropoff_time,   -- Dùng thời gian kết thúc schedule làm giờ trả  
                 r.route_name,
                 b.bus_number,
                 b.license_plate,
@@ -482,18 +482,19 @@ router.get('/:id/students-by-route', async (req, res) => {
             LEFT JOIN classes c ON s.class_id = c.id
             LEFT JOIN routes r ON s.route_id = r.id
             LEFT JOIN buses b ON s.bus_id = b.id
+            INNER JOIN schedules sch ON sch.id = ? -- Lấy thời gian từ schedule hiện tại
             WHERE s.route_id = ? AND s.status = 'active'
-            ORDER BY s.pickup_time, s.name
-        `, [routeId]);
+            ORDER BY s.name
+        `, [id, routeId]);
         
-        // Format dữ liệu cho frontend
+        // Format dữ liệu cho frontend với thời gian từ schedule
         const formattedStudents = students.map(student => ({
             id: student.id,
             name: student.name,
             class: student.class_name || student.class,
-            pickup: `Điểm đón ${student.pickup_time?.substring(0,5) || '06:30'}`, // Dùng thời gian làm điểm đón tạm
-            drop: `Điểm trả ${student.dropoff_time?.substring(0,5) || '16:30'}`, // Dùng thời gian làm điểm trả tạm
-            status: student.status
+            pickup: `Đón lúc ${student.pickup_time?.substring(0,5) || '06:30'}`, // Tất cả đón cùng lúc theo schedule
+            drop: `Trả lúc ${student.dropoff_time?.substring(0,5) || '16:30'}`,   // Tất cả trả cùng lúc theo schedule
+            status: student.status || 'Chưa đón'
         }));
         
         res.json({
