@@ -32,7 +32,9 @@ router.get('/', async (req, res) => {
                 sch_template.start_time as schedule_start_time,
                 sch_template.end_time as schedule_end_time,
                 sch_template.shift_type as schedule_shift_type,
-                sch_template.date as schedule_date
+                sch_template.date as schedule_date,
+                sch_template.start_point as schedule_start_point,
+                sch_template.end_point as schedule_end_point
             FROM view_students_with_parents s
             LEFT JOIN (
                 SELECT DISTINCT 
@@ -43,11 +45,14 @@ router.get('/', async (req, res) => {
                     end_time,
                     shift_type,
                     date,
-                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type, driver_id ORDER BY date DESC) as rn
+                    start_point,
+                    end_point,
+                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type ORDER BY 
+                        CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
+                        date DESC) as rn
                 FROM schedules 
                 WHERE status IN ('scheduled', 'in_progress', 'completed')
             ) sch_template ON sch_template.route_id = s.route_id 
-                AND sch_template.bus_id = s.bus_id
                 AND sch_template.rn = 1
             ORDER BY s.id DESC
         `);
@@ -98,7 +103,9 @@ router.get('/:id', async (req, res) => {
                 sch_template.start_time as schedule_start_time,
                 sch_template.end_time as schedule_end_time,
                 sch_template.shift_type as schedule_shift_type,
-                sch_template.date as schedule_date
+                sch_template.date as schedule_date,
+                sch_template.start_point as schedule_start_point,
+                sch_template.end_point as schedule_end_point
             FROM view_students_with_parents s
             LEFT JOIN (
                 SELECT DISTINCT 
@@ -107,13 +114,16 @@ router.get('/:id', async (req, res) => {
                     bus_id,
                     start_time,
                     end_time,
+                    start_point,
+                    end_point,
                     shift_type,
                     date,
-                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type, driver_id ORDER BY date DESC) as rn
+                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type ORDER BY 
+                        CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
+                        date DESC) as rn
                 FROM schedules 
                 WHERE status IN ('scheduled', 'in_progress', 'completed')
             ) sch_template ON sch_template.route_id = s.route_id 
-                AND sch_template.bus_id = s.bus_id
                 AND sch_template.rn = 1
             WHERE s.id = ?
             LIMIT 1
