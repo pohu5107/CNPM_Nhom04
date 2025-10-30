@@ -206,8 +206,8 @@ export default function DriverSchedulePage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                          {schedule.studentCount}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          {schedule.actualStudentCount || schedule.studentCount.split('/')[0]}/{schedule.studentCount.split('/')[1]} học sinh
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">

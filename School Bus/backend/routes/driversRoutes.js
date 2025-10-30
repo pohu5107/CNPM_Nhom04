@@ -292,4 +292,69 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET /api/drivers/:id/details - Lấy thông tin chi tiết của tài xế
+router.get('/:id/details', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Thông tin cơ bản của tài xế
+        const [driverRows] = await pool.execute(`
+            SELECT 
+                d.*,
+                u.email,
+                u.username
+            FROM drivers d
+            LEFT JOIN users u ON d.user_id = u.id
+            WHERE d.id = ?
+        `, [id]);
+        
+        if (driverRows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy tài xế'
+            });
+        }
+        
+        const driver = driverRows[0];
+        
+        // Lấy lịch trình làm việc theo thời gian
+        const [scheduleRows] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.date,
+                s.shift_type,
+                s.shift_number,
+                s.start_time,
+                s.end_time,
+                s.start_point,
+                s.end_point,
+                r.route_name,
+                r.distance,
+                b.bus_number,
+                b.license_plate,
+                b.status as bus_status
+            FROM schedules s
+            JOIN routes r ON s.route_id = r.id
+            JOIN buses b ON s.bus_id = b.id
+            WHERE s.driver_id = ?
+            ORDER BY s.date DESC, s.start_time ASC
+        `, [id]);
+        
+        res.json({
+            success: true,
+            data: {
+                ...driver,
+                schedules: scheduleRows
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching driver details:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy thông tin chi tiết tài xế',
+            error: error.message
+        });
+    }
+});
+
 export default router;

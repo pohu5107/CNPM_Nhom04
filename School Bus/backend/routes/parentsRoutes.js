@@ -108,12 +108,35 @@ router.get('/:id/children', async (req, res) => {
                 s.parent_id,
                 s.status,
                 r.route_name,
+                -- Get current bus assignment and schedule info
+                sch_template.bus_id,
                 b.bus_number,
-                b.license_plate
+                b.license_plate,
+                sch_template.date as schedule_date,
+                sch_template.start_time as schedule_start_time,
+                sch_template.end_time as schedule_end_time,
+                sch_template.start_point as schedule_start_point,
+                sch_template.end_point as schedule_end_point
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
             LEFT JOIN routes r ON s.route_id = r.id
-            LEFT JOIN buses b ON s.bus_id = b.id
+            LEFT JOIN (
+                SELECT DISTINCT 
+                    route_id,
+                    bus_id,
+                    start_time,
+                    end_time,
+                    start_point,
+                    end_point,
+                    date,
+                    ROW_NUMBER() OVER (PARTITION BY route_id ORDER BY 
+                        CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
+                        date DESC) as rn
+                FROM schedules 
+                WHERE status IN ('scheduled', 'in_progress', 'completed')
+            ) sch_template ON sch_template.route_id = s.route_id 
+                AND sch_template.rn = 1
+            LEFT JOIN buses b ON sch_template.bus_id = b.id
             WHERE s.parent_id = ?
             ORDER BY s.name ASC
         `, [id]);

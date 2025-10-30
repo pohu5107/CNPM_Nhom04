@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Table from '../../common/Table';
 
-const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onDelete, onViewChildren }) => {
+const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -86,33 +86,6 @@ const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onD
             }}>
               {childrenCount} con
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewChildren(item);
-              }}
-              style={{
-                background: 'none',
-                border: '1px solid #3b82f6',
-                borderRadius: '4px',
-                color: '#3b82f6',
-                fontSize: '11px',
-                padding: '2px 6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#3b82f6';
-                e.target.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = '#3b82f6';
-              }}
-              title="Xem danh sách con em"
-            >
-              Xem DS
-            </button>
           </div>
         );
       }

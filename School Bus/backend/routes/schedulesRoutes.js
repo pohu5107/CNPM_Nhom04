@@ -54,14 +54,14 @@ router.get('/driver/:driverId', async (req, res) => {
                 r.route_name,
                 r.distance,
                 d.name as driver_name,
-                COUNT(rs.id) as actual_stop_count
+                COUNT(DISTINCT rs.id) as actual_stop_count
             FROM schedules s
             INNER JOIN buses b ON s.bus_id = b.id
             INNER JOIN routes r ON s.route_id = r.id
             INNER JOIN drivers d ON s.driver_id = d.id
             LEFT JOIN route_stops rs ON s.route_id = rs.route_id
             WHERE s.driver_id = ? ${dateCondition}
-            GROUP BY s.id
+            GROUP BY s.id, s.route_id
             ORDER BY s.date ASC, s.start_time ASC
         `, params);
         
@@ -97,7 +97,8 @@ router.get('/driver/:driverId', async (req, res) => {
                 startPoint: schedule.start_point,
                 endPoint: schedule.end_point,
                 stopCount: schedule.actual_stop_count || 0, // Số điểm dừng thực tế từ route_stops
-                studentCount: `${schedule.student_count}/${schedule.max_capacity}`,
+                studentCount: `${schedule.student_count}/${schedule.max_capacity}`, // Sử dụng student_count đã cập nhật từ DB
+                actualStudentCount: schedule.student_count, // Để sử dụng trong frontend
                 status: schedule.status,
                 statusText: getStatusText(schedule.status),
                 statusColor: getStatusColor(schedule.status),
@@ -171,9 +172,9 @@ router.get('/:id', async (req, res) => {
                 p.phone as parent_phone
             FROM students st
             LEFT JOIN parents p ON st.parent_id = p.id
-            WHERE st.route_id = ? AND st.bus_id = ? AND st.status = 'active'
+            WHERE st.route_id = ? AND st.status = 'active'
             ORDER BY st.pickup_time ASC
-        `, [rows[0].route_id, rows[0].bus_id]);
+        `, [rows[0].route_id]);
         
         const schedule = rows[0];
         const detailData = {
@@ -181,7 +182,8 @@ router.get('/:id', async (req, res) => {
             statusText: getStatusText(schedule.status),
             statusColor: getStatusColor(schedule.status),
             students: students,
-            studentCount: students.length
+            studentCount: students.length, // Số học sinh thực tế từ database
+            original_student_count: schedule.student_count // Giữ lại giá trị gốc từ schedule
         };
         
         res.json({
@@ -385,5 +387,136 @@ function getStatusColor(status) {
     };
     return colorMap[status] || 'bg-gray-100 text-gray-700';
 }
+
+// GET /api/schedules/admin - Lấy schedules cho admin với thông tin students thật từ database
+router.get('/admin', async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        let dateCondition = '';
+        const params = [];
+        
+        if (date) {
+            dateCondition = 'WHERE s.date = ?';
+            params.push(date);
+        } else {
+            // Mặc định lấy schedules từ ngày hiện tại
+            dateCondition = 'WHERE s.date >= CURDATE()';
+        }
+        
+        const [rows] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.date,
+                s.shift_type,
+                s.shift_number,
+                s.start_time,
+                s.end_time,
+                s.start_point,
+                s.end_point,
+                s.status,
+                d.name as driver_name,
+                b.bus_number,
+                b.license_plate,
+                r.route_name,
+                s.student_count,
+                s.max_capacity
+            FROM schedules s
+            INNER JOIN drivers d ON s.driver_id = d.id
+            INNER JOIN buses b ON s.bus_id = b.id
+            INNER JOIN routes r ON s.route_id = r.id
+            ${dateCondition}
+            ORDER BY s.date ASC, s.start_time ASC
+        `, params);
+        
+        res.json({
+            success: true,
+            data: rows,
+            count: rows.length
+        });
+    } catch (error) {
+        console.error('Error fetching admin schedules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách lịch trình',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/schedules/:id/students-by-route - Lấy students của schedule theo route từ database
+router.get('/:id/students-by-route', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Lấy thông tin schedule trước
+        const [scheduleInfo] = await pool.execute(`
+            SELECT s.route_id, r.route_name, s.shift_type, s.shift_number
+            FROM schedules s
+            INNER JOIN routes r ON s.route_id = r.id
+            WHERE s.id = ?
+        `, [id]);
+        
+        if (scheduleInfo.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lịch trình'
+            });
+        }
+        
+        const routeId = scheduleInfo[0].route_id;
+        
+        // Lấy students thuộc route này từ database với thời gian từ schedule
+        const [students] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.name,
+                s.grade,
+                s.class,
+                c.class_name,
+                sch.start_time as pickup_time,  -- Dùng thời gian bắt đầu schedule làm giờ đón
+                sch.end_time as dropoff_time,   -- Dùng thời gian kết thúc schedule làm giờ trả  
+                r.route_name,
+                b.bus_number,
+                b.license_plate,
+                'Chưa đón' as status -- Mặc định status
+            FROM students s
+            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN routes r ON s.route_id = r.id
+            INNER JOIN schedules sch ON sch.id = ? -- Lấy thời gian từ schedule hiện tại
+            LEFT JOIN buses b ON sch.bus_id = b.id
+            WHERE s.route_id = ? AND s.status = 'active'
+            ORDER BY s.name
+        `, [id, routeId]);
+        
+        // Format dữ liệu cho frontend với thời gian từ schedule
+        const formattedStudents = students.map(student => ({
+            id: student.id,
+            name: student.name,
+            class: student.class_name || student.class,
+            pickup: `Đón lúc ${student.pickup_time?.substring(0,5) || '06:30'}`, // Tất cả đón cùng lúc theo schedule
+            drop: `Trả lúc ${student.dropoff_time?.substring(0,5) || '16:30'}`,   // Tất cả trả cùng lúc theo schedule
+            status: student.status || 'Chưa đón'
+        }));
+        
+        res.json({
+            success: true,
+            data: formattedStudents,
+            count: formattedStudents.length,
+            route_info: {
+                route_name: scheduleInfo[0].route_name,
+                shift_type: scheduleInfo[0].shift_type,
+                shift_number: scheduleInfo[0].shift_number
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching schedule students:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách học sinh',
+            error: error.message
+        });
+    }
+});
 
 export default router;
