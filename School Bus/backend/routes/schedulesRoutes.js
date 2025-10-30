@@ -172,9 +172,9 @@ router.get('/:id', async (req, res) => {
                 p.phone as parent_phone
             FROM students st
             LEFT JOIN parents p ON st.parent_id = p.id
-            WHERE st.route_id = ? AND st.bus_id = ? AND st.status = 'active'
+            WHERE st.route_id = ? AND st.status = 'active'
             ORDER BY st.pickup_time ASC
-        `, [rows[0].route_id, rows[0].bus_id]);
+        `, [rows[0].route_id]);
         
         const schedule = rows[0];
         const detailData = {
