@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import ParentTable from '../../components/admin/parents/ParentTable';
 import ParentForm from '../../components/admin/parents/ParentForm';
-import ChildrenListModal from '../../components/admin/parents/ChildrenListModal';
 import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import Pagination from '../../components/UI/Pagination';
@@ -14,7 +13,6 @@ const ParentsPage = () => {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showChildrenList, setShowChildrenList] = useState(false);
   const [selectedParent, setSelectedParent] = useState(null);
   const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,11 +60,6 @@ const ParentsPage = () => {
     setShowConfirm(true);
   };
 
-  const handleViewChildren = (parent) => {
-    setSelectedParent(parent);
-    setShowChildrenList(true);
-  };
-
   const confirmDelete = async () => {
     try {
       await parentsService.deleteParent(selectedParent.id);
@@ -111,7 +104,6 @@ const ParentsPage = () => {
         onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
-        onViewChildren={handleViewChildren}
       />
 
       {/* Pagination - placeholder for future implementation */}
@@ -140,13 +132,6 @@ const ParentsPage = () => {
           onCancel={() => setShowForm(false)}
         />
       </Modal>
-
-      {/* Children List Modal */}
-      <ChildrenListModal
-        isOpen={showChildrenList}
-        onClose={() => setShowChildrenList(false)}
-        parent={selectedParent}
-      />
 
       {/* Confirm Delete Dialog */}
       <ConfirmDialog

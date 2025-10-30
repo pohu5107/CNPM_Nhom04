@@ -61,7 +61,7 @@ router.get('/driver/:driverId', async (req, res) => {
             INNER JOIN drivers d ON s.driver_id = d.id
             LEFT JOIN route_stops rs ON s.route_id = rs.route_id
             WHERE s.driver_id = ? ${dateCondition}
-            GROUP BY s.id, s.route_id, s.bus_id
+            GROUP BY s.id, s.route_id
             ORDER BY s.date ASC, s.start_time ASC
         `, params);
         
@@ -483,8 +483,8 @@ router.get('/:id/students-by-route', async (req, res) => {
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
             LEFT JOIN routes r ON s.route_id = r.id
-            LEFT JOIN buses b ON s.bus_id = b.id
             INNER JOIN schedules sch ON sch.id = ? -- Lấy thời gian từ schedule hiện tại
+            LEFT JOIN buses b ON sch.bus_id = b.id
             WHERE s.route_id = ? AND s.status = 'active'
             ORDER BY s.name
         `, [id, routeId]);

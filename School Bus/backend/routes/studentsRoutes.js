@@ -31,7 +31,11 @@ router.get('/', async (req, res) => {
                 sch_template.shift_type as schedule_shift_type,
                 sch_template.date as schedule_date,
                 sch_template.start_point as schedule_start_point,
-                sch_template.end_point as schedule_end_point
+                sch_template.end_point as schedule_end_point,
+                -- Thông tin xe bus từ schedule
+                sch_template.bus_id,
+                b.bus_number,
+                b.license_plate
             FROM view_students_with_parents s
             LEFT JOIN (
                 SELECT DISTINCT 
@@ -51,6 +55,7 @@ router.get('/', async (req, res) => {
                 WHERE status IN ('scheduled', 'in_progress', 'completed')
             ) sch_template ON sch_template.route_id = s.route_id 
                 AND sch_template.rn = 1
+            LEFT JOIN buses b ON sch_template.bus_id = b.id
             ORDER BY s.id DESC
         `);
         
@@ -99,7 +104,11 @@ router.get('/:id', async (req, res) => {
                 sch_template.shift_type as schedule_shift_type,
                 sch_template.date as schedule_date,
                 sch_template.start_point as schedule_start_point,
-                sch_template.end_point as schedule_end_point
+                sch_template.end_point as schedule_end_point,
+                -- Thông tin xe bus từ schedule
+                sch_template.bus_id,
+                b.bus_number,
+                b.license_plate
             FROM view_students_with_parents s
             LEFT JOIN (
                 SELECT DISTINCT 
@@ -119,6 +128,7 @@ router.get('/:id', async (req, res) => {
                 WHERE status IN ('scheduled', 'in_progress', 'completed')
             ) sch_template ON sch_template.route_id = s.route_id 
                 AND sch_template.rn = 1
+            LEFT JOIN buses b ON sch_template.bus_id = b.id
             WHERE s.id = ?
             LIMIT 1
         `, [id]);
