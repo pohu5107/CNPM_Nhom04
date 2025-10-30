@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   MapPin, Clock, Users, Bus, ArrowLeft, Settings, 
   AlertTriangle, CheckCircle, XCircle, Phone, 
-  Navigation, Send, X, LogOut
+  Navigation, Send, X, LogOut, Play
 } from 'lucide-react';
 import DriverMapView from '../../components/driver/DriverMapView';
 
@@ -12,7 +12,7 @@ export default function DriverMapPage() {
   const { scheduleId } = useParams(); // Lấy scheduleId từ URL params
   
   // States chính
-  const [tripStatus, setTripStatus] = useState('in_progress');
+  const [tripStatus, setTripStatus] = useState('not_started'); // Bắt đầu từ not_started
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [alerts, setAlerts] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -91,6 +91,12 @@ export default function DriverMapPage() {
       isTracking
     });
   }, [scheduleId, currentStopIndex, tripStatus]);
+
+  // Bắt đầu chuyến
+  const startTrip = () => {
+    setTripStatus('in_progress');
+    addAlert('success', 'Đã bắt đầu chuyến đi!');
+  };
 
   // Xác nhận đến điểm dừng
   const confirmArrival = () => {
@@ -303,10 +309,13 @@ export default function DriverMapPage() {
             <div className="flex items-center justify-between pb-2 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  tripStatus === 'completed' ? 'bg-green-500' : 'bg-blue-500'
+                  tripStatus === 'completed' ? 'bg-green-500' : 
+                  tripStatus === 'in_progress' ? 'bg-blue-500' : 'bg-gray-400'
                 }`}></div>
                 <span className="font-semibold text-gray-800">
-                  {tripStatus === 'completed' ? '🏁 Chuyến đã hoàn thành' : '🚍 Đang trong chuyến'}
+                  {tripStatus === 'completed' ? '🏁 Chuyến đã hoàn thành' : 
+                   tripStatus === 'in_progress' ? '🚍 Đang trong chuyến' : 
+                   '⏳ Chờ bắt đầu chuyến'}
                 </span>
               </div>
               <div className="text-xs text-gray-500">
@@ -314,8 +323,20 @@ export default function DriverMapPage() {
               </div>
             </div>
 
-            {/* Next Stop Info */}
-            {nextStop && tripStatus !== 'completed' ? (
+            {/* Pre-trip Status - hiển thị khi chưa bắt đầu */}
+            {tripStatus === 'not_started' ? (
+              <div className="text-center py-4">
+                <div className="text-gray-600 mb-2">
+                  🚀 Sẵn sàng bắt đầu chuyến đi
+                </div>
+                <div className="text-sm text-gray-500">
+                  Nhấn nút "Bắt đầu chuyến" để khởi động
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Next Stop Info - chỉ hiển thị khi đã bắt đầu */}
+                {nextStop && tripStatus !== 'completed' ? (
               <>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -349,66 +370,74 @@ export default function DriverMapPage() {
                 </div>
               </div>
             )}
+          </>
+        )}
             
-            {/* Progress bar */}
-            <div className="pt-2">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Tiến độ</span>
-                <span>{Math.round(((currentStopIndex + 1) / stops.length) * 100)}%</span>
+        {/* Progress bar - chỉ hiển thị khi đã bắt đầu */}
+            {tripStatus !== 'not_started' && (
+              <div className="pt-2">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Tiến độ</span>
+                  <span>{Math.round(((currentStopIndex + 1) / stops.length) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${((currentStopIndex + 1) / stops.length) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${((currentStopIndex + 1) / stops.length) * 100}%` }}
-                />
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* ================== DEBUG OVERLAY - Chỉ hiện trong dev mode ================== */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="absolute top-6 left-6 bg-yellow-100/95 backdrop-blur-sm rounded-lg shadow-md p-3 z-60 text-xs border border-yellow-200">
-            <div className="font-bold text-yellow-800 mb-2">🐛 Debug Info</div>
-            <div className="space-y-1 text-yellow-700">
-              <div>Current Stop: {currentStopIndex + 1}/{stops.length}</div>
-              <div>Next Stop: {nextStop?.name || 'None'}</div>
-              <div>Trip Status: {tripStatus}</div>
-              <div>Is Tracking: {isTracking ? 'Yes' : 'No'}</div>
-              <div>Schedule ID: {scheduleId || 'None'}</div>
-            </div>
-          </div>
-        )}
+        
+    
 
         {/* ================== FLOATING ACTION BUTTONS - Góc phải dưới ================== */}
         <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
-          {/* 1️⃣ Nút Danh sách học sinh */}
-          <button
-            onClick={() => setShowStudentsPanel(true)}
-            className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-blue-200 relative"
-            title="🧍 Danh sách học sinh"
-          >
-            <Users className="w-7 h-7" />
-            {getRemainingStudents() > 0 && (
-              <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                {getRemainingStudents()}
-              </div>
-            )}
-          </button>
+          {/* Nút Bắt đầu chuyến - chỉ hiện khi chưa bắt đầu */}
+          {tripStatus === 'not_started' && (
+            <button
+              onClick={startTrip}
+              className="w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-green-200 pulse-animation"
+              title="🚀 Bắt đầu chuyến"
+            >
+              <Play className="w-7 h-7" />
+            </button>
+          )}
 
-          {/* 2️⃣ Nút Xác nhận đến điểm đón */}
-          <button
-            onClick={() => setShowArrivalModal(true)}
-            disabled={!nextStop && tripStatus !== 'completed'}
-            className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 ${
-              nextStop || tripStatus !== 'completed'
-                ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
-                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-            }`}
-            title={nextStop ? "✅ Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
-          >
-            <CheckCircle className="w-7 h-7" />
-          </button>
+          {/* 1️⃣ Nút Danh sách học sinh - chỉ hiện khi đã bắt đầu */}
+          {tripStatus !== 'not_started' && (
+            <button
+              onClick={() => setShowStudentsPanel(true)}
+              className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-blue-200 relative"
+              title="🧍 Danh sách học sinh"
+            >
+              <Users className="w-7 h-7" />
+              {getRemainingStudents() > 0 && (
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  {getRemainingStudents()}
+                </div>
+              )}
+            </button>
+          )}
+
+          {/* 2️⃣ Nút Xác nhận đến điểm đón - chỉ hiện khi đã bắt đầu */}
+          {tripStatus !== 'not_started' && (
+            <button
+              onClick={() => setShowArrivalModal(true)}
+              disabled={!nextStop && tripStatus !== 'completed'}
+              className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 ${
+                nextStop || tripStatus !== 'completed'
+                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
+              title={nextStop ? "✅ Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
+            >
+              <CheckCircle className="w-7 h-7" />
+            </button>
+          )}
 
           {/* 3️⃣ Nút Báo sự cố */}
           <button
@@ -428,19 +457,7 @@ export default function DriverMapPage() {
             <Phone className="w-7 h-7" />
           </button>
 
-          {/* Test button - Chỉ hiện trong dev mode */}
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => {
-                console.log('🔘 Test button clicked!');
-                addAlert('info', 'Test button works!');
-              }}
-              className="w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 bg-purple-600 hover:bg-purple-700 text-white"
-              title="Test Button"
-            >
-              <span className="text-xs font-bold">TEST</span>
-            </button>
-          )}
+       
         </div>
 
         {/* ================== POPUP: XÁC NHẬN ĐẾN ĐIỂM ================== */}
