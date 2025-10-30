@@ -7,9 +7,9 @@ import DriverNavbar from "./components/driver/DriverNavbar.jsx";
 function NavbarSelector() {
   const location = useLocation();
   
-  // Show DriverNavbar if path starts with /driver
+  // Don't show navbar for /driver paths - DriverLayout handles its own navbar
   if (location.pathname.startsWith('/driver')) {
-    return <DriverNavbar />;
+    return null;
   }
   
   // Show Admin Navbar for /admin paths and root path

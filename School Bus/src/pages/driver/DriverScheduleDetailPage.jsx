@@ -13,6 +13,7 @@ export default function DriverScheduleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [showStudentsModal, setShowStudentsModal] = useState(false);
 
   useEffect(() => {
     fetchScheduleDetail();
@@ -227,7 +228,17 @@ export default function DriverScheduleDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Học sinh:</span>
-                <span className="font-semibold text-slate-900">{schedule.student_count}/{schedule.max_capacity}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-900">
+                    {schedule.students?.length || 0}/{schedule.max_capacity}
+                  </span>
+                  <button
+                    onClick={() => setShowStudentsModal(true)}
+                    className="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    👥 Xem danh sách
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Trạng thái:</span>
@@ -239,7 +250,140 @@ export default function DriverScheduleDetailPage() {
           </div>
         </div>
 
-        {/* Danh sách điểm dừng - Bảng theo thiết kế */}
+        {/* Modal danh sách học sinh */}
+        {showStudentsModal && (
+          <div 
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={(e) => e.target === e.currentTarget && setShowStudentsModal(false)}
+          >
+            <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-[#174D2C] to-[#1a5530] text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      👥 Danh sách học sinh
+                    </h2>
+                    <p className="text-green-100 mt-1">
+                      Chuyến {id} - {schedule.students?.length || 0} học sinh
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowStudentsModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors group"
+                  >
+                    <span className="text-2xl group-hover:scale-110 transition-transform">✕</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Modal Body */}
+              <div className="overflow-auto max-h-[calc(90vh-120px)]">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-slate-100 text-slate-700">
+                    <tr>
+                      <th className="px-6 py-4 text-left font-semibold">STT</th>
+                      <th className="px-6 py-4 text-left font-semibold">HỌ TÊN</th>
+                      <th className="px-6 py-4 text-left font-semibold">LỚP</th>
+                      <th className="px-6 py-4 text-left font-semibold">ĐỊA CHỈ</th>
+                      <th className="px-6 py-4 text-left font-semibold">THỜI GIAN ĐÓN</th>
+                      <th className="px-6 py-4 text-left font-semibold">PHỤ HUYNH</th>
+                      <th className="px-6 py-4 text-left font-semibold">LIÊN HỆ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {!schedule.students || schedule.students.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-12 text-center">
+                          <div className="text-6xl mb-4">👥</div>
+                          <p className="text-slate-500 text-lg">Chưa có học sinh được phân công cho chuyến này</p>
+                          <p className="text-slate-400 text-sm mt-2">Vui lòng liên hệ quản trị viên để cập nhật danh sách</p>
+                        </td>
+                      </tr>
+                    ) : schedule.students.map((student, index) => (
+                      <tr 
+                        key={student.id} 
+                        className={`hover:bg-slate-50 transition-colors duration-200 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                        }`}
+                      >
+                        <td className="px-6 py-4 font-bold text-slate-900 text-lg text-center">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-slate-900">{student.name}</div>
+                          <div className="text-sm text-slate-500">ID: {student.id}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                            {student.class} - Khối {student.grade}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-slate-900 max-w-xs">
+                            {student.address}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-mono text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-600">🚌</span>
+                              <span>{student.pickup_time?.substring(0, 5) || 'Chưa có'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-orange-600">🏠</span>
+                              <span className="text-sm text-slate-500">{student.dropoff_time?.substring(0, 5) || 'Chưa có'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-slate-900">
+                            {student.parent_name || 'Chưa có thông tin'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-mono text-slate-900 mb-1">
+                            {student.parent_phone || student.phone || 'Chưa có'}
+                          </div>
+                          {(student.parent_phone || student.phone) && (
+                            <button 
+                              className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-lg transition-colors"
+                              onClick={() => window.open(`tel:${student.parent_phone || student.phone}`)}
+                            >
+                              📞 Gọi ngay
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Modal Footer */}
+              {schedule.students && schedule.students.length > 0 && (
+                <div className="bg-gradient-to-r from-slate-50 to-green-50/30 p-6 border-t">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-slate-600">
+                      📊 Tổng cộng: <span className="font-bold text-slate-900">{schedule.students.length}</span> học sinh
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      Sức chứa xe: <span className="font-bold text-slate-900">{schedule.students.length}/{schedule.max_capacity}</span>
+                    </div>
+                    <button
+                      onClick={() => setShowStudentsModal(false)}
+                      className="px-6 py-2 bg-gradient-to-r from-[#174D2C] to-[#1a5530] text-white rounded-lg hover:from-[#0f3820] hover:to-[#134025] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      ✓ Đóng
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bảng điểm dừng */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
             <h2 className="text-xl font-bold text-[#174D2C] flex items-center gap-2">
@@ -258,7 +402,6 @@ export default function DriverScheduleDetailPage() {
                   <th className="px-6 py-4 text-left font-semibold">TÊN ĐIỂM DỪNG</th>
                   <th className="px-6 py-4 text-left font-semibold">LOẠI</th>
                   <th className="px-6 py-4 text-left font-semibold">THỜI GIAN DỰ KIẾN</th>
-                  <th className="px-6 py-4 text-center font-semibold">HỌC SINH</th>
                   <th className="px-6 py-4 text-center font-semibold">TRẠNG THÁI</th>
                   <th className="px-6 py-4 text-left font-semibold">GHI CHÚ</th>
                 </tr>
@@ -266,7 +409,7 @@ export default function DriverScheduleDetailPage() {
               <tbody className="divide-y divide-slate-100">
                 {stops.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center">
+                    <td colSpan="6" className="px-6 py-12 text-center">
                       <div className="text-6xl mb-4">🛑</div>
                       <p className="text-slate-500 text-lg">Chưa có thông tin điểm dừng cho tuyến này</p>
                       <p className="text-slate-400 text-sm mt-2">Vui lòng liên hệ quản trị viên để cập nhật</p>
@@ -293,11 +436,6 @@ export default function DriverScheduleDetailPage() {
                     </td>
                     <td className="px-6 py-4 font-mono text-slate-900">
                       {stop.estimatedTime}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                        {stop.studentCount}
-                      </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

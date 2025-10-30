@@ -9,6 +9,7 @@ import MapPage from "../pages/admin/MapPage.jsx";
 // Driver pages
 import DriverSchedulePage from "../pages/driver/DriverSchedulePage";
 import DriverScheduleDetailPage from "../pages/driver/DriverScheduleDetailPage";
+import DriverMapPage from "../pages/driver/DriverMapPage";
 // Layouts
 import DriverLayout from "../layouts/DriverLayout";
 
@@ -18,8 +19,7 @@ export default function AppRouter() {
   return (
     <div className="h-screen text-slate-900 w-full">
       <Routes>
-        {/* Redirect root to admin */}
-        <Route path="/" element={<Navigate to="/admin/routes" replace />} />
+   
         
         {/* Admin Routes */}
         <Route path="/admin" element={<Navigate to="/admin/mapview" replace />} />
@@ -36,6 +36,8 @@ export default function AppRouter() {
           <Route index element={<DriverSchedulePage />} />
           <Route path="schedule" element={<DriverSchedulePage />} />
           <Route path="schedule/:id" element={<DriverScheduleDetailPage />} />
+          <Route path="map" element={<DriverMapPage />} />
+          <Route path="map/:scheduleId" element={<DriverMapPage />} />
         </Route>
       
         {/* <Route path="/admin/reports"  element={<ReportsPage />} /> */}

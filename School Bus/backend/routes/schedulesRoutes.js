@@ -54,14 +54,14 @@ router.get('/driver/:driverId', async (req, res) => {
                 r.route_name,
                 r.distance,
                 d.name as driver_name,
-                COUNT(rs.id) as actual_stop_count
+                COUNT(DISTINCT rs.id) as actual_stop_count
             FROM schedules s
             INNER JOIN buses b ON s.bus_id = b.id
             INNER JOIN routes r ON s.route_id = r.id
             INNER JOIN drivers d ON s.driver_id = d.id
             LEFT JOIN route_stops rs ON s.route_id = rs.route_id
             WHERE s.driver_id = ? ${dateCondition}
-            GROUP BY s.id
+            GROUP BY s.id, s.route_id, s.bus_id
             ORDER BY s.date ASC, s.start_time ASC
         `, params);
         
@@ -97,7 +97,8 @@ router.get('/driver/:driverId', async (req, res) => {
                 startPoint: schedule.start_point,
                 endPoint: schedule.end_point,
                 stopCount: schedule.actual_stop_count || 0, // Số điểm dừng thực tế từ route_stops
-                studentCount: `${schedule.student_count}/${schedule.max_capacity}`,
+                studentCount: `${schedule.student_count}/${schedule.max_capacity}`, // Sử dụng student_count đã cập nhật từ DB
+                actualStudentCount: schedule.student_count, // Để sử dụng trong frontend
                 status: schedule.status,
                 statusText: getStatusText(schedule.status),
                 statusColor: getStatusColor(schedule.status),
@@ -181,7 +182,8 @@ router.get('/:id', async (req, res) => {
             statusText: getStatusText(schedule.status),
             statusColor: getStatusColor(schedule.status),
             students: students,
-            studentCount: students.length
+            studentCount: students.length, // Số học sinh thực tế từ database
+            original_student_count: schedule.student_count // Giữ lại giá trị gốc từ schedule
         };
         
         res.json({
