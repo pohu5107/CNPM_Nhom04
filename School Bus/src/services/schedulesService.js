@@ -1,10 +1,20 @@
 // src/services/schedulesService.js
-
 import apiClient from './api.js';
 
 const ENDPOINT = '/schedules';
 
 export const schedulesService = {
+    // Lấy tất cả lịch trình (Admin)
+    getAllSchedules: async () => {
+        try {
+            const response = await apiClient.get('/admin-schedules');
+            return Array.isArray(response) ? response : [];
+        } catch (error) {
+            console.error('Error fetching schedules:', error);
+            throw error;
+        }
+    },
+
     // Lấy lịch làm việc của driver
     getDriverSchedules: async (driverId, params = {}) => {
         try {
@@ -21,13 +31,57 @@ export const schedulesService = {
         }
     },
 
-    // Lấy chi tiết một lịch làm việc
+    // Lấy chi tiết một lịch làm việc (cho driver)
     getScheduleById: async (id) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
             return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error fetching schedule detail:', error);
+            throw error;
+        }
+    },
+
+    // Lấy chi tiết một lịch trình (cho admin)
+    getAdminScheduleById: async (id) => {
+        try {
+            const response = await apiClient.get(`/admin-schedules/${id}`);
+            return response; // Response đã được interceptor xử lý
+        } catch (error) {
+            console.error('Error fetching admin schedule detail:', error);
+            throw error;
+        }
+    },
+
+    // Tạo lịch trình mới
+    createSchedule: async (data) => {
+        try {
+            const response = await apiClient.post('/admin-schedules', data);
+            return response;
+        } catch (error) {
+            console.error('Error creating schedule:', error);
+            throw error;
+        }
+    },
+
+    // Cập nhật lịch trình
+    updateSchedule: async (id, data) => {
+        try {
+            const response = await apiClient.put(`/admin-schedules/${id}`, data);
+            return response;
+        } catch (error) {
+            console.error('Error updating schedule:', error);
+            throw error;
+        }
+    },
+
+    // Xóa lịch trình
+    deleteSchedule: async (id) => {
+        try {
+            const response = await apiClient.delete(`/admin-schedules/${id}`);
+            return response;
+        } catch (error) {
+            console.error('Error deleting schedule:', error);
             throw error;
         }
     },
