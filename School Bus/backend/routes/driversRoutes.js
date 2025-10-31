@@ -324,10 +324,10 @@ router.get('/:id/details', async (req, res) => {
                 s.date,
                 s.shift_type,
                 s.shift_number,
-                s.start_time,
-                s.end_time,
-                s.start_point,
-                s.end_point,
+                s.scheduled_start_time as start_time,
+                s.scheduled_end_time as end_time,
+                'Điểm bắt đầu' as start_point,
+                'Điểm kết thúc' as end_point,
                 r.route_name,
                 r.distance,
                 b.bus_number,
@@ -337,7 +337,7 @@ router.get('/:id/details', async (req, res) => {
             JOIN routes r ON s.route_id = r.id
             JOIN buses b ON s.bus_id = b.id
             WHERE s.driver_id = ?
-            ORDER BY s.date DESC, s.start_time ASC
+            ORDER BY s.date DESC, s.scheduled_start_time ASC
         `, [id]);
         
         res.json({

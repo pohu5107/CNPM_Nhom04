@@ -115,8 +115,8 @@ router.get('/:id/children', async (req, res) => {
                 sch_template.date as schedule_date,
                 sch_template.start_time as schedule_start_time,
                 sch_template.end_time as schedule_end_time,
-                sch_template.start_point as schedule_start_point,
-                sch_template.end_point as schedule_end_point
+                start_stop.start_point as schedule_start_point,
+                end_stop.end_point as schedule_end_point
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
             LEFT JOIN routes r ON s.route_id = r.id
@@ -124,10 +124,8 @@ router.get('/:id/children', async (req, res) => {
                 SELECT DISTINCT 
                     route_id,
                     bus_id,
-                    start_time,
-                    end_time,
-                    start_point,
-                    end_point,
+                    scheduled_start_time as start_time,
+                    scheduled_end_time as end_time,
                     date,
                     ROW_NUMBER() OVER (PARTITION BY route_id ORDER BY 
                         CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
@@ -137,6 +135,18 @@ router.get('/:id/children', async (req, res) => {
             ) sch_template ON sch_template.route_id = s.route_id 
                 AND sch_template.rn = 1
             LEFT JOIN buses b ON sch_template.bus_id = b.id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name as start_point
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 0
+            ) start_stop ON start_stop.route_id = s.route_id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name as end_point
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 99
+            ) end_stop ON end_stop.route_id = s.route_id
             WHERE s.parent_id = ?
             ORDER BY s.name ASC
         `, [id]);

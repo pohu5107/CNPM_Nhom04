@@ -247,10 +247,16 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
                   <span className="text-sm font-medium text-gray-500">Mối quan hệ</span>
                   <span className="text-sm text-gray-800 font-medium">{student.relationship || 'Chưa có'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
                   <span className="text-sm font-medium text-gray-500">SĐT phụ huynh</span>
                   <span className="text-sm text-gray-800 font-medium">{student.parent_phone || 'Chưa có'}</span>
                 </div>
+                {student.parent_address && (
+                  <div className="py-2">
+                    <span className="text-sm font-medium text-gray-500 block mb-1">Địa chỉ phụ huynh</span>
+                    <p className="text-sm text-gray-800">{student.parent_address}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -312,7 +318,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
                         <span className="text-sm font-medium text-green-700">Điểm đón</span>
                       </div>
                       <p className="text-sm text-gray-800 pl-5">
-                        {student.schedule_start_point || 'Chưa có thông tin'}
+                        {student.schedule_start_point || 'Chưa có thông tin điểm đón'}
                       </p>
                     </div>
                     <div className="bg-red-50 rounded-lg p-3 border border-red-200">
@@ -321,7 +327,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
                         <span className="text-sm font-medium text-red-700">Điểm trả</span>
                       </div>
                       <p className="text-sm text-gray-800 pl-5">
-                        {student.schedule_end_point || 'Chưa có thông tin'}
+                        {student.schedule_end_point || 'Chưa có thông tin điểm trả'}
                       </p>
                     </div>
                   </div>

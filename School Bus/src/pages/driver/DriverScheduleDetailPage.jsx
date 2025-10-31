@@ -149,7 +149,9 @@ export default function DriverScheduleDetailPage() {
                 Chi tiết chuyến {id}
               </h1>
               <p className="text-slate-600">
-                {schedule.route_name} • {schedule.start_time?.substring(0, 5)} – {schedule.end_time?.substring(0, 5)}
+                {schedule.route_name} • 
+                {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
+                {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
               </p>
             </div>
             <button
@@ -198,7 +200,8 @@ export default function DriverScheduleDetailPage() {
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Thời gian:</span>
                 <span className="font-bold text-lg text-slate-900">
-                  {schedule.start_time?.substring(0, 5)} – {schedule.end_time?.substring(0, 5)}
+                  🕐 {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
+                  {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -220,11 +223,15 @@ export default function DriverScheduleDetailPage() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Điểm bắt đầu:</span>
-                <span className="font-semibold text-green-600">{schedule.start_point}</span>
+                <span className="font-semibold text-green-600">
+                  📍 {schedule.start_point}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Điểm kết thúc:</span>
-                <span className="font-semibold text-red-600">{schedule.end_point}</span>
+                <span className="font-semibold text-red-600">
+                  🏁 {schedule.end_point}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Học sinh:</span>
@@ -397,14 +404,14 @@ export default function DriverScheduleDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-100 text-slate-700">
-                  <th className="px-6 py-4 text-left font-semibold">STT</th>
-                  <th className="px-6 py-4 text-left font-semibold">TÊN ĐIỂM DỪNG</th>
-                  <th className="px-6 py-4 text-left font-semibold">LOẠI</th>
-                  <th className="px-6 py-4 text-left font-semibold">THỜI GIAN DỰ KIẾN</th>
-                  <th className="px-6 py-4 text-center font-semibold">TRẠNG THÁI</th>
-                  <th className="px-6 py-4 text-left font-semibold">GHI CHÚ</th>
-                </tr>
+                  <tr className="bg-slate-100 text-slate-700">
+                    <th className="px-6 py-4 text-center font-semibold">STT</th>
+                    <th className="px-6 py-4 text-left font-semibold">TÊN ĐIỂM DỪNG</th>
+                    <th className="px-6 py-4 text-center font-semibold">LOẠI</th>
+                    <th className="px-6 py-4 text-center font-semibold">THỜI GIAN DỰ KIẾN</th>
+                    <th className="px-6 py-4 text-center font-semibold">TRẠNG THÁI</th>
+                    <th className="px-6 py-4 text-left font-semibold">GHI CHÚ</th>
+                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {stops.length === 0 ? (
@@ -417,24 +424,28 @@ export default function DriverScheduleDetailPage() {
                   </tr>
                 ) : stops.map((stop, index) => (
                   <tr 
-                    key={stop.order} 
+                    key={`${stop.order}-${index}`} 
                     className={`hover:bg-slate-50 transition-colors duration-200 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                     }`}
                   >
                     <td className="px-6 py-4 font-bold text-slate-900 text-lg text-center">
-                      {stop.order}
+                      {stop.displayOrder}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-900">{stop.name}</div>
                       {stop.address && <div className="text-sm text-slate-500 mt-1">{stop.address}</div>}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        stop.order === 0 ? 'bg-green-100 text-green-700' :
+                        stop.order === 99 ? 'bg-red-100 text-red-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
                         {stop.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-mono text-slate-900">
+                    <td className="px-6 py-4 font-mono text-slate-900 text-center font-semibold">
                       {stop.estimatedTime}
                     </td>
                     <td className="px-6 py-4 text-center">

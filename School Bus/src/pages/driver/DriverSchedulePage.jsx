@@ -191,13 +191,13 @@ export default function DriverSchedulePage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-slate-600">
-                          {schedule.startPoint}
+                        <div className="text-sm text-slate-600 max-w-[150px]">
+                          📍 {schedule.startPoint || 'Điểm bắt đầu'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-slate-600">
-                          {schedule.endPoint}
+                        <div className="text-sm text-slate-600 max-w-[150px]">
+                          🏁 {schedule.endPoint || 'Điểm kết thúc'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
