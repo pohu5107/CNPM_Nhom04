@@ -37,7 +37,7 @@ router.get('/driver/:driverId', async (req, res) => {
         const [rows] = await pool.execute(`
             SELECT 
                 s.id,
-                s.date,
+                DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
                 s.shift_number,
                 s.scheduled_start_time as start_time,

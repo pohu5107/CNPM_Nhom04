@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
                 b.bus_number,
                 b.license_plate,
                 r.route_name,
-                s.date,
+                DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
                 s.shift_number,
                 s.scheduled_start_time as start_time,
@@ -34,10 +34,20 @@ router.get('/', async (req, res) => {
             ORDER BY s.date DESC, s.shift_number
         `);
 
+        // Format data để đồng bộ với driver format
+        const formattedRows = rows.map(row => ({
+            ...row,
+            id: `CH${String(row.id).padStart(3, '0')}`, // Format giống driver
+            schedule_id: row.id, // Giữ ID gốc để CRUD
+            shift_display: row.shift_type === 'morning' ? `Ca ${row.shift_number} - Sáng` : 
+                          row.shift_type === 'afternoon' ? `Ca ${row.shift_number} - Chiều` :
+                          `Ca ${row.shift_number}`
+        }));
+
         res.json({
             success: true,
-            data: rows,
-            count: rows.length
+            data: formattedRows,
+            count: formattedRows.length
         });
     } catch (error) {
         console.error('Error fetching schedules:', error);
@@ -52,7 +62,13 @@ router.get('/', async (req, res) => {
 // GET /api/schedules/:id - Lấy thông tin một lịch trình
 router.get('/:id', async (req, res) => {
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+        
+        // Xử lý ID format - nếu là "CH001" thì lấy số 1
+        if (typeof id === 'string' && id.startsWith('CH')) {
+            id = parseInt(id.substring(2));
+        }
+        
         const [rows] = await pool.execute(`
             SELECT 
                 s.id,
@@ -62,7 +78,7 @@ router.get('/:id', async (req, res) => {
                 s.bus_id,
                 r.route_name,
                 s.route_id,
-                s.date,
+                DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
                 s.shift_number,
                 s.scheduled_start_time as start_time,
@@ -88,9 +104,19 @@ router.get('/:id', async (req, res) => {
             });
         }
 
+        // Format response để đồng bộ
+        const schedule = {
+            ...rows[0],
+            id: `CH${String(rows[0].id).padStart(3, '0')}`,
+            schedule_id: rows[0].id,
+            shift_display: rows[0].shift_type === 'morning' ? `Ca ${rows[0].shift_number} - Sáng` : 
+                          rows[0].shift_type === 'afternoon' ? `Ca ${rows[0].shift_number} - Chiều` :
+                          `Ca ${rows[0].shift_number}`
+        };
+
         res.json({
             success: true,
-            data: rows[0]
+            data: schedule
         });
     } catch (error) {
         console.error('Error fetching schedule:', error);
@@ -161,7 +187,13 @@ router.post('/', async (req, res) => {
 // PUT /api/schedules/:id - Cập nhật lịch trình
 router.put('/:id', async (req, res) => {
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+        
+        // Xử lý ID format - nếu là "CH001" thì lấy số 1
+        if (typeof id === 'string' && id.startsWith('CH')) {
+            id = parseInt(id.substring(2));
+        }
+        
         const {
             driver_id,
             bus_id,
@@ -200,13 +232,18 @@ router.put('/:id', async (req, res) => {
             id
         ]);
 
-        // Get updated schedule
+        // Get updated schedule với format mới
         const [updatedSchedule] = await pool.execute('SELECT * FROM schedules WHERE id = ?', [id]);
+        const formattedSchedule = {
+            ...updatedSchedule[0],
+            id: `CH${String(updatedSchedule[0].id).padStart(3, '0')}`,
+            schedule_id: updatedSchedule[0].id
+        };
 
         res.json({
             success: true,
             message: 'Cập nhật lịch trình thành công',
-            data: updatedSchedule[0]
+            data: formattedSchedule
         });
     } catch (error) {
         console.error('Error updating schedule:', error);
@@ -221,7 +258,12 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/schedules/:id - Xóa lịch trình
 router.delete('/:id', async (req, res) => {
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+
+        // Xử lý ID format - nếu là "CH001" thì lấy số 1
+        if (typeof id === 'string' && id.startsWith('CH')) {
+            id = parseInt(id.substring(2));
+        }
 
         // Check if schedule exists
         const [existing] = await pool.execute('SELECT id FROM schedules WHERE id = ?', [id]);

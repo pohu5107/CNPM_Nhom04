@@ -59,7 +59,9 @@ const SchedulesPage = () => {
 
   const confirmDelete = async () => {
     try {
-      await schedulesService.deleteSchedule(selectedSchedule.id);
+      // Sử dụng schedule_id (ID gốc) hoặc ID formatted
+      const deleteId = selectedSchedule.schedule_id || selectedSchedule.id;
+      await schedulesService.deleteSchedule(deleteId);
       await fetchSchedules();
       setSelectedSchedule(null);
       setShowConfirm(false);
@@ -74,7 +76,9 @@ const SchedulesPage = () => {
       if (formMode === 'add') {
         await schedulesService.createSchedule(scheduleData);
       } else if (formMode === 'edit') {
-        await schedulesService.updateSchedule(selectedSchedule.id, scheduleData);
+        // Sử dụng schedule_id (ID gốc) hoặc ID formatted
+        const updateId = selectedSchedule.schedule_id || selectedSchedule.id;
+        await schedulesService.updateSchedule(updateId, scheduleData);
       }
       await fetchSchedules();
       setShowForm(false);
