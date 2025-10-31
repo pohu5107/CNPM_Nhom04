@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 30, 2025 lúc 07:08 AM
+-- Thời gian đã tạo: Th10 31, 2025 lúc 01:46 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -20,6 +20,36 @@ SET time_zone = "+00:00";
 --
 -- Cơ sở dữ liệu: `school_bus_db`
 --
+
+DELIMITER $$
+--
+-- Các hàm
+--
+CREATE DEFINER=`` FUNCTION `get_route_end_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
+    DECLARE end_point VARCHAR(255);
+    
+    SELECT s.name INTO end_point
+    FROM route_stops rs
+    JOIN stops s ON rs.stop_id = s.id
+    WHERE rs.route_id = route_id AND rs.stop_order = 99
+    LIMIT 1;
+    
+    RETURN COALESCE(end_point, 'Diem ket thuc');
+END$$
+
+CREATE DEFINER=`` FUNCTION `get_route_start_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
+    DECLARE start_point VARCHAR(255);
+    
+    SELECT s.name INTO start_point
+    FROM route_stops rs
+    JOIN stops s ON rs.stop_id = s.id
+    WHERE rs.route_id = route_id AND rs.stop_order = 0
+    LIMIT 1;
+    
+    RETURN COALESCE(start_point, 'Diem bat dau');
+END$$
+
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -58,6 +88,7 @@ CREATE TABLE `buses` (
   `id` int(11) NOT NULL,
   `bus_number` varchar(20) NOT NULL,
   `license_plate` varchar(20) NOT NULL,
+  `capacity` int(11) DEFAULT 25 COMMENT 'Sức chứa tối đa của xe',
   `status` enum('active','maintenance','inactive') DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -66,10 +97,27 @@ CREATE TABLE `buses` (
 -- Đang đổ dữ liệu cho bảng `buses`
 --
 
-INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `status`, `created_at`) VALUES
-(1, 'BUS-04', '51K-123.45', 'active', '2025-10-20 13:44:19'),
-(2, 'BUS-02', '51K-678.90', 'active', '2025-10-20 13:44:19'),
-(3, 'BUS-03', '51K-111.22', 'active', '2025-10-20 13:44:19');
+INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `capacity`, `status`, `created_at`) VALUES
+(1, 'BUS-04', '51K-123.45', 20, 'active', '2025-10-20 13:44:19'),
+(2, 'BUS-02', '51K-678.90', 20, 'active', '2025-10-20 13:44:19'),
+(3, 'BUS-03', '51K-111.22', 15, 'active', '2025-10-20 13:44:19');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `bus_locations`
+--
+
+CREATE TABLE `bus_locations` (
+  `id` bigint(20) NOT NULL,
+  `schedule_id` int(11) NOT NULL COMMENT 'Chuyến đi (lịch trình) mà vị trí này thuộc về',
+  `bus_id` int(11) NOT NULL COMMENT 'Xe buýt đang gửi vị trí',
+  `driver_id` int(11) NOT NULL COMMENT 'Tài xế đang lái chuyến này',
+  `latitude` decimal(10,8) NOT NULL COMMENT 'Kinh độ',
+  `longitude` decimal(11,8) NOT NULL COMMENT 'Vĩ độ',
+  `speed` decimal(5,2) DEFAULT 0.00 COMMENT 'Tốc độ (km/h)',
+  `timestamp` datetime NOT NULL COMMENT 'Thời điểm chính xác của tọa độ'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ tọa độ GPS real-time của xe buýt';
 
 -- --------------------------------------------------------
 
@@ -133,6 +181,24 @@ INSERT INTO `drivers` (`id`, `user_id`, `name`, `phone`, `license_number`, `addr
 (1, 2, 'Nguyễn Văn A', '0901234567', 'A1-12345', NULL, 'active', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
 (2, 3, 'Trần Thị B', '0912345678', 'A1-54321', '273 an dương vương', 'active', '2025-10-20 13:44:19', '2025-10-23 03:03:13'),
 (3, 7, 'Lê Văn C', '0923456789', 'A1-98765', '273 an dương vương ', 'active', '2025-10-20 13:44:19', '2025-10-23 02:40:09');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL,
+  `sender_user_id` int(11) DEFAULT NULL COMMENT 'ID người gửi (từ users.id). NULL = Hệ thống tự gửi',
+  `recipient_user_id` int(11) NOT NULL COMMENT 'ID người nhận (từ users.id)',
+  `schedule_id` int(11) DEFAULT NULL COMMENT 'Liên kết tới lịch trình (nếu có)',
+  `title` varchar(255) NOT NULL,
+  `message_content` text NOT NULL,
+  `type` enum('delay','approaching','incident','general','system') NOT NULL DEFAULT 'general',
+  `status` enum('sent','read') NOT NULL DEFAULT 'sent',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ tin nhắn và cảnh báo';
 
 -- --------------------------------------------------------
 
@@ -205,24 +271,64 @@ CREATE TABLE `route_stops` (
 --
 
 INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `estimated_arrival_time`, `student_pickup_count`, `created_at`) VALUES
-(1, 1, 1, 1, '00:10:00', 0, '2025-10-24 05:00:15'),
-(2, 1, 2, 2, '00:25:00', 5, '2025-10-24 05:00:15'),
-(3, 1, 3, 3, '00:40:00', 8, '2025-10-24 05:00:15'),
-(4, 2, 2, 1, '00:10:00', 0, '2025-10-24 05:00:15'),
-(5, 2, 3, 2, '00:25:00', 3, '2025-10-24 05:00:15'),
-(6, 2, 1, 3, '00:40:00', 6, '2025-10-24 05:00:15'),
-(7, 3, 3, 1, '00:10:00', 0, '2025-10-24 05:00:15'),
-(8, 3, 1, 2, '00:25:00', 4, '2025-10-24 05:00:15'),
-(9, 3, 2, 3, '00:40:00', 7, '2025-10-24 05:00:15'),
-(10, 4, 2, 1, '00:10:00', 0, '2025-10-24 11:29:50'),
-(11, 4, 3, 2, '00:25:00', 3, '2025-10-24 11:29:50'),
-(12, 4, 1, 3, '00:40:00', 6, '2025-10-24 11:29:50'),
-(13, 5, 1, 1, '00:10:00', 0, '2025-10-24 12:19:57'),
-(14, 5, 2, 2, '00:25:00', 5, '2025-10-24 12:19:57'),
-(15, 5, 3, 3, '00:40:00', 8, '2025-10-24 12:19:57'),
-(16, 6, 3, 1, '00:10:00', 0, '2025-10-24 12:19:57'),
-(17, 6, 1, 2, '00:25:00', 4, '2025-10-24 12:19:57'),
-(18, 6, 2, 3, '00:40:00', 7, '2025-10-24 12:19:57');
+(103, 1, 44, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(104, 1, 1, 1, '00:15:00', 3, '2025-10-31 12:08:03'),
+(105, 1, 46, 2, '00:30:00', 5, '2025-10-31 12:08:03'),
+(106, 1, 2, 3, '00:45:00', 4, '2025-10-31 12:08:03'),
+(107, 1, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
+(108, 2, 49, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(109, 2, 50, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
+(110, 2, 51, 2, '00:30:00', 3, '2025-10-31 12:08:03'),
+(111, 2, 52, 3, '00:45:00', 5, '2025-10-31 12:08:03'),
+(112, 2, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
+(113, 3, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(114, 3, 57, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
+(115, 3, 56, 2, '00:30:00', 7, '2025-10-31 12:08:03'),
+(116, 3, 55, 3, '00:45:00', 6, '2025-10-31 12:08:03'),
+(117, 3, 54, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
+(118, 4, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(119, 4, 52, 1, '00:15:00', 3, '2025-10-31 12:08:03'),
+(120, 4, 51, 2, '00:30:00', 6, '2025-10-31 12:08:03'),
+(121, 4, 53, 3, '00:45:00', 4, '2025-10-31 12:08:03'),
+(122, 4, 49, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
+(123, 5, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(124, 5, 2, 1, '00:15:00', 5, '2025-10-31 12:08:03'),
+(125, 5, 1, 2, '00:25:00', 8, '2025-10-31 12:08:03'),
+(126, 5, 48, 3, '00:40:00', 6, '2025-10-31 12:08:03'),
+(127, 5, 44, 99, '00:50:00', 0, '2025-10-31 12:08:03'),
+(128, 6, 54, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
+(129, 6, 55, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
+(130, 6, 56, 2, '00:30:00', 7, '2025-10-31 12:08:03'),
+(131, 6, 57, 3, '00:45:00', 5, '2025-10-31 12:08:03'),
+(132, 6, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03');
+
+--
+-- Bẫy `route_stops`
+--
+DELIMITER $$
+CREATE TRIGGER `update_schedule_times_after_insert` AFTER INSERT ON `route_stops` FOR EACH ROW BEGIN
+    DECLARE start_time TIME;
+    DECLARE end_time TIME;
+    
+    
+    SELECT TIME(ADDTIME(s.scheduled_start_time, '00:00:00')) INTO start_time
+    FROM schedules s
+    WHERE s.route_id = NEW.route_id
+    LIMIT 1;
+    
+    
+    SELECT TIME(ADDTIME(start_time, rs.estimated_arrival_time)) INTO end_time
+    FROM route_stops rs
+    WHERE rs.route_id = NEW.route_id AND rs.stop_order = 99
+    LIMIT 1;
+    
+    
+    UPDATE schedules 
+    SET scheduled_end_time = end_time
+    WHERE route_id = NEW.route_id AND scheduled_start_time = start_time;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -238,14 +344,12 @@ CREATE TABLE `schedules` (
   `date` date NOT NULL,
   `shift_type` enum('morning','afternoon','evening') NOT NULL,
   `shift_number` int(11) NOT NULL,
-  `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `start_point` varchar(255) NOT NULL,
-  `end_point` varchar(255) NOT NULL,
-  `estimated_duration` int(11) DEFAULT 60,
+  `scheduled_start_time` time NOT NULL COMMENT 'Thời gian dự kiến bắt đầu chuyến (theo lịch)',
+  `scheduled_end_time` time NOT NULL COMMENT 'Thời gian dự kiến kết thúc chuyến (theo lịch)',
   `student_count` int(11) DEFAULT 0,
-  `max_capacity` int(11) DEFAULT 25,
   `status` enum('scheduled','in_progress','completed','cancelled') DEFAULT 'scheduled',
+  `actual_start_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút bắt đầu chuyến',
+  `actual_end_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút kết thúc chuyến',
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -255,17 +359,17 @@ CREATE TABLE `schedules` (
 -- Đang đổ dữ liệu cho bảng `schedules`
 --
 
-INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift_type`, `shift_number`, `start_time`, `end_time`, `start_point`, `end_point`, `estimated_duration`, `student_count`, `max_capacity`, `status`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, '2025-10-23', 'morning', 1, '06:30:00', '07:30:00', '120 Nguyễn Trãi', '273 An Dương Vương', 60, 2, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(2, 1, 1, 2, '2025-10-23', 'morning', 2, '10:00:00', '11:00:00', '273 An Dương Vương', '120 Nguyễn Trãi', 60, 1, 18, 'in_progress', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(3, 1, 2, 3, '2025-10-23', 'afternoon', 3, '17:00:00', '18:00:00', '134 Lê Đại Hành', '273 An Dương Vương', 60, 0, 22, 'completed', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(4, 2, 2, 1, '2025-10-23', 'morning', 1, '07:00:00', '08:00:00', '50 Lê Lợi', '100 Nguyễn Huệ', 60, 0, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(5, 2, 2, 4, '2025-10-23', 'afternoon', 2, '16:30:00', '17:30:00', '100 Nguyễn Huệ', '50 Lê Lợi', 60, 0, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(6, 3, 3, 6, '2025-10-23', 'morning', 1, '06:45:00', '07:45:00', '200 Trường Sa', '150 Hoàng Sa', 60, 0, 15, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(7, 1, 1, 1, '2025-10-24', 'morning', 1, '06:30:00', '07:30:00', '120 Nguyễn Trãi', '273 An Dương Vương', 60, 2, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(8, 1, 1, 4, '2025-10-24', 'afternoon', 2, '17:00:00', '18:00:00', '273 An Dương Vương', '120 Nguyễn Trãi', 60, 0, 18, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(9, 2, 2, 1, '2025-10-24', 'morning', 1, '07:00:00', '08:00:00', '50 Lê Lợi', '100 Nguyễn Huệ', 60, 0, 20, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(10, 3, 3, 3, '2025-10-24', 'afternoon', 1, '17:00:00', '18:00:00', '200 Trường Sa', '150 Hoàng Sa', 60, 0, 15, 'scheduled', NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09');
+INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift_type`, `shift_number`, `scheduled_start_time`, `scheduled_end_time`, `student_count`, `status`, `actual_start_time`, `actual_end_time`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 1, '2025-10-23', 'morning', 1, '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(2, 1, 1, 2, '2025-10-23', 'morning', 2, '10:00:00', '11:00:00', 1, 'in_progress', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(3, 1, 2, 3, '2025-10-23', 'afternoon', 3, '17:00:00', '18:00:00', 0, 'completed', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(4, 2, 2, 1, '2025-10-23', 'morning', 1, '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(5, 2, 2, 4, '2025-10-23', 'afternoon', 2, '16:30:00', '17:30:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(6, 3, 3, 6, '2025-10-23', 'morning', 1, '06:45:00', '07:45:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(7, 1, 1, 1, '2025-10-24', 'morning', 1, '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(8, 1, 1, 4, '2025-10-24', 'afternoon', 2, '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(9, 2, 2, 1, '2025-10-24', 'morning', 1, '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(10, 3, 3, 3, '2025-10-24', 'afternoon', 1, '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09');
 
 -- --------------------------------------------------------
 
@@ -289,7 +393,22 @@ CREATE TABLE `stops` (
 INSERT INTO `stops` (`id`, `name`, `address`, `latitude`, `longitude`, `status`) VALUES
 (1, 'Nhà Văn hóa Thanh Niên', '4 Phạm Ngọc Thạch, P. Bến Nghé, Q.1', 10.78310000, 106.69970000, 'active'),
 (2, 'Ngã tư Hàng Xanh', 'Giao lộ Xô Viết Nghệ Tĩnh & Điện Biên Phủ, P.21, Q. Bình Thạnh', 10.79610000, 106.70370000, 'active'),
-(3, 'Gigamall Thủ Đức', '240 Phạm Văn Đồng, P. Hiệp Bình Chánh, Thủ Đức', 10.83290000, 106.72030000, 'active');
+(3, 'Gigamall Thủ Đức', '240 Phạm Văn Đồng, P. Hiệp Bình Chánh, Thủ Đức', 10.83290000, 106.72030000, 'active'),
+(43, 'Truong THCS Nguyen Du', '123 Duong Giao Duc, Q.1, TP.HCM', 10.77690000, 106.70090000, 'active'),
+(44, 'Cong vien 23/9', '2 Pham Ngoc Thach, Q.1, TP.HCM', 10.78300000, 106.69970000, 'active'),
+(45, 'Nha Van Hoa Thanh Nien', '4 Pham Ngoc Thach, P. Ben Nghe, Q.1', 10.78310000, 106.69970000, 'active'),
+(46, 'Nga Sau Phu Dong', '240 Pham Van Dong, P. Hiep Binh Chanh, Thu Duc', 10.83290000, 106.72030000, 'active'),
+(47, 'Nga Tu Hang Xanh', 'Giao lo Xo Viet Nghe Tinh & Dien Bien Phu, P.21, Q.Binh Thanh', 10.79610000, 106.70370000, 'active'),
+(48, 'Ben Thanh', '1 Le Loi, P. Ben Nghe, Q.1, TP.HCM', 10.77260000, 106.69800000, 'active'),
+(49, 'Cong vien Lang Hoa', '1040 Quang Trung, P.8, Go Vap, TP.HCM', 10.83710000, 106.67950000, 'active'),
+(50, 'Nga Tu Phan Van Tri - Le Duc Tho', '197 Le Duc Tho, P.6, Go Vap, TP.HCM', 10.84200000, 106.68500000, 'active'),
+(51, 'Nga Nam Chuong Cho', '789 Quang Trung, Go Vap, TP.HCM', 10.83950000, 106.68260000, 'active'),
+(52, 'Cau vuot Nguyen Thai Son', '268 Ly Thuong Kiet, P. Hiep Phu, Thu Duc, TP.HCM', 10.84500000, 106.75800000, 'active'),
+(53, 'Lotte Mart Nguyen Van Luong', '30 Vo Van Ngan, P. Linh Chieu, Thu Duc, TP.HCM', 10.85000000, 106.76000000, 'active'),
+(54, 'Chung cu Sunview Town', '321 Vo Van Ngan, Thu Duc, TP.HCM', 10.85160000, 106.77180000, 'active'),
+(55, 'Vincom Thu Duc', '216 Vo Van Ngan, Thu Duc, TP.HCM', 10.85000000, 106.77000000, 'active'),
+(56, 'Xa Lo Ha Noi - Nga 4 Binh Thai', '1040 Xa Lo Ha Noi, Thu Duc, TP.HCM', 10.86000000, 106.78000000, 'active'),
+(57, 'Cau Sai Gon', 'Cau Sai Gon, TP.HCM', 10.82000000, 106.74000000, 'active');
 
 -- --------------------------------------------------------
 
@@ -307,6 +426,8 @@ CREATE TABLE `students` (
   `phone` varchar(20) DEFAULT NULL,
   `parent_id` int(11) DEFAULT NULL,
   `route_id` int(11) DEFAULT NULL,
+  `morning_pickup_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng đón học sinh (tham chiếu stops.id)',
+  `afternoon_dropoff_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng trả học sinh (tham chiếu stops.id)',
   `pickup_time` time DEFAULT NULL,
   `dropoff_time` time DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active'
@@ -316,10 +437,10 @@ CREATE TABLE `students` (
 -- Đang đổ dữ liệu cho bảng `students`
 --
 
-INSERT INTO `students` (`id`, `name`, `grade`, `class_id`, `class`, `address`, `phone`, `parent_id`, `route_id`, `pickup_time`, `dropoff_time`, `status`) VALUES
-(1, 'Trần Dũng Minh', '6', 1, '6A1', '123 Nguyễn Văn Linh, Q.7, TP.HCM', '0123456789', 1, 1, '06:30:00', '16:30:00', 'active'),
-(2, 'Lê Ngọc Anh', '7', 9, '7B2', '456 Lý Lãm, Q.1, TP.HCM', '0123456790', 2, 2, '06:45:00', '16:45:00', 'active'),
-(3, 'Phạm An Khang', '6', 1, '6A1', '789 Võ Văn Kiệt, Q.5, TP.HCM', '0123456791', 3, 1, '06:40:00', '16:30:00', 'active');
+INSERT INTO `students` (`id`, `name`, `grade`, `class_id`, `class`, `address`, `phone`, `parent_id`, `route_id`, `morning_pickup_stop_id`, `afternoon_dropoff_stop_id`, `pickup_time`, `dropoff_time`, `status`) VALUES
+(1, 'Trần Dũng Minh', '6', 1, '6A1', '123 Nguyễn Văn Linh, Q.7, TP.HCM', '0123456789', 1, 1, NULL, NULL, '06:30:00', '16:30:00', 'active'),
+(2, 'Lê Ngọc Anh', '7', 9, '7B2', '456 Lý Lãm, Q.1, TP.HCM', '0123456790', 2, 2, NULL, NULL, '06:45:00', '16:45:00', 'active'),
+(3, 'Phạm An Khang', '6', 1, '6A1', '789 Võ Văn Kiệt, Q.5, TP.HCM', '0123456791', 3, 1, NULL, NULL, '06:40:00', '16:30:00', 'active');
 
 -- --------------------------------------------------------
 
@@ -437,7 +558,7 @@ CREATE TABLE `view_student_current_bus` (
 --
 DROP TABLE IF EXISTS `view_class_statistics`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_class_statistics`  AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_class_statistics`  AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
 
 -- --------------------------------------------------------
 
@@ -446,7 +567,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_class_statistics`  AS
 --
 DROP TABLE IF EXISTS `view_parent_children_count`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_parent_children_count`  AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_parent_children_count`  AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
 
 -- --------------------------------------------------------
 
@@ -455,7 +576,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_parent_children_count
 --
 DROP TABLE IF EXISTS `view_students_with_parents`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_students_with_parents`  AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name` FROM (((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_students_with_parents`  AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name` FROM (((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) ;
 
 -- --------------------------------------------------------
 
@@ -464,7 +585,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_students_with_parents
 --
 DROP TABLE IF EXISTS `view_student_current_bus`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `view_student_current_bus`  AS SELECT `s`.`id` AS `student_id`, `s`.`name` AS `student_name`, `s`.`route_id` AS `route_id`, `r`.`route_name` AS `route_name`, `sch`.`bus_id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `sch`.`date` AS `date`, `sch`.`start_time` AS `start_time`, `sch`.`end_time` AS `end_time` FROM (((`students` `s` left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `schedules` `sch` on(`s`.`route_id` = `sch`.`route_id` and `sch`.`date` = curdate())) left join `buses` `b` on(`sch`.`bus_id` = `b`.`id`)) WHERE `s`.`status` = 'active' ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_student_current_bus`  AS SELECT `s`.`id` AS `student_id`, `s`.`name` AS `student_name`, `s`.`route_id` AS `route_id`, `r`.`route_name` AS `route_name`, `sch`.`bus_id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `sch`.`date` AS `date`, `sch`.`scheduled_start_time` AS `start_time`, `sch`.`scheduled_end_time` AS `end_time` FROM (((`students` `s` left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `schedules` `sch` on(`s`.`route_id` = `sch`.`route_id` and `sch`.`date` = curdate())) left join `buses` `b` on(`sch`.`bus_id` = `b`.`id`)) WHERE `s`.`status` = 'active' ;
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -487,6 +608,16 @@ ALTER TABLE `buses`
   ADD UNIQUE KEY `license_plate` (`license_plate`);
 
 --
+-- Chỉ mục cho bảng `bus_locations`
+--
+ALTER TABLE `bus_locations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_schedule_id` (`schedule_id`),
+  ADD KEY `idx_bus_id` (`bus_id`),
+  ADD KEY `idx_timestamp` (`timestamp`),
+  ADD KEY `fk_location_driver` (`driver_id`);
+
+--
 -- Chỉ mục cho bảng `classes`
 --
 ALTER TABLE `classes`
@@ -500,6 +631,15 @@ ALTER TABLE `drivers`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `license_number` (`license_number`),
   ADD KEY `user_id` (`user_id`);
+
+--
+-- Chỉ mục cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_recipient_user_id` (`recipient_user_id`),
+  ADD KEY `idx_schedule_id` (`schedule_id`),
+  ADD KEY `fk_notification_sender` (`sender_user_id`);
 
 --
 -- Chỉ mục cho bảng `parents`
@@ -546,7 +686,9 @@ ALTER TABLE `students`
   ADD KEY `parent_id` (`parent_id`),
   ADD KEY `route_id` (`route_id`),
   ADD KEY `class_id` (`class_id`),
-  ADD KEY `idx_class_id` (`class_id`);
+  ADD KEY `idx_class_id` (`class_id`),
+  ADD KEY `fk_morning_pickup_stop` (`morning_pickup_stop_id`),
+  ADD KEY `fk_afternoon_dropoff_stop` (`afternoon_dropoff_stop_id`);
 
 --
 -- Chỉ mục cho bảng `users`
@@ -573,6 +715,12 @@ ALTER TABLE `buses`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT cho bảng `bus_locations`
+--
+ALTER TABLE `bus_locations`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT cho bảng `classes`
 --
 ALTER TABLE `classes`
@@ -585,10 +733,16 @@ ALTER TABLE `drivers`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
@@ -600,7 +754,7 @@ ALTER TABLE `routes`
 -- AUTO_INCREMENT cho bảng `route_stops`
 --
 ALTER TABLE `route_stops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
 
 --
 -- AUTO_INCREMENT cho bảng `schedules`
@@ -612,19 +766,19 @@ ALTER TABLE `schedules`
 -- AUTO_INCREMENT cho bảng `stops`
 --
 ALTER TABLE `stops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Các ràng buộc cho các bảng đã đổ
@@ -638,10 +792,26 @@ ALTER TABLE `attendance`
   ADD CONSTRAINT `attendance_ibfk_2` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE;
 
 --
+-- Các ràng buộc cho bảng `bus_locations`
+--
+ALTER TABLE `bus_locations`
+  ADD CONSTRAINT `fk_location_bus` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_location_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_location_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`) ON DELETE CASCADE;
+
+--
 -- Các ràng buộc cho bảng `drivers`
 --
 ALTER TABLE `drivers`
   ADD CONSTRAINT `drivers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `fk_notification_recipient` FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_notification_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_notification_sender` FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Các ràng buộc cho bảng `parents`
@@ -668,6 +838,8 @@ ALTER TABLE `schedules`
 -- Các ràng buộc cho bảng `students`
 --
 ALTER TABLE `students`
+  ADD CONSTRAINT `fk_afternoon_dropoff_stop` FOREIGN KEY (`afternoon_dropoff_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_morning_pickup_stop` FOREIGN KEY (`morning_pickup_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parents` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `students_ibfk_2` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `students_ibfk_4` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;

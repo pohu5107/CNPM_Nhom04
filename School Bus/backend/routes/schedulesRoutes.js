@@ -40,15 +40,15 @@ router.get('/driver/:driverId', async (req, res) => {
                 s.date,
                 s.shift_type,
                 s.shift_number,
-                s.start_time,
-                s.end_time,
-                s.start_point,
-                s.end_point,
+                s.scheduled_start_time as start_time,
+                s.scheduled_end_time as end_time,
+                COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
+                COALESCE(end_stop.name, 'Điểm kết thúc') as end_point,
                 s.student_count,
-                s.max_capacity,
+                25 as max_capacity,
                 s.status,
                 s.notes,
-                s.estimated_duration,
+                60 as estimated_duration,
                 b.bus_number,
                 b.license_plate,
                 r.route_name,
@@ -59,10 +59,22 @@ router.get('/driver/:driverId', async (req, res) => {
             INNER JOIN buses b ON s.bus_id = b.id
             INNER JOIN routes r ON s.route_id = r.id
             INNER JOIN drivers d ON s.driver_id = d.id
-            LEFT JOIN route_stops rs ON s.route_id = rs.route_id
+            LEFT JOIN route_stops rs ON s.route_id = rs.route_id AND rs.stop_order BETWEEN 1 AND 98
+            LEFT JOIN (
+                SELECT rs.route_id, st.name
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 0
+            ) start_stop ON start_stop.route_id = s.route_id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name  
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 99
+            ) end_stop ON end_stop.route_id = s.route_id
             WHERE s.driver_id = ? ${dateCondition}
             GROUP BY s.id, s.route_id
-            ORDER BY s.date ASC, s.start_time ASC
+            ORDER BY s.date ASC, s.scheduled_start_time ASC
         `, params);
         
         // Format dữ liệu cho frontend
@@ -136,6 +148,10 @@ router.get('/:id', async (req, res) => {
         const [rows] = await pool.execute(`
             SELECT 
                 s.*,
+                s.scheduled_start_time as start_time,
+                s.scheduled_end_time as end_time,
+                COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
+                COALESCE(end_stop.name, 'Điểm kết thúc') as end_point,
                 b.bus_number,
                 b.license_plate,
                 b.status as bus_status,
@@ -148,6 +164,18 @@ router.get('/:id', async (req, res) => {
             INNER JOIN buses b ON s.bus_id = b.id
             INNER JOIN routes r ON s.route_id = r.id
             INNER JOIN drivers d ON s.driver_id = d.id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 0
+            ) start_stop ON start_stop.route_id = s.route_id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name  
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 99
+            ) end_stop ON end_stop.route_id = s.route_id
             WHERE s.id = ?
         `, [id]);
         
@@ -278,7 +306,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         
         // Lấy thông tin schedule trước
         const [scheduleRows] = await pool.execute(`
-            SELECT s.route_id, s.start_time, s.date, r.route_name
+            SELECT s.route_id, s.scheduled_start_time as start_time, s.date, r.route_name
             FROM schedules s 
             INNER JOIN routes r ON s.route_id = r.id
             WHERE s.id = ?
@@ -303,7 +331,11 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 s.address as stop_address,
                 s.latitude,
                 s.longitude,
-                'Đón học sinh' as stop_type
+                CASE 
+                    WHEN rs.stop_order = 0 THEN 'Điểm bắt đầu'
+                    WHEN rs.stop_order = 99 THEN 'Điểm kết thúc'
+                    ELSE 'Đón học sinh'
+                END as stop_type
             FROM route_stops rs
             INNER JOIN stops s ON rs.stop_id = s.id
             WHERE rs.route_id = ?
@@ -316,31 +348,59 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         
         // Format dữ liệu cho frontend với thời gian được tính từ offset trong DB
         const formattedStops = stops.map((stop, index) => {
-            // Lấy offset từ database (format HH:MM:SS được chuyển thành phút)
-            const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
-            const offsetMinutes = offsetHour * 60 + offsetMinute; // Chuyển offset thành phút
+            let actualTimeString;
+            let displayOrder;
+            let stopType;
             
-            // Tính thời gian thực tế = schedule start_time + offset từ DB
-            const scheduleStartTotal = startHour * 60 + startMinute;
-            const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
-            
-            const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
-            const actualMinute = actualArrivalTotal % 60;
-            const actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
+            if (stop.stop_order === 0) {
+                // Điểm bắt đầu = scheduled_start_time
+                actualTimeString = scheduleStartTime.substring(0, 5);
+                displayOrder = index + 1; // Số thứ tự tuần tự
+                stopType = 'Điểm khởi hành';
+            } else if (stop.stop_order === 99) {
+                // Điểm kết thúc
+                const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
+                const offsetMinutes = offsetHour * 60 + offsetMinute;
+                
+                const scheduleStartTotal = startHour * 60 + startMinute;
+                const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
+                
+                const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
+                const actualMinute = actualArrivalTotal % 60;
+                actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
+                displayOrder = index + 1; // Số thứ tự tuần tự
+                stopType = 'Điểm đích';
+            } else {
+                // Các điểm dừng thường = start_time + offset từ DB
+                const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
+                const offsetMinutes = offsetHour * 60 + offsetMinute;
+                
+                const scheduleStartTotal = startHour * 60 + startMinute;
+                const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
+                
+                const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
+                const actualMinute = actualArrivalTotal % 60;
+                actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
+                displayOrder = index + 1; // Số thứ tự tuần tự
+                stopType = stop.student_pickup_count > 0 ? `Đón ${stop.student_pickup_count} HS` : 'Điểm dừng';
+            }
             
             return {
                 order: stop.stop_order,
+                displayOrder: displayOrder,
                 name: stop.stop_name,
                 address: stop.stop_address,
-                type: stop.stop_type,
-                estimatedTime: actualTimeString, // Thời gian = start_time + offset từ DB
+                type: stopType,
+                estimatedTime: actualTimeString,
                 studentCount: stop.student_pickup_count > 0 ? `${stop.student_pickup_count} học sinh` : '-',
                 status: index === 0 ? 'current' : 'pending',
                 coordinates: {
                     latitude: parseFloat(stop.latitude),
                     longitude: parseFloat(stop.longitude)
                 },
-                note: stop.student_pickup_count > 0 ? 
+                note: stop.stop_order === 0 ? 'Điểm khởi hành' :
+                     stop.stop_order === 99 ? 'Điểm đích' :
+                     stop.student_pickup_count > 0 ? 
                      `Đón ${stop.student_pickup_count} học sinh` : 
                      'Điểm dừng trung gian'
             };
@@ -410,23 +470,23 @@ router.get('/admin', async (req, res) => {
                 s.date,
                 s.shift_type,
                 s.shift_number,
-                s.start_time,
-                s.end_time,
-                s.start_point,
-                s.end_point,
+                s.scheduled_start_time as start_time,
+                s.scheduled_end_time as end_time,
+                'Điểm bắt đầu' as start_point,
+                'Điểm kết thúc' as end_point,
                 s.status,
                 d.name as driver_name,
                 b.bus_number,
                 b.license_plate,
                 r.route_name,
                 s.student_count,
-                s.max_capacity
+                25 as max_capacity
             FROM schedules s
             INNER JOIN drivers d ON s.driver_id = d.id
             INNER JOIN buses b ON s.bus_id = b.id
             INNER JOIN routes r ON s.route_id = r.id
             ${dateCondition}
-            ORDER BY s.date ASC, s.start_time ASC
+            ORDER BY s.date ASC, s.scheduled_start_time ASC
         `, params);
         
         res.json({
@@ -474,8 +534,8 @@ router.get('/:id/students-by-route', async (req, res) => {
                 s.grade,
                 s.class,
                 c.class_name,
-                sch.start_time as pickup_time,  -- Dùng thời gian bắt đầu schedule làm giờ đón
-                sch.end_time as dropoff_time,   -- Dùng thời gian kết thúc schedule làm giờ trả  
+                sch.scheduled_start_time as pickup_time,  -- Dùng thời gian bắt đầu schedule làm giờ đón
+                sch.scheduled_end_time as dropoff_time,   -- Dùng thời gian kết thúc schedule làm giờ trả  
                 r.route_name,
                 b.bus_number,
                 b.license_plate,
