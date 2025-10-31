@@ -10,10 +10,7 @@ Sử dụng cột stop_order để xác định thứ tự (0 = bắt đầu, 99
 
 Thêm cột: estimated_arrival_time (thời gian dự kiến đến từng trạm).
 
-3. Bảng students (Học sinh)
-Thêm các cột: morning_pickup_stop_id và afternoon_dropoff_stop_id.
 
-(Thay đổi quan hệ: Học sinh giờ đây liên kết trực tiếp với điểm dừng cụ thể).
 
 4. Bảng stops (Điểm dừng)
 Thêm cột: Tọa độ GPS.
