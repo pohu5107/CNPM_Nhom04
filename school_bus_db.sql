@@ -25,7 +25,7 @@ DELIMITER $$
 --
 -- Các hàm
 --
-CREATE DEFINER=`` FUNCTION `get_route_end_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
+CREATE FUNCTION `get_route_end_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
     DECLARE end_point VARCHAR(255);
     
     SELECT s.name INTO end_point
@@ -37,7 +37,7 @@ CREATE DEFINER=`` FUNCTION `get_route_end_point` (`route_id` INT) RETURNS VARCHA
     RETURN COALESCE(end_point, 'Diem ket thuc');
 END$$
 
-CREATE DEFINER=`` FUNCTION `get_route_start_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
+CREATE FUNCTION `get_route_start_point` (`route_id` INT) RETURNS VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC READS SQL DATA BEGIN
     DECLARE start_point VARCHAR(255);
     
     SELECT s.name INTO start_point
@@ -558,7 +558,7 @@ CREATE TABLE `view_student_current_bus` (
 --
 DROP TABLE IF EXISTS `view_class_statistics`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_class_statistics`  AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
+CREATE VIEW `view_class_statistics` AS SELECT `c`.`id` AS `class_id`, `c`.`class_name` AS `class_name`, `c`.`grade` AS `grade`, `c`.`academic_year` AS `academic_year`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `c`.`max_students` AS `max_students`, count(`s`.`id`) AS `current_students`, `c`.`max_students`- count(`s`.`id`) AS `available_slots`, `c`.`status` AS `status` FROM (`classes` `c` left join `students` `s` on(`c`.`id` = `s`.`class_id` and `s`.`status` = 'active')) GROUP BY `c`.`id`, `c`.`class_name`, `c`.`grade`, `c`.`academic_year`, `c`.`homeroom_teacher`, `c`.`max_students`, `c`.`status` ;
 
 -- --------------------------------------------------------
 
@@ -567,7 +567,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_class_stat
 --
 DROP TABLE IF EXISTS `view_parent_children_count`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_parent_children_count`  AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
+CREATE VIEW `view_parent_children_count` AS SELECT `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `phone`, `p`.`address` AS `address`, `p`.`relationship` AS `relationship`, count(`s`.`id`) AS `children_count`, group_concat(`s`.`name` order by `s`.`name` ASC separator ', ') AS `children_names`, group_concat(`s`.`class` order by `s`.`name` ASC separator ', ') AS `children_classes` FROM (`parents` `p` left join `students` `s` on(`p`.`id` = `s`.`parent_id` and `s`.`status` = 'active')) GROUP BY `p`.`id`, `p`.`name`, `p`.`phone`, `p`.`address`, `p`.`relationship` ;
 
 -- --------------------------------------------------------
 
@@ -576,7 +576,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_parent_chi
 --
 DROP TABLE IF EXISTS `view_students_with_parents`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_students_with_parents`  AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name` FROM (((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) ;
+CREATE VIEW `view_students_with_parents` AS SELECT `s`.`id` AS `id`, `s`.`name` AS `student_name`, `s`.`grade` AS `grade`, `s`.`class` AS `class`, `c`.`class_name` AS `class_name`, `c`.`homeroom_teacher` AS `homeroom_teacher`, `s`.`address` AS `address`, `s`.`phone` AS `student_phone`, `s`.`status` AS `status`, `s`.`pickup_time` AS `pickup_time`, `s`.`dropoff_time` AS `dropoff_time`, `p`.`id` AS `parent_id`, `p`.`name` AS `parent_name`, `p`.`phone` AS `parent_phone`, `p`.`address` AS `parent_address`, `p`.`relationship` AS `relationship`, `r`.`id` AS `route_id`, `r`.`route_name` AS `route_name` FROM (((`students` `s` left join `classes` `c` on(`s`.`class_id` = `c`.`id`)) left join `parents` `p` on(`s`.`parent_id` = `p`.`id`)) left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) ;
 
 -- --------------------------------------------------------
 
@@ -585,7 +585,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_students_w
 --
 DROP TABLE IF EXISTS `view_student_current_bus`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `view_student_current_bus`  AS SELECT `s`.`id` AS `student_id`, `s`.`name` AS `student_name`, `s`.`route_id` AS `route_id`, `r`.`route_name` AS `route_name`, `sch`.`bus_id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `sch`.`date` AS `date`, `sch`.`scheduled_start_time` AS `start_time`, `sch`.`scheduled_end_time` AS `end_time` FROM (((`students` `s` left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `schedules` `sch` on(`s`.`route_id` = `sch`.`route_id` and `sch`.`date` = curdate())) left join `buses` `b` on(`sch`.`bus_id` = `b`.`id`)) WHERE `s`.`status` = 'active' ;
+CREATE VIEW `view_student_current_bus` AS SELECT `s`.`id` AS `student_id`, `s`.`name` AS `student_name`, `s`.`route_id` AS `route_id`, `r`.`route_name` AS `route_name`, `sch`.`bus_id` AS `bus_id`, `b`.`bus_number` AS `bus_number`, `sch`.`date` AS `date`, `sch`.`scheduled_start_time` AS `start_time`, `sch`.`scheduled_end_time` AS `end_time` FROM (((`students` `s` left join `routes` `r` on(`s`.`route_id` = `r`.`id`)) left join `schedules` `sch` on(`s`.`route_id` = `sch`.`route_id` and `sch`.`date` = curdate())) left join `buses` `b` on(`sch`.`bus_id` = `b`.`id`)) WHERE `s`.`status` = 'active' ;
 
 --
 -- Chỉ mục cho các bảng đã đổ
