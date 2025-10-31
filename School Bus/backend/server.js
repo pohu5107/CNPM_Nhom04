@@ -12,6 +12,7 @@ import driversRoutes from './routes/driversRoutes.js';
 import parentsRoutes from './routes/parentsRoutes.js';
 import classesRoutes from './routes/classesRoutes.js';
 import schedulesRoutes from './routes/schedulesRoutes.js';
+import adminschedulesRoutes from './routes/adminschedulesRoutes.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 5000;
@@ -30,6 +31,7 @@ app.use('/api/drivers', driversRoutes);
 app.use('/api/parents', parentsRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/schedules', schedulesRoutes);
+app.use('/api/schedules', adminschedulesRoutes);
 // check
 app.get('/api/health', async (req, res) => {
     try {
@@ -40,7 +42,7 @@ app.get('/api/health', async (req, res) => {
         res.json({
             success: true,
             message: 'Server and database are healthy',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString() 
         });
     } catch (error) {
         res.status(500).json({
