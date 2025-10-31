@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import routesService from '../../services/routesService';
-import schedulesService from '../../services/schedulesService';
+import { routesService } from '../../services/routesService';
+import { schedulesService } from '../../services/schedulesService';
 
 
 // FIX lỗi icon mặc định không hiện
@@ -37,8 +37,8 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
         
         // Đây là nơi gọi API backend để lấy dữ liệu lộ trình
         console.log('🗺️ Fetching route details for routeId:', rid);
-        const response = await routesService.getRouteDetails(rid);
-        const data = response.data;
+        const response = await routesService.getRouteById(rid);
+        const data = response;
         console.log('🗺️ Route details response:', data);
 
         setRouteData(data);

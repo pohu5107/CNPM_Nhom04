@@ -25,14 +25,7 @@ router.get('/', async (req, res) => {
                 s.pickup_time,
                 s.dropoff_time,
                 s.status,
-                -- Lấy template thời gian cố định từ schedule cho route (bất kể ngày)
-                sch_template.start_time as schedule_start_time,
-                sch_template.end_time as schedule_end_time,
-                sch_template.shift_type as schedule_shift_type,
-                sch_template.date as schedule_date,
-                start_stop.start_point as schedule_start_point,
-                end_stop.end_point as schedule_end_point,
-                -- Thông tin xe bus từ schedule
+                -- Thông tin xe bus từ schedule mới nhất
                 sch_template.bus_id,
                 b.bus_number,
                 b.license_plate
@@ -40,32 +33,12 @@ router.get('/', async (req, res) => {
             LEFT JOIN (
                 SELECT DISTINCT 
                     route_id,
-                    driver_id,
                     bus_id,
-                    scheduled_start_time as start_time,
-                    scheduled_end_time as end_time,
-                    shift_type,
-                    date,
-                    ROW_NUMBER() OVER (PARTITION BY route_id, shift_type ORDER BY 
-                        CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
-                        date DESC) as rn
-                FROM schedules 
-                WHERE status IN ('scheduled', 'in_progress', 'completed')
-            ) sch_template ON sch_template.route_id = s.route_id 
-                AND sch_template.rn = 1
+                    ROW_NUMBER() OVER (PARTITION BY route_id ORDER BY date DESC) as rn
+                FROM schedules
+                WHERE date >= CURDATE()
+            ) sch_template ON s.route_id = sch_template.route_id AND sch_template.rn = 1
             LEFT JOIN buses b ON sch_template.bus_id = b.id
-            LEFT JOIN (
-                SELECT rs.route_id, st.name as start_point
-                FROM route_stops rs
-                JOIN stops st ON rs.stop_id = st.id
-                WHERE rs.stop_order = 0
-            ) start_stop ON start_stop.route_id = s.route_id
-            LEFT JOIN (
-                SELECT rs.route_id, st.name as end_point
-                FROM route_stops rs
-                JOIN stops st ON rs.stop_id = st.id
-                WHERE rs.stop_order = 99
-            ) end_stop ON end_stop.route_id = s.route_id
             ORDER BY s.id DESC
         `);
         
