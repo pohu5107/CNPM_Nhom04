@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* màu mặc định */
+@theme {
+  --color-hover: #fc791a;
+  --color-bg: #174d2c;
+  --color-bg2: #D8E359;
+  --color-bg3: #FEF8DF;
+}
+
+button {
+  cursor: pointer;
+}
+body{
+  background-color: white;
+}
