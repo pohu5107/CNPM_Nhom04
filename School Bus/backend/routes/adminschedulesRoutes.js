@@ -72,28 +72,38 @@ router.get('/:id', async (req, res) => {
         const [rows] = await pool.execute(`
             SELECT 
                 s.id,
-                d.name AS driver_name,
                 s.driver_id,
-                b.bus_number,
                 s.bus_id,
-                r.route_name,
                 s.route_id,
                 DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
                 s.shift_number,
-                s.scheduled_start_time as start_time,
-                s.scheduled_end_time as end_time,
-                'Điểm bắt đầu' as start_point,
-                'Điểm kết thúc' as end_point,
-                60 as estimated_duration,
+                TIME_FORMAT(s.scheduled_start_time, '%H:%i') as start_time,
+                TIME_FORMAT(s.scheduled_end_time, '%H:%i') as end_time,
+                COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
+                COALESCE(end_stop.name, 'Điểm kết thúc') as end_point,
                 s.student_count,
-                25 as max_capacity,
                 s.status,
-                s.notes
+                s.notes,
+                d.name AS driver_name,
+                b.license_plate,
+                r.route_name
             FROM schedules s
             LEFT JOIN drivers d ON s.driver_id = d.id
             LEFT JOIN buses b ON s.bus_id = b.id
             LEFT JOIN routes r ON s.route_id = r.id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 0
+            ) start_stop ON start_stop.route_id = s.route_id
+            LEFT JOIN (
+                SELECT rs.route_id, st.name  
+                FROM route_stops rs
+                JOIN stops st ON rs.stop_id = st.id
+                WHERE rs.stop_order = 99
+            ) end_stop ON end_stop.route_id = s.route_id
             WHERE s.id = ?
         `, [id]);
 
@@ -104,14 +114,27 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        // Format response để đồng bộ
+        // Format response để hiển thị đúng trong form
         const schedule = {
-            ...rows[0],
-            id: `CH${String(rows[0].id).padStart(3, '0')}`,
-            schedule_id: rows[0].id,
-            shift_display: rows[0].shift_type === 'morning' ? `Ca ${rows[0].shift_number} - Sáng` : 
-                          rows[0].shift_type === 'afternoon' ? `Ca ${rows[0].shift_number} - Chiều` :
-                          `Ca ${rows[0].shift_number}`
+            id: `CH${String(rows[0].id).padStart(3, '0')}`, // ID hiển thị
+            schedule_id: rows[0].id, // ID gốc để update
+            driver_id: rows[0].driver_id,
+            bus_id: rows[0].bus_id, 
+            route_id: rows[0].route_id,
+            date: rows[0].date,
+            shift_type: rows[0].shift_type,
+            shift_number: rows[0].shift_number,
+            start_time: rows[0].start_time,
+            end_time: rows[0].end_time,
+            start_point: rows[0].start_point,
+            end_point: rows[0].end_point,
+            student_count: rows[0].student_count,
+            status: rows[0].status,
+            notes: rows[0].notes,
+            // Thông tin bổ sung để hiển thị
+            driver_name: rows[0].driver_name,
+            license_plate: rows[0].license_plate,
+            route_name: rows[0].route_name
         };
 
         res.json({

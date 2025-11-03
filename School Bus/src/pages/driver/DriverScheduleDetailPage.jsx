@@ -330,6 +330,17 @@ export default function DriverScheduleDetailPage() {
                           <div className="text-slate-900 max-w-xs">
                             {student.address}
                           </div>
+                          {/* Hiển thị điểm dừng cụ thể nếu có */}
+                          {(student.pickup_stop_name && student.pickup_stop_name !== 'Chưa xác định') && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              📍 Đón tại: {student.pickup_stop_name}
+                            </div>
+                          )}
+                          {(student.dropoff_stop_name && student.dropoff_stop_name !== 'Chưa xác định') && (
+                            <div className="text-xs text-orange-600 mt-1">
+                              🏠 Trả tại: {student.dropoff_stop_name}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="font-mono text-slate-900">
@@ -459,7 +470,36 @@ export default function DriverScheduleDetailPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                      {stop.note}
+                      <div>
+                        {stop.note}
+                      </div>
+                      {/* Hiển thị danh sách học sinh nếu có */}
+                      {stop.students && stop.students.length > 0 && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="text-sm font-semibold text-blue-800 mb-2">
+                            👥 Học sinh đón tại điểm này ({stop.students.length}):
+                          </div>
+                          <div className="space-y-1">
+                            {stop.students.map((student, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm">
+                                <span className="w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-bold">
+                                  {idx + 1}
+                                </span>
+                                <span className="font-medium text-slate-900">{student.name}</span>
+                                <span className="text-blue-600 bg-blue-100 px-2 py-1 rounded text-xs">
+                                  {student.class}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Hiển thị thông báo nếu không có học sinh */}
+                      {stop.order > 0 && stop.order < 99 && (!stop.students || stop.students.length === 0) && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-500 italic">
+                          Không có học sinh đón tại điểm này
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

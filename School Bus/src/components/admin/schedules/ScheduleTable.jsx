@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import Table from '../../common/Table';
 
-const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView, onDelete }) => {
+const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView, onDelete, onAssign }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [driverFilter, setDriverFilter] = useState('');
   const [busFilter, setBusFilter] = useState('');
@@ -149,6 +149,15 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}
+        extraActions={onAssign ? (item) => (
+          <button
+            onClick={() => onAssign(item)}
+            className="h-8 rounded-md bg-emerald-500 px-3 text-white font-medium hover:bg-emerald-600 transition flex items-center gap-1 text-xs whitespace-nowrap"
+            title="Phân công học sinh"
+          >
+            Phân công HS
+          </button>
+        ) : undefined}
         addButtonText="Thêm lịch trình"
         filters={filters}
         emptyMessage={
@@ -174,6 +183,7 @@ ScheduleTable.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onView: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onAssign: PropTypes.func,
 };
 
 export default ScheduleTable;
