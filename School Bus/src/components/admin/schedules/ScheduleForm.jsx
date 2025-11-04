@@ -48,6 +48,11 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   // Gán dữ liệu khi edit/view
   useEffect(() => {
     if (schedule) {
+      console.log('🔍 Schedule data received:', schedule);
+      console.log('🔍 Available drivers:', drivers);
+      console.log('🔍 Available buses:', buses);
+      console.log('🔍 Available routes:', routes);
+      
       setFormData({
         driver_id: schedule.driver_id || '',
         bus_id: schedule.bus_id || '',
@@ -60,8 +65,14 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         start_point: schedule.start_point || '',
         end_point: schedule.end_point || '',
       });
+      
+      console.log('🔍 Form data set:', {
+        driver_id: schedule.driver_id,
+        bus_id: schedule.bus_id,
+        route_id: schedule.route_id
+      });
     }
-  }, [schedule]);
+  }, [schedule, drivers, buses, routes]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -171,7 +182,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
           options={[
             { value: 'morning', label: 'Ca sáng' },
             { value: 'afternoon', label: 'Ca chiều' },
-            { value: 'evening', label: 'Ca tối' },
+          
           ]}
           required
           readOnly={isReadOnly}
