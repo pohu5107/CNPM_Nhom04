@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ScheduleTable from '../../components/admin/schedules/ScheduleTable';
 import ScheduleForm from '../../components/admin/schedules/ScheduleForm';
+import ScheduleConflictAlert from '../../components/admin/schedules/ScheduleConflictAlert';
 import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import Header from '../../components/admin/Header';
@@ -13,7 +14,7 @@ const SchedulesPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
+  const [formMode, setFormMode] = useState('add'); // 'add', 'view'
 
   // Load schedules from API
   useEffect(() => {
@@ -37,12 +38,6 @@ const SchedulesPage = () => {
   const handleAdd = () => {
     setFormMode('add');
     setSelectedSchedule(null);
-    setShowForm(true);
-  };
-
-  const handleEdit = (schedule) => {
-    setFormMode('edit');
-    setSelectedSchedule(schedule);
     setShowForm(true);
   };
 
@@ -75,35 +70,36 @@ const SchedulesPage = () => {
     try {
       if (formMode === 'add') {
         await schedulesService.createSchedule(scheduleData);
-      } else if (formMode === 'edit') {
-        // Sử dụng schedule_id (ID gốc) hoặc ID formatted
-        const updateId = selectedSchedule.schedule_id || selectedSchedule.id;
-        await schedulesService.updateSchedule(updateId, scheduleData);
       }
       await fetchSchedules();
       setShowForm(false);
       setSelectedSchedule(null);
       setError(null);
     } catch (err) {
-      setError('Lỗi khi lưu lịch trình: ' + err.message);
       console.error('Error saving schedule:', err);
+      
+      // Xử lý lỗi conflict đặc biệt
+      if (err.response?.status === 409) {
+        const errorData = err.response.data;
+        setError(errorData.message + (errorData.suggestion ? '. ' + errorData.suggestion : ''));
+      } else {
+        setError('Lỗi khi lưu lịch trình: ' + (err.response?.data?.message || err.message));
+      }
     }
   };
 
   return (
     <div>
       <Header title="QUẢN LÝ LỊCH TRÌNH" />
-      {error && (
-        <div className="mx-8 mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+      <ScheduleConflictAlert 
+        error={error} 
+        onClose={() => setError(null)} 
+      />
 
       <ScheduleTable
         schedules={schedules}
         loading={loading}
         onAdd={handleAdd}
-        onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
       />
@@ -114,7 +110,6 @@ const SchedulesPage = () => {
         onClose={() => setShowForm(false)}
         title={
           formMode === 'add' ? 'Thêm lịch trình mới' :
-          formMode === 'edit' ? 'Chỉnh sửa lịch trình' :
           'Thông tin lịch trình'
         }
         size="lg"

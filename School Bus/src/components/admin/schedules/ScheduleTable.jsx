@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import Table from '../../common/Table';
 
-const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView, onDelete }) => {
+const ScheduleTable = ({ schedules = [], loading = false, onAdd, onView, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [driverFilter, setDriverFilter] = useState('');
   const [busFilter, setBusFilter] = useState('');
@@ -70,7 +70,6 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
     { key: 'route_name', header: 'Tuyến' },
     { key: 'date', header: 'Ngày' },
     { key: 'shift_type', header: 'Loại ca' },
-    { key: 'shift_number', header: 'Số ca' },
     { key: 'start_time', header: 'Giờ bắt đầu' },
     { key: 'end_time', header: 'Giờ kết thúc' },
     { key: 'start_point', header: 'Điểm đầu' },
@@ -147,7 +146,6 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
         onSearchChange={setSearchTerm}
         onAdd={onAdd}
         onView={onView}
-        onEdit={onEdit}
         onDelete={onDelete}
         addButtonText="Thêm lịch trình"
         filters={filters}
@@ -171,7 +169,6 @@ ScheduleTable.propTypes = {
   schedules: PropTypes.array.isRequired,
   loading: PropTypes.bool,
   onAdd: PropTypes.func.isRequired,
-  onEdit: PropTypes.func.isRequired,
   onView: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };

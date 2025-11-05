@@ -39,7 +39,6 @@ router.get('/driver/:driverId', async (req, res) => {
                 s.id,
                 DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
-                s.shift_number,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
                 COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
@@ -79,29 +78,27 @@ router.get('/driver/:driverId', async (req, res) => {
         
         // Format dữ liệu cho frontend
         const formattedSchedules = rows.map(schedule => {
-            // Xác định loại ca dựa trên thời gian và shift_type
+            // Xác định loại ca dựa trên shift_type
             let caText = '';
             if (schedule.shift_type) {
-                // Nếu có shift_type trong database
-                caText = schedule.shift_type === 'morning' ? `Ca ${schedule.shift_number} - Sáng` : 
-                        schedule.shift_type === 'afternoon' ? `Ca ${schedule.shift_number} - Chiều` :
-                        `Ca ${schedule.shift_number}`;
+                caText = schedule.shift_type === 'morning' ? 'Ca Sáng' : 
+                        schedule.shift_type === 'afternoon' ? 'Ca Chiều' :
+                        schedule.shift_type === 'evening' ? 'Ca Tối' : 'Ca khác';
             } else {
                 // Fallback: dựa vào thời gian để xác định
                 const startHour = parseInt(schedule.start_time.split(':')[0]);
                 if (startHour >= 6 && startHour < 12) {
-                    caText = `Ca ${schedule.shift_number} - Sáng`;
+                    caText = 'Ca Sáng';
                 } else if (startHour >= 12 && startHour < 18) {
-                    caText = `Ca ${schedule.shift_number} - Chiều`;
+                    caText = 'Ca Chiều';
                 } else {
-                    caText = `Ca ${schedule.shift_number} - Tối`;
+                    caText = 'Ca Tối';
                 }
             }
             
             return {
                 id: `CH${String(schedule.id).padStart(3, '0')}`,
                 ca: caText, // Hiển thị ca với loại (sáng/chiều)
-                caNumber: schedule.shift_number, // Giữ số ca để sort
                 shiftType: schedule.shift_type, // Thêm thông tin loại ca
                 time: `${schedule.start_time.substring(0, 5)} - ${schedule.end_time.substring(0, 5)}`,
                 route: schedule.route_name,
@@ -469,7 +466,6 @@ router.get('/admin', async (req, res) => {
                 s.id,
                 s.date,
                 s.shift_type,
-                s.shift_number,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
                 'Điểm bắt đầu' as start_point,
@@ -511,7 +507,7 @@ router.get('/:id/students-by-route', async (req, res) => {
         
         // Lấy thông tin schedule trước
         const [scheduleInfo] = await pool.execute(`
-            SELECT s.route_id, r.route_name, s.shift_type, s.shift_number
+            SELECT s.route_id, r.route_name, s.shift_type
             FROM schedules s
             INNER JOIN routes r ON s.route_id = r.id
             WHERE s.id = ?
@@ -565,8 +561,7 @@ router.get('/:id/students-by-route', async (req, res) => {
             count: formattedStudents.length,
             route_info: {
                 route_name: scheduleInfo[0].route_name,
-                shift_type: scheduleInfo[0].shift_type,
-                shift_number: scheduleInfo[0].shift_number
+                shift_type: scheduleInfo[0].shift_type
             }
         });
     } catch (error) {

@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
+import { AlertTriangle } from 'lucide-react';
 import { driversService } from '../../../services/driversService';
 import { busesService } from '../../../services/busesService';
 import { routesService } from '../../../services/routesService';
+import { schedulesService } from '../../../services/schedulesService';
 
 const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -13,7 +15,6 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     route_id: '',
     date: '',
     shift_type: '',
-    shift_number: '',
     start_time: '',
     end_time: '',
     start_point: '',
@@ -22,6 +23,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState('');
   const [drivers, setDrivers] = useState([]);
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -59,7 +61,6 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         route_id: schedule.route_id || '',
         date: schedule.date || '',
         shift_type: schedule.shift_type || '',
-        shift_number: schedule.shift_number || '',
         start_time: schedule.start_time || '',
         end_time: schedule.end_time || '',
         start_point: schedule.start_point || '',
@@ -82,7 +83,6 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     if (!formData.route_id) newErrors.route_id = 'Tuyến đường là bắt buộc';
     if (!formData.date) newErrors.date = 'Ngày là bắt buộc';
     if (!formData.shift_type) newErrors.shift_type = 'Loại ca là bắt buộc';
-    if (!formData.shift_number) newErrors.shift_number = 'Số ca là bắt buộc';
     if (!formData.start_time) newErrors.start_time = 'Giờ bắt đầu là bắt buộc';
     if (!formData.end_time) newErrors.end_time = 'Giờ kết thúc là bắt buộc';
     if (!formData.start_point) newErrors.start_point = 'Điểm đầu là bắt buộc';
@@ -100,7 +100,44 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    
+    // Clear conflict warning khi user thay đổi data
+    if (conflictWarning) setConflictWarning('');
   };
+
+  // Check conflict khi user nhập đủ thông tin
+  const checkConflict = async () => {
+    const { driver_id, bus_id, route_id, date, shift_type } = formData;
+    
+    if (!driver_id || !bus_id || !route_id || !date || !shift_type) {
+      return; // Chưa đủ thông tin để check
+    }
+
+    try {
+      const response = await schedulesService.checkScheduleConflict({
+        driver_id, bus_id, route_id, date, shift_type
+      });
+      
+      if (response.has_conflict) {
+        setConflictWarning(response.message);
+      } else {
+        setConflictWarning('');
+      }
+    } catch (error) {
+      console.error('Error checking conflict:', error);
+    }
+  };
+
+  // Check conflict khi user nhập xong các field quan trọng
+  useEffect(() => {
+    if (mode === 'add') {
+      const timer = setTimeout(() => {
+        checkConflict();
+      }, 500); // Debounce 500ms
+      
+      return () => clearTimeout(timer);
+    }
+  }, [formData.driver_id, formData.bus_id, formData.route_id, formData.date, formData.shift_type, mode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,6 +161,14 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* Hiển thị conflict warning */}
+      {conflictWarning && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-yellow-600" />
+          <span className="text-yellow-800 text-sm">{conflictWarning}</span>
+        </div>
+      )}
+      
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <FormInput
           label="Tài xế"
@@ -182,19 +227,8 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
           options={[
             { value: 'morning', label: 'Ca sáng' },
             { value: 'afternoon', label: 'Ca chiều' },
-          
+            { value: 'evening', label: 'Ca tối' },
           ]}
-          required
-          readOnly={isReadOnly}
-        />
-
-        <FormInput
-          label="Số ca"
-          name="shift_number"
-          type="number"
-          value={formData.shift_number}
-          onChange={handleChange}
-          error={errors.shift_number}
           required
           readOnly={isReadOnly}
         />
@@ -249,8 +283,13 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
           {isReadOnly ? 'Đóng' : 'Hủy'}
         </Button>
         {!isReadOnly && (
-          <Button type="submit" loading={loading}>
-            {mode === 'add' ? 'Thêm mới' : 'Cập nhật'}
+          <Button 
+            type="submit" 
+            loading={loading}
+            disabled={conflictWarning}
+            className={conflictWarning ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            Thêm mới
           </Button>
         )}
       </div>
@@ -260,7 +299,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
 ScheduleForm.propTypes = {
   schedule: PropTypes.object,
-  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+  mode: PropTypes.oneOf(['add', 'view']).isRequired,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
 };
