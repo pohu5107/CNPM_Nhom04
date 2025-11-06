@@ -9,8 +9,6 @@ const Table = ({
   onView,
   onEdit,
   onDelete,
-  // Optional custom actions renderer: (item) => JSX
-  extraActions,
   addButtonText = "Thêm mới",
   filters = [],
   isLoading = false,
@@ -103,11 +101,6 @@ const Table = ({
                   ))}
                   <td className="px-6 py-4 w-80">
                     <div className="flex justify-center items-center gap-2 min-w-fit">
-                      {extraActions && (
-                        <div className="flex items-center gap-2">
-                          {extraActions(item)}
-                        </div>
-                      )}
                       {onView && (
                         <button
                           onClick={() => onView(item)}
