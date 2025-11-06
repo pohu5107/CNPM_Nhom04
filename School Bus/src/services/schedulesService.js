@@ -64,17 +64,6 @@ export const schedulesService = {
         }
     },
 
-    // Kiểm tra xung đột lịch trình
-    checkScheduleConflict: async (data) => {
-        try {
-            const response = await apiClient.post('/admin-schedules/check-conflict', data);
-            return response;
-        } catch (error) {
-            console.error('Error checking schedule conflict:', error);
-            throw error;
-        }
-    },
-
     // Cập nhật lịch trình
     updateSchedule: async (id, data) => {
         try {

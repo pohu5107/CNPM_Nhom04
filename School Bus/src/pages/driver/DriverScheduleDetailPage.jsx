@@ -176,12 +176,11 @@ export default function DriverScheduleDetailPage() {
                 <span className="text-slate-600 font-medium min-w-[120px]">Ca:</span>
                 <span className="font-bold text-xl text-[#174D2C]">
                   {(() => {
-                    // Xác định loại ca dựa trên shift_type
+                    // Xác định loại ca dựa trên thời gian nếu không có shift_type
                     if (schedule.shift_type) {
                       const shiftTypeText = schedule.shift_type === 'morning' ? 'Sáng' : 
-                                           schedule.shift_type === 'afternoon' ? 'Chiều' : 
-                                           schedule.shift_type === 'evening' ? 'Tối' : 'Khác';
-                      return `Ca ${shiftTypeText}`;
+                                           schedule.shift_type === 'afternoon' ? 'Chiều' : 'Tối';
+                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
                     } else {
                       // Fallback: dựa vào thời gian
                       const startHour = schedule.start_time ? parseInt(schedule.start_time.split(':')[0]) : 0;
@@ -193,7 +192,7 @@ export default function DriverScheduleDetailPage() {
                       } else {
                         shiftTypeText = 'Tối';
                       }
-                      return `Ca ${shiftTypeText}`;
+                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
                     }
                   })()}
                 </span>

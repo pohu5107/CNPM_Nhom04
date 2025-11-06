@@ -98,9 +98,7 @@ const ScheduleCalendar = ({ driver }) => {
                             {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {schedule.shift_type === 'morning' ? 'Ca Sáng' : 
-                             schedule.shift_type === 'afternoon' ? 'Ca Chiều' :
-                             schedule.shift_type === 'evening' ? 'Ca Tối' : 'Ca khác'}
+                            Ca {schedule.shift_number} • {schedule.shift_type === 'morning' ? 'Sáng' : 'Chiều'}
                           </div>
                         </div>
                       </div>
