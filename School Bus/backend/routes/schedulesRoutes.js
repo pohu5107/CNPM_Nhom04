@@ -186,7 +186,7 @@ router.get('/:id', async (req, res) => {
             });
         }
         
-        // Lấy danh sách học sinh trên tuyến này
+        // Lấy danh sách học sinh được phân công theo bảng student_route_assignments mới
         const [students] = await pool.execute(`
             SELECT 
                 st.id,
@@ -194,15 +194,37 @@ router.get('/:id', async (req, res) => {
                 st.grade,
                 st.class,
                 st.address,
-                st.pickup_time,
-                st.dropoff_time,
+                sra.pickup_stop_id,
+                sra.dropoff_stop_id,
+                COALESCE(ps.name, 'Chưa xác định') as pickup_stop_name,
+                COALESCE(ds.name, 'Chưa xác định') as dropoff_stop_name,
+                -- Thời gian từ schedule (tất cả học sinh dùng chung)
+                s.scheduled_start_time as pickup_time,
+                s.scheduled_end_time as dropoff_time,
                 p.name as parent_name,
-                p.phone as parent_phone
-            FROM students st
+                p.phone as parent_phone,
+                sra.effective_start_date,
+                sra.effective_end_date
+            FROM student_route_assignments sra
+            INNER JOIN students st ON sra.student_id = st.id
+            INNER JOIN schedules s ON s.route_id = sra.route_id AND s.id = ?
             LEFT JOIN parents p ON st.parent_id = p.id
-            WHERE st.route_id = ? AND st.status = 'active'
-            ORDER BY st.pickup_time ASC
-        `, [rows[0].route_id]);
+            LEFT JOIN stops ps ON sra.pickup_stop_id = ps.id
+            LEFT JOIN stops ds ON sra.dropoff_stop_id = ds.id
+            WHERE sra.route_id = ?
+              AND sra.shift_type = (
+                SELECT shift_type FROM schedules WHERE id = ? LIMIT 1
+              )
+              AND sra.active = 1
+              AND sra.effective_start_date <= (
+                SELECT date FROM schedules WHERE id = ? LIMIT 1  
+              )
+              AND (sra.effective_end_date IS NULL OR sra.effective_end_date >= (
+                SELECT date FROM schedules WHERE id = ? LIMIT 1
+              ))
+              AND st.status = 'active'
+            ORDER BY st.name ASC
+        `, [id, rows[0].route_id, id, id, id]);
         
         const schedule = rows[0];
         const detailData = {
@@ -327,6 +349,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 rs.stop_order,
                 rs.estimated_arrival_time as template_time,
                 rs.student_pickup_count,
+                s.id as stop_id,
                 s.name as stop_name,
                 s.address as stop_address,
                 s.latitude,
@@ -341,6 +364,41 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             WHERE rs.route_id = ?
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
+
+        // Lấy danh sách học sinh được phân công theo từng điểm dừng
+        const [studentsAtStops] = await pool.execute(`
+            SELECT 
+                sra.pickup_stop_id,
+                st.name as student_name,
+                st.class as class_name,
+                c.class_name as class_full_name
+            FROM student_route_assignments sra
+            INNER JOIN students st ON sra.student_id = st.id
+            LEFT JOIN classes c ON st.class_id = c.id
+            WHERE sra.route_id = ? 
+            AND sra.active = 1
+            AND (
+                sra.effective_start_date IS NULL 
+                OR sra.effective_start_date <= ?
+            )
+            AND (
+                sra.effective_end_date IS NULL 
+                OR sra.effective_end_date >= ?
+            )
+            ORDER BY sra.pickup_stop_id, st.name
+        `, [schedule.route_id, schedule.date, schedule.date]);
+
+        // Nhóm học sinh theo điểm dừng
+        const studentsByStop = {};
+        studentsAtStops.forEach(student => {
+            if (!studentsByStop[student.pickup_stop_id]) {
+                studentsByStop[student.pickup_stop_id] = [];
+            }
+            studentsByStop[student.pickup_stop_id].push({
+                name: student.student_name,
+                class: student.class_name || student.class_full_name || 'Chưa xác định'
+            });
+        });
         
         // Tính thời gian động cho điểm dừng dựa trên schedule start_time
         const scheduleStartTime = schedule.start_time;
@@ -351,6 +409,9 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             let actualTimeString;
             let displayOrder;
             let stopType;
+            
+            // Lấy danh sách học sinh tại điểm dừng này
+            const studentsAtThisStop = studentsByStop[stop.stop_id] || [];
             
             if (stop.stop_order === 0) {
                 // Điểm bắt đầu = scheduled_start_time
@@ -382,7 +443,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 const actualMinute = actualArrivalTotal % 60;
                 actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
                 displayOrder = index + 1; // Số thứ tự tuần tự
-                stopType = stop.student_pickup_count > 0 ? `Đón ${stop.student_pickup_count} HS` : 'Điểm dừng';
+                stopType = studentsAtThisStop.length > 0 ? `Đón ${studentsAtThisStop.length} HS` : 'Điểm dừng';
             }
             
             return {
@@ -392,7 +453,8 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 address: stop.stop_address,
                 type: stopType,
                 estimatedTime: actualTimeString,
-                studentCount: stop.student_pickup_count > 0 ? `${stop.student_pickup_count} học sinh` : '-',
+                studentCount: studentsAtThisStop.length > 0 ? `${studentsAtThisStop.length} học sinh` : '-',
+                students: studentsAtThisStop, // Thêm danh sách học sinh
                 status: index === 0 ? 'current' : 'pending',
                 coordinates: {
                     latitude: parseFloat(stop.latitude),
@@ -400,8 +462,8 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 },
                 note: stop.stop_order === 0 ? 'Điểm khởi hành' :
                      stop.stop_order === 99 ? 'Điểm đích' :
-                     stop.student_pickup_count > 0 ? 
-                     `Đón ${stop.student_pickup_count} học sinh` : 
+                     studentsAtThisStop.length > 0 ? 
+                     studentsAtThisStop.map(s => `${s.name} (${s.class})`).join(', ') : 
                      'Điểm dừng trung gian'
             };
         });

@@ -5,6 +5,7 @@ import Modal from '../../components/UI/Modal';
 import ConfirmDialog from '../../components/UI/ConfirmDialog';
 import Header from '../../components/admin/Header';
 import { schedulesService } from '../../services/schedulesService';
+import AssignStudentsModal from '../../components/admin/AssignStudentsModal';
 
 const SchedulesPage = () => {
   const [schedules, setSchedules] = useState([]);
@@ -14,6 +15,7 @@ const SchedulesPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
+  const [showAssign, setShowAssign] = useState(false);
 
   // Load schedules from API
   useEffect(() => {
@@ -40,21 +42,50 @@ const SchedulesPage = () => {
     setShowForm(true);
   };
 
-  const handleEdit = (schedule) => {
-    setFormMode('edit');
-    setSelectedSchedule(schedule);
-    setShowForm(true);
+  const handleEdit = async (schedule) => {
+    try {
+      setLoading(true);
+      // Fetch chi tiết từ backend thay vì dùng dữ liệu từ bảng
+      const scheduleId = schedule.schedule_id || schedule.id;
+      const detailSchedule = await schedulesService.getAdminScheduleById(scheduleId);
+      
+      setFormMode('edit');
+      setSelectedSchedule(detailSchedule);
+      setShowForm(true);
+    } catch (err) {
+      setError('Lỗi khi lấy chi tiết lịch trình: ' + err.message);
+      console.error('Error fetching schedule detail:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleView = (schedule) => {
-    setFormMode('view');
-    setSelectedSchedule(schedule);
-    setShowForm(true);
+  const handleView = async (schedule) => {
+    try {
+      setLoading(true);
+      // Fetch chi tiết từ backend thay vì dùng dữ liệu từ bảng
+      const scheduleId = schedule.schedule_id || schedule.id;
+      const detailSchedule = await schedulesService.getAdminScheduleById(scheduleId);
+      
+      setFormMode('view');
+      setSelectedSchedule(detailSchedule);
+      setShowForm(true);
+    } catch (err) {
+      setError('Lỗi khi lấy chi tiết lịch trình: ' + err.message);
+      console.error('Error fetching schedule detail:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = (schedule) => {
     setSelectedSchedule(schedule);
     setShowConfirm(true);
+  };
+
+  const handleAssign = (schedule) => {
+    setSelectedSchedule(schedule);
+    setShowAssign(true);
   };
 
   const confirmDelete = async () => {
@@ -106,6 +137,7 @@ const SchedulesPage = () => {
         onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
+        onAssign={handleAssign}
       />
 
       {/* Form Modal */}
@@ -136,6 +168,14 @@ const SchedulesPage = () => {
         message={`Bạn có chắc chắn muốn xóa lịch trình "${selectedSchedule?.id}"? Hành động này không thể hoàn tác.`}
         confirmText="Xóa"
         cancelText="Hủy"
+      />
+
+      {/* Assign Students Modal */}
+      <AssignStudentsModal
+        isOpen={showAssign}
+        onClose={() => setShowAssign(false)}
+        schedule={selectedSchedule}
+        onChanged={() => fetchSchedules()}
       />
     </div>
   );

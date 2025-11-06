@@ -4,7 +4,7 @@ import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
 // Giả sử driver hiện tại có ID = 1  
-const CURRENT_DRIVER_ID = 2; // Đổi sang driver khác để test nếu chưa có đăng nhập
+const CURRENT_DRIVER_ID = 1; // Đổi sang driver khác để test nếu chưa có đăng nhập
 
 export default function DriverSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("2025-10-23");
