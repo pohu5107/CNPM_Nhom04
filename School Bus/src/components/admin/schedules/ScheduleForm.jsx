@@ -13,11 +13,11 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     route_id: '',
     date: '',
     shift_type: '',
-    shift_number: '',
     start_time: '',
     end_time: '',
-    start_point: '',
-    end_point: '',
+    student_count: 0,
+    status: 'scheduled',
+    notes: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -54,11 +54,11 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         route_id: schedule.route_id || '',
         date: schedule.date || '',
         shift_type: schedule.shift_type || '',
-        shift_number: schedule.shift_number || '',
-        start_time: schedule.start_time || '',
-        end_time: schedule.end_time || '',
-        start_point: schedule.start_point || '',
-        end_point: schedule.end_point || '',
+        start_time: schedule.start_time || schedule.scheduled_start_time || '',
+        end_time: schedule.end_time || schedule.scheduled_end_time || '',
+        student_count: schedule.student_count || 0,
+        status: schedule.status || 'scheduled',
+        notes: schedule.notes || '',
       });
     }
   }, [schedule]);
@@ -71,14 +71,15 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     if (!formData.route_id) newErrors.route_id = 'Tuyến đường là bắt buộc';
     if (!formData.date) newErrors.date = 'Ngày là bắt buộc';
     if (!formData.shift_type) newErrors.shift_type = 'Loại ca là bắt buộc';
-    if (!formData.shift_number) newErrors.shift_number = 'Số ca là bắt buộc';
     if (!formData.start_time) newErrors.start_time = 'Giờ bắt đầu là bắt buộc';
     if (!formData.end_time) newErrors.end_time = 'Giờ kết thúc là bắt buộc';
-    if (!formData.start_point) newErrors.start_point = 'Điểm đầu là bắt buộc';
-    if (!formData.end_point) newErrors.end_point = 'Điểm cuối là bắt buộc';
 
     if (formData.start_time && formData.end_time && formData.start_time >= formData.end_time) {
       newErrors.end_time = 'Giờ kết thúc phải sau giờ bắt đầu';
+    }
+
+    if (formData.student_count < 0) {
+      newErrors.student_count = 'Số học sinh không thể âm';
     }
 
     setErrors(newErrors);
@@ -178,17 +179,6 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Số ca"
-          name="shift_number"
-          type="number"
-          value={formData.shift_number}
-          onChange={handleChange}
-          error={errors.shift_number}
-          required
-          readOnly={isReadOnly}
-        />
-
-        <FormInput
           label="Giờ bắt đầu"
           name="start_time"
           type="time"
@@ -211,24 +201,43 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Điểm đầu"
-          name="start_point"
-          type="text"
-          value={formData.start_point}
+          label="Số học sinh"
+          name="student_count"
+          type="number"
+          value={formData.student_count}
           onChange={handleChange}
-          error={errors.start_point}
-          required
+          error={errors.student_count}
+          min="0"
           readOnly={isReadOnly}
         />
 
         <FormInput
-          label="Điểm cuối"
-          name="end_point"
-          type="text"
-          value={formData.end_point}
+          label="Trạng thái"
+          name="status"
+          type="select"
+          value={formData.status}
           onChange={handleChange}
-          error={errors.end_point}
-          required
+          error={errors.status}
+          options={[
+            { value: 'scheduled', label: 'Đã lên lịch' },
+            { value: 'in_progress', label: 'Đang thực hiện' },
+            { value: 'completed', label: 'Hoàn thành' },
+            { value: 'cancelled', label: 'Đã hủy' },
+          ]}
+          readOnly={isReadOnly}
+        />
+      </div>
+
+      {/* Ghi chú full width */}
+      <div className="mt-4">
+        <FormInput
+          label="Ghi chú"
+          name="notes"
+          type="textarea"
+          value={formData.notes}
+          onChange={handleChange}
+          error={errors.notes}
+          rows={3}
           readOnly={isReadOnly}
         />
       </div>

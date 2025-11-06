@@ -50,24 +50,26 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         const [rows] = await pool.execute(`
             SELECT 
-                p.*,
-                u.email,
-                u.username,
-                COUNT(s.id) as children_count
+                p.id,
+                p.name,
+                COALESCE(u.email, 'Chưa có') as email,
+                p.phone,
+                p.address,
+                p.relationship,
+                'active' as status,
+                p.user_id
             FROM parents p
             LEFT JOIN users u ON p.user_id = u.id
-            LEFT JOIN students s ON p.id = s.parent_id
             WHERE p.id = ?
-            GROUP BY p.id
         `, [id]);
-        
+
         if (rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy phụ huynh'
             });
         }
-        
+
         res.json({
             success: true,
             data: rows[0]
@@ -82,72 +84,69 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// GET /api/parents/:id/children - Lấy danh sách con của phụ huynh
+// GET /api/parents/:id/children - Lấy danh sách con của phụ huynh (cập nhật cho morning/afternoon routes)
 router.get('/:id/children', async (req, res) => {
     try {
         const { id } = req.params;
-        
-        // Check if parent exists
-        const [parentExists] = await pool.execute('SELECT id FROM parents WHERE id = ?', [id]);
-        if (parentExists.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy phụ huynh'
-            });
-        }
         
         const [children] = await pool.execute(`
             SELECT 
                 s.id,
                 s.name,
                 s.grade,
-                s.class_id,
-                c.class_name as class,
+                s.class,
+                c.class_name,
+                c.homeroom_teacher,
                 s.address,
-                s.phone,
-                s.parent_id,
+                s.phone as student_phone,
                 s.status,
-                r.route_name,
-                -- Get current bus assignment and schedule info
-                sch_template.bus_id,
-                b.bus_number,
-                b.license_plate,
-                sch_template.date as schedule_date,
-                sch_template.start_time as schedule_start_time,
-                sch_template.end_time as schedule_end_time,
-                start_stop.start_point as schedule_start_point,
-                end_stop.end_point as schedule_end_point
+                -- Morning route info
+                s.morning_route_id,
+                mr.route_name as morning_route_name,
+                s.morning_pickup_stop_id,
+                mps.name as morning_pickup_stop_name,
+                -- Afternoon route info  
+                s.afternoon_route_id,
+                ar.route_name as afternoon_route_name,
+                s.afternoon_dropoff_stop_id,
+                ads.name as afternoon_dropoff_stop_name,
+                -- Morning schedule info
+                ms.bus_id as morning_bus_id,
+                mb.bus_number as morning_bus_number,
+                mb.license_plate as morning_license_plate,
+                ms.scheduled_start_time as morning_start_time,
+                ms.scheduled_end_time as morning_end_time,
+                -- Afternoon schedule info
+                as_table.bus_id as afternoon_bus_id,
+                ab.bus_number as afternoon_bus_number,
+                ab.license_plate as afternoon_license_plate,
+                as_table.scheduled_start_time as afternoon_start_time,
+                as_table.scheduled_end_time as afternoon_end_time
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
-            LEFT JOIN routes r ON s.route_id = r.id
-            LEFT JOIN (
-                SELECT DISTINCT 
-                    route_id,
-                    bus_id,
-                    scheduled_start_time as start_time,
-                    scheduled_end_time as end_time,
-                    date,
-                    ROW_NUMBER() OVER (PARTITION BY route_id ORDER BY 
-                        CASE WHEN bus_id = 1 THEN 1 ELSE 2 END,
-                        date DESC) as rn
-                FROM schedules 
-                WHERE status IN ('scheduled', 'in_progress', 'completed')
-            ) sch_template ON sch_template.route_id = s.route_id 
-                AND sch_template.rn = 1
-            LEFT JOIN buses b ON sch_template.bus_id = b.id
-            LEFT JOIN (
-                SELECT rs.route_id, st.name as start_point
-                FROM route_stops rs
-                JOIN stops st ON rs.stop_id = st.id
-                WHERE rs.stop_order = 0
-            ) start_stop ON start_stop.route_id = s.route_id
-            LEFT JOIN (
-                SELECT rs.route_id, st.name as end_point
-                FROM route_stops rs
-                JOIN stops st ON rs.stop_id = st.id
-                WHERE rs.stop_order = 99
-            ) end_stop ON end_stop.route_id = s.route_id
-            WHERE s.parent_id = ?
+            LEFT JOIN routes mr ON s.morning_route_id = mr.id
+            LEFT JOIN routes ar ON s.afternoon_route_id = ar.id
+            LEFT JOIN stops mps ON s.morning_pickup_stop_id = mps.id
+            LEFT JOIN stops ads ON s.afternoon_dropoff_stop_id = ads.id
+            -- Morning schedule info (latest)
+            LEFT JOIN schedules ms ON s.morning_route_id = ms.route_id 
+                AND ms.shift_type = 'morning' 
+                AND ms.date = (
+                    SELECT MAX(date) FROM schedules 
+                    WHERE route_id = s.morning_route_id AND shift_type = 'morning'
+                        AND status IN ('scheduled', 'in_progress', 'completed')
+                )
+            LEFT JOIN buses mb ON ms.bus_id = mb.id
+            -- Afternoon schedule info (latest)
+            LEFT JOIN schedules as_table ON s.afternoon_route_id = as_table.route_id 
+                AND as_table.shift_type = 'afternoon' 
+                AND as_table.date = (
+                    SELECT MAX(date) FROM schedules 
+                    WHERE route_id = s.afternoon_route_id AND shift_type = 'afternoon'
+                        AND status IN ('scheduled', 'in_progress', 'completed')
+                )
+            LEFT JOIN buses ab ON as_table.bus_id = ab.id
+            WHERE s.parent_id = ? AND s.status = 'active'
             ORDER BY s.name ASC
         `, [id]);
         
@@ -169,8 +168,8 @@ router.get('/:id/children', async (req, res) => {
 // POST /api/parents - Thêm phụ huynh mới
 router.post('/', async (req, res) => {
     try {
-        const { name, email, phone, relationship, address, status = 'active' } = req.body;
-        
+        const { name, email, phone, address, relationship } = req.body;
+
         // Validate required fields
         if (!name || !phone) {
             return res.status(400).json({
@@ -178,80 +177,67 @@ router.post('/', async (req, res) => {
                 message: 'Thiếu thông tin bắt buộc: tên và số điện thoại'
             });
         }
-        
+
         // Check if phone already exists
-        const [phoneExists] = await pool.execute(
+        const [existingPhone] = await pool.execute(
             'SELECT id FROM parents WHERE phone = ?',
             [phone]
         );
-        
-        if (phoneExists.length > 0) {
+
+        if (existingPhone.length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Số điện thoại đã tồn tại'
             });
         }
-        
-        // Tạo user account trước nếu có email
+
         let user_id = null;
-        if (email) {
-            // Check if email already exists in users table
-            const [emailExists] = await pool.execute(
+        
+        // Nếu có email, tạo user account và lấy user_id
+        if (email && email !== '') {
+            // Check if email already exists
+            const [existingEmail] = await pool.execute(
                 'SELECT id FROM users WHERE email = ?',
                 [email]
             );
-            
-            if (emailExists.length > 0) {
+
+            if (existingEmail.length > 0) {
                 return res.status(400).json({
                     success: false,
                     message: 'Email đã tồn tại'
                 });
             }
+
+            // Tạo user account mới (mật khẩu mặc định sẽ được hash)
+            const defaultPassword = '123456'; // Mật khẩu mặc định
+            const [userResult] = await pool.execute(`
+                INSERT INTO users (email, password, role, status) 
+                VALUES (?, ?, 'parent', 'active')
+            `, [email, defaultPassword]); // Trong thực tế cần hash password
             
-            // Tạo username từ phone number
-            const username = `parent_${phone}`;
-            const defaultPassword = phone; // Sử dụng số điện thoại làm mật khẩu mặc định
-            
-            try {
-                const [userResult] = await pool.execute(`
-                    INSERT INTO users (username, email, password, role)
-                    VALUES (?, ?, ?, 'parent')
-                `, [username, email, defaultPassword]);
-                
-                user_id = userResult.insertId;
-            } catch (userError) {
-                if (userError.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Tài khoản với số điện thoại này đã tồn tại'
-                    });
-                }
-                throw userError;
-            }
+            user_id = userResult.insertId;
         }
-        
+
         const [result] = await pool.execute(`
-            INSERT INTO parents (user_id, name, phone, relationship, address)
+            INSERT INTO parents (name, phone, address, relationship, user_id) 
             VALUES (?, ?, ?, ?, ?)
-        `, [user_id, name, phone, relationship || null, address || null]);
-        
-        // Get the created parent
+        `, [name, phone, address || null, relationship || 'Phụ huynh', user_id]);
+
+        // Get the newly created parent
         const [newParent] = await pool.execute(`
             SELECT 
                 p.id,
-                p.user_id,
                 p.name,
-                u.email,
+                COALESCE(u.email, 'Chưa có') as email,
                 p.phone,
-                p.relationship,
                 p.address,
-                'active' as status,
-                0 as children_count
+                p.relationship,
+                'active' as status
             FROM parents p
             LEFT JOIN users u ON p.user_id = u.id
             WHERE p.id = ?
         `, [result.insertId]);
-        
+
         res.status(201).json({
             success: true,
             message: 'Thêm phụ huynh thành công',
@@ -271,113 +257,98 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, phone, relationship, address, status } = req.body;
-        
-        // Check if parent exists and get user_id
-        const [existing] = await pool.execute(
-            'SELECT id, user_id FROM parents WHERE id = ?', 
-            [id]
-        );
+        const { name, email, phone, address, relationship } = req.body;
+
+        // Check if parent exists
+        const [existing] = await pool.execute('SELECT id, user_id FROM parents WHERE id = ?', [id]);
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy phụ huynh'
             });
         }
-        
-        const currentParent = existing[0];
-        
-        // Check if phone already exists for other parents
-        const [phoneExists] = await pool.execute(
+
+        // Check if phone already exists (except current parent)
+        const [existingPhone] = await pool.execute(
             'SELECT id FROM parents WHERE phone = ? AND id != ?',
             [phone, id]
         );
-        
-        if (phoneExists.length > 0) {
+
+        if (existingPhone.length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Số điện thoại đã tồn tại'
             });
         }
-        
-        // Handle user account logic
-        let user_id = currentParent.user_id;
-        
-        if (email) {
-            // Check if email already exists for other users
-            const [emailExists] = await pool.execute(
-                'SELECT id FROM users WHERE email = ? AND id != ?',
-                [email, user_id || 0]
-            );
-            
-            if (emailExists.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Email đã tồn tại'
-                });
-            }
-            
-            if (!user_id) {
-                // Tạo user account mới nếu chưa có
-                const username = `parent_${phone}`;
-                const defaultPassword = phone;
-                
-                try {
-                    const [userResult] = await pool.execute(`
-                        INSERT INTO users (username, email, password, role)
-                        VALUES (?, ?, ?, 'parent')
-                    `, [username, email, defaultPassword]);
-                    
-                    user_id = userResult.insertId;
-                } catch (userError) {
-                    if (userError.code === 'ER_DUP_ENTRY') {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Tài khoản với số điện thoại này đã tồn tại'
-                        });
-                    }
-                    throw userError;
+
+        let user_id = existing[0].user_id;
+
+        // Xử lý email và user account
+        if (email && email !== '' && email !== 'Chưa có') {
+            if (user_id) {
+                // Update existing user email
+                const [existingEmail] = await pool.execute(
+                    'SELECT id FROM users WHERE email = ? AND id != ?',
+                    [email, user_id]
+                );
+
+                if (existingEmail.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Email đã tồn tại'
+                    });
                 }
+
+                await pool.execute('UPDATE users SET email = ? WHERE id = ?', [email, user_id]);
             } else {
-                // Cập nhật user account hiện tại
-                const newUsername = `parent_${phone}`;
-                await pool.execute(`
-                    UPDATE users 
-                    SET username = ?, email = ?, password = ?
-                    WHERE id = ?
-                `, [newUsername, email, phone, user_id]);
+                // Create new user account
+                const [existingEmail] = await pool.execute(
+                    'SELECT id FROM users WHERE email = ?',
+                    [email]
+                );
+
+                if (existingEmail.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Email đã tồn tại'
+                    });
+                }
+
+                const defaultPassword = '123456';
+                const [userResult] = await pool.execute(`
+                    INSERT INTO users (email, password, role, status) 
+                    VALUES (?, ?, 'parent', 'active')
+                `, [email, defaultPassword]);
+                
+                user_id = userResult.insertId;
             }
-        } else if (user_id) {
-            // Nếu xóa email, xóa luôn user account
+        } else if ((!email || email === '' || email === 'Chưa có') && user_id) {
+            // Remove user account if email is cleared
             await pool.execute('DELETE FROM users WHERE id = ?', [user_id]);
             user_id = null;
         }
-        
+
         await pool.execute(`
             UPDATE parents 
-            SET user_id = ?, name = ?, phone = ?, relationship = ?, address = ?
+            SET name = ?, phone = ?, address = ?, relationship = ?, user_id = ?
             WHERE id = ?
-        `, [user_id, name, phone, relationship || null, address || null, id]);
-        
+        `, [name, phone, address || null, relationship || 'Phụ huynh', user_id, id]);
+
         // Get updated parent
         const [updatedParent] = await pool.execute(`
             SELECT 
                 p.id,
-                p.user_id,
                 p.name,
                 COALESCE(u.email, 'Chưa có') as email,
                 p.phone,
-                p.relationship,
                 p.address,
-                'active' as status,
-                COUNT(s.id) as children_count
+                p.relationship,
+                'active' as status
             FROM parents p
             LEFT JOIN users u ON p.user_id = u.id
-            LEFT JOIN students s ON p.id = s.parent_id
             WHERE p.id = ?
-            GROUP BY p.id, p.user_id, p.name, u.email, p.phone, p.relationship, p.address
         `, [id]);
-        
+
         res.json({
             success: true,
             message: 'Cập nhật phụ huynh thành công',
@@ -397,38 +368,33 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         // Check if parent exists and get user_id
-        const [existing] = await pool.execute(
-            'SELECT id, user_id FROM parents WHERE id = ?', 
-            [id]
-        );
+        const [existing] = await pool.execute('SELECT id, user_id FROM parents WHERE id = ?', [id]);
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy phụ huynh'
             });
         }
-        
-        const parent = existing[0];
-        
+
         // Check if parent has children
         const [children] = await pool.execute('SELECT id FROM students WHERE parent_id = ?', [id]);
         if (children.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: `Không thể xóa phụ huynh vì còn ${children.length} học sinh liên kết`
+                message: 'Không thể xóa phụ huynh vì còn có con đang học'
             });
         }
-        
-        // Xóa parent trước
+
+        // Delete parent
         await pool.execute('DELETE FROM parents WHERE id = ?', [id]);
-        
-        // Nếu có user_id, xóa luôn user account
-        if (parent.user_id) {
-            await pool.execute('DELETE FROM users WHERE id = ?', [parent.user_id]);
+
+        // Delete associated user account if exists
+        if (existing[0].user_id) {
+            await pool.execute('DELETE FROM users WHERE id = ?', [existing[0].user_id]);
         }
-        
+
         res.json({
             success: true,
             message: 'Xóa phụ huynh thành công'

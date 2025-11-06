@@ -5,26 +5,166 @@ import pool from '../config/db.js';
 
 const router = express.Router();
 
-// GET /api/schedules/driver/:driverId - Lấy lịch làm việc của driver
-router.get('/driver/:driverId', async (req, res) => {
+// GET /api/schedules/driver/:driverId/summary - Lấy thống kê tổng quan cho driver
+router.get('/driver/:driverId/summary', async (req, res) => {
     try {
         const { driverId } = req.params;
-        const { date, timeFilter = 'today' } = req.query;
+        const { date } = req.query;
         
-        let dateCondition = '';
-        const params = [driverId];
+        let dateCondition = 'AND s.date = CURDATE()';
+        let params = [driverId];
         
         if (date) {
             dateCondition = 'AND s.date = ?';
             params.push(date);
-        } else {
-            // Xử lý timeFilter
+        }
+        
+        const [summary] = await pool.execute(`
+            SELECT 
+                COUNT(*) as total_shifts,
+                SUM(CASE WHEN s.status = 'scheduled' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN s.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN s.status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN s.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+            FROM schedules s
+            WHERE s.driver_id = ? ${dateCondition}
+        `, params);
+        
+        res.json({
+            success: true,
+            data: summary[0] || {
+                total_shifts: 0,
+                pending: 0,
+                in_progress: 0,
+                completed: 0,
+                cancelled: 0
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching driver summary:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy thống kê tổng quan',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/schedules/driver/:driverId - Lấy danh sách lịch làm việc của tài xế
+router.get('/driver/:driverId', async (req, res) => {
+    try {
+        const { driverId } = req.params;
+        const { date, timeFilter } = req.query;
+        
+        let dateCondition = '';
+        let params = [driverId];
+        
+        if (date) {
+            dateCondition = 'AND s.date = ?';
+            params.push(date);
+        } else if (timeFilter) {
             switch (timeFilter) {
-                case 'today':
-                    dateCondition = 'AND s.date = CURDATE()';
-                    break;
                 case 'week':
-                    dateCondition = 'AND s.date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)';
+                    dateCondition = 'AND s.date >= CURDATE() AND s.date <= DATE_ADD(CURDATE(), INTERVAL 6 DAY)';
+                    break;
+                case 'month':
+                    dateCondition = 'AND MONTH(s.date) = MONTH(CURDATE()) AND YEAR(s.date) = YEAR(CURDATE())';
+                    break;
+                case 'all':
+                    dateCondition = 'AND s.date >= CURDATE()';
+                    break;
+                default: // today
+                    dateCondition = 'AND s.date = CURDATE()';
+            }
+        }
+        
+        const [rows] = await pool.execute(`
+            SELECT 
+                s.id,
+                DATE_FORMAT(s.date, '%Y-%m-%d') as date,
+                s.shift_type,
+                s.scheduled_start_time as start_time,
+                s.scheduled_end_time as end_time,
+                COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
+                COALESCE(end_stop.name, 'Điểm kết thúc') as end_point,
+                s.student_count,
+                25 as max_capacity,
+                s.status,
+                s.notes,
+                60 as estimated_duration,
+                b.bus_number,
+                b.license_plate,
+                r.route_name,
+                r.distance,
+                CONCAT(d.name) as driver_name,
+                COALESCE(stops_count.total_stops, 0) as stop_count
+            FROM schedules s
+            LEFT JOIN buses b ON s.bus_id = b.id
+            LEFT JOIN drivers d ON s.driver_id = d.id
+            LEFT JOIN routes r ON s.route_id = r.id
+            LEFT JOIN route_stops start_rs ON r.id = start_rs.route_id AND start_rs.stop_order = 0
+            LEFT JOIN stops start_stop ON start_rs.stop_id = start_stop.id
+            LEFT JOIN route_stops end_rs ON r.id = end_rs.route_id AND end_rs.stop_order = 99
+            LEFT JOIN stops end_stop ON end_rs.stop_id = end_stop.id
+            LEFT JOIN (
+                SELECT route_id, COUNT(*) as total_stops
+                FROM route_stops 
+                GROUP BY route_id
+            ) stops_count ON r.id = stops_count.route_id
+            WHERE s.driver_id = ? ${dateCondition}
+            ORDER BY s.date DESC, s.scheduled_start_time ASC
+        `, params);
+        
+        const schedules = rows.map(row => ({
+            id: row.id,
+            date: row.date,
+            ca: row.shift_type === 'morning' ? 'Sáng' : 
+                row.shift_type === 'afternoon' ? 'Chiều' : 'Tối',
+            time: `${row.start_time?.substring(0, 5)} - ${row.end_time?.substring(0, 5)}`,
+            route: row.route_name,
+            busNumber: row.license_plate,
+            startPoint: row.start_point,
+            endPoint: row.end_point,
+            stopCount: row.stop_count,
+            studentCount: `${row.student_count || 0}/${row.max_capacity}`,
+            actualStudentCount: row.student_count || 0,
+            status: row.status,
+            statusText: getStatusText(row.status),
+            statusColor: getStatusColor(row.status),
+            notes: row.notes,
+            estimatedDuration: row.estimated_duration
+        }));
+        
+        res.json({
+            success: true,
+            data: schedules
+        });
+    } catch (error) {
+        console.error('Error fetching driver schedules:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy lịch làm việc',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/schedules/:driverId?period=today|week|month|all - Lấy danh sách lịch làm việc của tài xế (legacy)
+router.get('/:driverId', async (req, res) => {
+    try {
+        const { driverId } = req.params;
+        const { period } = req.query;
+        
+        let dateCondition = '';
+        let params = [driverId];
+        
+        if (period) {
+            switch (period) {
+                case 'week':
+                    dateCondition = 'AND s.date >= CURDATE() AND s.date <= DATE_ADD(CURDATE(), INTERVAL 6 DAY)';
+                    break;
+                case 'month':
+                    dateCondition = 'AND MONTH(s.date) = MONTH(CURDATE()) AND YEAR(s.date) = YEAR(CURDATE())';
                     break;
                 case 'all':
                     dateCondition = 'AND s.date >= CURDATE()';
@@ -39,7 +179,6 @@ router.get('/driver/:driverId', async (req, res) => {
                 s.id,
                 DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
-                s.shift_number,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
                 COALESCE(start_stop.name, 'Điểm bắt đầu') as start_point,
@@ -79,29 +218,27 @@ router.get('/driver/:driverId', async (req, res) => {
         
         // Format dữ liệu cho frontend
         const formattedSchedules = rows.map(schedule => {
-            // Xác định loại ca dựa trên thời gian và shift_type
+            // Xác định loại ca dựa trên shift_type
             let caText = '';
             if (schedule.shift_type) {
-                // Nếu có shift_type trong database
-                caText = schedule.shift_type === 'morning' ? `Ca ${schedule.shift_number} - Sáng` : 
-                        schedule.shift_type === 'afternoon' ? `Ca ${schedule.shift_number} - Chiều` :
-                        `Ca ${schedule.shift_number}`;
+                caText = schedule.shift_type === 'morning' ? 'Ca Sáng' : 
+                        schedule.shift_type === 'afternoon' ? 'Ca Chiều' :
+                        schedule.shift_type === 'evening' ? 'Ca Tối' : 'Ca khác';
             } else {
                 // Fallback: dựa vào thời gian để xác định
                 const startHour = parseInt(schedule.start_time.split(':')[0]);
                 if (startHour >= 6 && startHour < 12) {
-                    caText = `Ca ${schedule.shift_number} - Sáng`;
+                    caText = 'Ca Sáng';
                 } else if (startHour >= 12 && startHour < 18) {
-                    caText = `Ca ${schedule.shift_number} - Chiều`;
+                    caText = 'Ca Chiều';
                 } else {
-                    caText = `Ca ${schedule.shift_number} - Tối`;
+                    caText = 'Ca Tối';
                 }
             }
             
             return {
                 id: `CH${String(schedule.id).padStart(3, '0')}`,
                 ca: caText, // Hiển thị ca với loại (sáng/chiều)
-                caNumber: schedule.shift_number, // Giữ số ca để sort
                 shiftType: schedule.shift_type, // Thêm thông tin loại ca
                 time: `${schedule.start_time.substring(0, 5)} - ${schedule.end_time.substring(0, 5)}`,
                 route: schedule.route_name,
@@ -113,37 +250,29 @@ router.get('/driver/:driverId', async (req, res) => {
                 actualStudentCount: schedule.student_count, // Để sử dụng trong frontend
                 status: schedule.status,
                 statusText: getStatusText(schedule.status),
-                statusColor: getStatusColor(schedule.status),
-                date: schedule.date,
-                notes: schedule.notes,
-                estimatedDuration: schedule.estimated_duration
+                statusColor: getStatusColor(schedule.status)
             };
         });
-        
+
         res.json({
             success: true,
             data: formattedSchedules,
             count: formattedSchedules.length
         });
     } catch (error) {
-        console.error('Error fetching driver schedules:', error);
+        console.error('Error fetching schedules:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi khi lấy lịch làm việc',
+            message: 'Lỗi khi lấy danh sách lịch làm việc',
             error: error.message
         });
     }
 });
 
-// GET /api/schedules/:id - Lấy chi tiết một lịch làm việc
-router.get('/:id', async (req, res) => {
+// GET /api/schedules/:driverId/:id - Lấy chi tiết một lịch làm việc
+router.get('/:driverId/:id', async (req, res) => {
     try {
-        let { id } = req.params;
-        
-        // Xử lý ID format - nếu là "CH002" thì lấy số 2
-        if (typeof id === 'string' && id.startsWith('CH')) {
-            id = parseInt(id.substring(2));
-        }
+        const { driverId, id } = req.params;
         
         const [rows] = await pool.execute(`
             SELECT 
@@ -176,17 +305,21 @@ router.get('/:id', async (req, res) => {
                 JOIN stops st ON rs.stop_id = st.id
                 WHERE rs.stop_order = 99
             ) end_stop ON end_stop.route_id = s.route_id
-            WHERE s.id = ?
-        `, [id]);
-        
+            WHERE s.id = ? AND s.driver_id = ?
+            LIMIT 1
+        `, [id, driverId]);
+
         if (rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
             });
         }
+
+        // Lấy danh sách học sinh cho lịch này - logic mới đơn giản hơn
+        const schedule = rows[0];
         
-        // Lấy danh sách học sinh trên tuyến này
+        // Tìm học sinh dựa trên route_id của schedule và shift_type
         const [students] = await pool.execute(`
             SELECT 
                 st.id,
@@ -200,11 +333,14 @@ router.get('/:id', async (req, res) => {
                 p.phone as parent_phone
             FROM students st
             LEFT JOIN parents p ON st.parent_id = p.id
-            WHERE st.route_id = ? AND st.status = 'active'
+            WHERE (
+                (? = 'morning' AND st.morning_route_id = ?) OR
+                (? = 'afternoon' AND st.afternoon_route_id = ?) OR
+                (? NOT IN ('morning', 'afternoon') AND (st.morning_route_id = ? OR st.afternoon_route_id = ?))
+            ) AND st.status = 'active'
             ORDER BY st.pickup_time ASC
-        `, [rows[0].route_id]);
+        `, [schedule.shift_type, schedule.route_id, schedule.shift_type, schedule.route_id, schedule.shift_type, schedule.route_id, schedule.route_id]);
         
-        const schedule = rows[0];
         const detailData = {
             ...schedule,
             statusText: getStatusText(schedule.status),
@@ -228,197 +364,216 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// PUT /api/schedules/:id/status - Cập nhật trạng thái lịch làm việc
-router.put('/:id/status', async (req, res) => {
+// POST /api/schedules/:driverId/:id/start - Bắt đầu chuyến
+router.post('/:driverId/:id/start', async (req, res) => {
     try {
-        const { id } = req.params;
-        const { status, notes } = req.body;
+        const { driverId, id } = req.params;
         
-        const validStatuses = ['scheduled', 'in_progress', 'completed', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({
+        // Kiểm tra lịch có tồn tại và thuộc về tài xế không
+        const [existing] = await pool.execute(
+            'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
+            [id, driverId]
+        );
+        
+        if (existing.length === 0) {
+            return res.status(404).json({
                 success: false,
-                message: 'Trạng thái không hợp lệ'
+                message: 'Không tìm thấy lịch làm việc'
             });
         }
         
-        await pool.execute(`
-            UPDATE schedules 
-            SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [status, notes || null, id]);
-        
-        res.json({
-            success: true,
-            message: 'Cập nhật trạng thái thành công'
-        });
-    } catch (error) {
-        console.error('Error updating schedule status:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi cập nhật trạng thái',
-            error: error.message
-        });
-    }
-});
-
-// GET /api/schedules/driver/:driverId/summary - Lấy thống kê tổng quan
-router.get('/driver/:driverId/summary', async (req, res) => {
-    try {
-        const { driverId } = req.params;
-        const { date = new Date().toISOString().split('T')[0] } = req.query;
-        
-        const [summary] = await pool.execute(`
-            SELECT 
-                COUNT(*) as total_shifts,
-                SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
-                SUM(student_count) as total_students
-            FROM schedules 
-            WHERE driver_id = ? AND date = ?
-        `, [driverId, date]);
-        
-        res.json({
-            success: true,
-            data: summary[0]
-        });
-    } catch (error) {
-        console.error('Error fetching schedule summary:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy thống kê',
-            error: error.message
-        });
-    }
-});
-
-// GET /api/schedules/driver/:driverId/stops/:scheduleId - Lấy danh sách điểm dừng thực tế
-router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
-    try {
-        let { scheduleId } = req.params;
-        
-        // Xử lý ID format - nếu là "CH002" thì lấy số 2
-        if (typeof scheduleId === 'string' && scheduleId.startsWith('CH')) {
-            scheduleId = parseInt(scheduleId.substring(2));
+        if (existing[0].status !== 'scheduled') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ có thể bắt đầu lịch làm việc có trạng thái "scheduled"'
+            });
         }
         
-        // Lấy thông tin schedule trước
+        // Cập nhật trạng thái và thời gian bắt đầu thực tế
+        await pool.execute(`
+            UPDATE schedules 
+            SET status = 'in_progress', actual_start_time = NOW()
+            WHERE id = ? AND driver_id = ?
+        `, [id, driverId]);
+        
+        res.json({
+            success: true,
+            message: 'Đã bắt đầu chuyến thành công'
+        });
+    } catch (error) {
+        console.error('Error starting schedule:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi bắt đầu chuyến',
+            error: error.message
+        });
+    }
+});
+
+// POST /api/schedules/:driverId/:id/complete - Hoàn thành chuyến
+router.post('/:driverId/:id/complete', async (req, res) => {
+    try {
+        const { driverId, id } = req.params;
+        const { notes } = req.body;
+        
+        // Kiểm tra lịch có tồn tại và thuộc về tài xế không
+        const [existing] = await pool.execute(
+            'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
+            [id, driverId]
+        );
+        
+        if (existing.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lịch làm việc'
+            });
+        }
+        
+        if (existing[0].status !== 'in_progress') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ có thể hoàn thành lịch làm việc đang thực hiện'
+            });
+        }
+        
+        // Cập nhật trạng thái và thời gian hoàn thành thực tế
+        await pool.execute(`
+            UPDATE schedules 
+            SET status = 'completed', actual_end_time = NOW(), notes = ?
+            WHERE id = ? AND driver_id = ?
+        `, [notes || null, id, driverId]);
+        
+        res.json({
+            success: true,
+            message: 'Đã hoàn thành chuyến thành công'
+        });
+    } catch (error) {
+        console.error('Error completing schedule:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi hoàn thành chuyến',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/schedules/driver/:driverId/stops/:scheduleId - Lấy danh sách điểm dừng cho driver
+router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
+    try {
+        const { driverId, scheduleId } = req.params;
+        
+        // Lấy thông tin schedule và route
         const [scheduleRows] = await pool.execute(`
-            SELECT s.route_id, s.scheduled_start_time as start_time, s.date, r.route_name
-            FROM schedules s 
-            INNER JOIN routes r ON s.route_id = r.id
-            WHERE s.id = ?
-        `, [scheduleId]);
+            SELECT 
+                s.id as schedule_id,
+                s.shift_type,
+                s.scheduled_start_time,
+                s.date,
+                s.route_id,
+                r.route_name
+            FROM schedules s
+            LEFT JOIN routes r ON s.route_id = r.id
+            WHERE s.id = ? AND s.driver_id = ?
+        `, [scheduleId, driverId]);
         
         if (scheduleRows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy lịch trình'
+                message: 'Không tìm thấy lịch làm việc'
             });
         }
         
         const schedule = scheduleRows[0];
+        const startTime = schedule.scheduled_start_time;
         
-        // Lấy danh sách điểm dừng và tính thời gian động dựa trên schedule start_time
+        // Lấy danh sách điểm dừng theo thứ tự
         const [stops] = await pool.execute(`
             SELECT 
-                rs.stop_order,
-                rs.estimated_arrival_time as template_time,
-                rs.student_pickup_count,
-                s.name as stop_name,
-                s.address as stop_address,
+                rs.id,
+                rs.stop_order as \`order\`,
+                s.name,
+                s.address,
+                rs.estimated_arrival_time,
                 s.latitude,
-                s.longitude,
-                CASE 
-                    WHEN rs.stop_order = 0 THEN 'Điểm bắt đầu'
-                    WHEN rs.stop_order = 99 THEN 'Điểm kết thúc'
-                    ELSE 'Đón học sinh'
-                END as stop_type
+                s.longitude
             FROM route_stops rs
             INNER JOIN stops s ON rs.stop_id = s.id
             WHERE rs.route_id = ?
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
         
-        // Tính thời gian động cho điểm dừng dựa trên schedule start_time
-        const scheduleStartTime = schedule.start_time;
-        const [startHour, startMinute] = scheduleStartTime.split(':').map(Number);
-        
-        // Format dữ liệu cho frontend với thời gian được tính từ offset trong DB
-        const formattedStops = stops.map((stop, index) => {
-            let actualTimeString;
-            let displayOrder;
-            let stopType;
+        // Tính toán thời gian dự kiến cho từng điểm dừng
+        const processedStops = stops.map((stop, index) => {
+            let estimatedTime = startTime; // Default fallback
             
-            if (stop.stop_order === 0) {
-                // Điểm bắt đầu = scheduled_start_time
-                actualTimeString = scheduleStartTime.substring(0, 5);
-                displayOrder = index + 1; // Số thứ tự tuần tự
-                stopType = 'Điểm khởi hành';
-            } else if (stop.stop_order === 99) {
-                // Điểm kết thúc
-                const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
-                const offsetMinutes = offsetHour * 60 + offsetMinute;
+            if (stop.estimated_arrival_time) {
+                // estimated_arrival_time là offset từ thời điểm bắt đầu  
+                // Parse start time
+                const [startHours, startMinutes] = startTime.split(':').map(Number);
                 
-                const scheduleStartTotal = startHour * 60 + startMinute;
-                const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
+                // Parse offset time
+                const offsetStr = stop.estimated_arrival_time.toString();
+                const [offsetHours, offsetMinutes] = offsetStr.split(':').map(Number);
                 
-                const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
-                const actualMinute = actualArrivalTotal % 60;
-                actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
-                displayOrder = index + 1; // Số thứ tự tuần tự
-                stopType = 'Điểm đích';
+                // Calculate final time
+                let totalMinutes = (startHours * 60 + startMinutes) + (offsetHours * 60 + offsetMinutes);
+                const finalHours = Math.floor(totalMinutes / 60) % 24;
+                const finalMins = totalMinutes % 60;
+                
+                estimatedTime = `${finalHours.toString().padStart(2, '0')}:${finalMins.toString().padStart(2, '0')}`;
             } else {
-                // Các điểm dừng thường = start_time + offset từ DB
-                const [offsetHour, offsetMinute] = stop.template_time.split(':').map(Number);
-                const offsetMinutes = offsetHour * 60 + offsetMinute;
+                // Tự động tính thời gian dựa trên startTime + offset theo thứ tự
+                const startDateTime = new Date(`1970-01-01T${startTime}:00`);
                 
-                const scheduleStartTotal = startHour * 60 + startMinute;
-                const actualArrivalTotal = scheduleStartTotal + offsetMinutes;
-                
-                const actualHour = Math.floor(actualArrivalTotal / 60) % 24;
-                const actualMinute = actualArrivalTotal % 60;
-                actualTimeString = `${String(actualHour).padStart(2, '0')}:${String(actualMinute).padStart(2, '0')}`;
-                displayOrder = index + 1; // Số thứ tự tuần tự
-                stopType = stop.student_pickup_count > 0 ? `Đón ${stop.student_pickup_count} HS` : 'Điểm dừng';
+                if (stop.order === 0) {
+                    // Điểm xuất phát = thời gian bắt đầu
+                    estimatedTime = startTime;
+                } else if (stop.order === 99) {
+                    // Điểm kết thúc = thời gian kết thúc schedule 
+                    const endDateTime = new Date(`1970-01-01T${startTime}:00`);
+                    endDateTime.setHours(endDateTime.getHours() + 1); // Giả sử toàn tuyến mất 1h
+                    estimatedTime = endDateTime.toTimeString().substring(0, 5);
+                } else {
+                    // Điểm dừng = startTime + (thứ tự * 15 phút)
+                    startDateTime.setMinutes(startDateTime.getMinutes() + (stop.order * 15));
+                    estimatedTime = startDateTime.toTimeString().substring(0, 5);
+                }
             }
             
+            const displayOrder = stop.order === 0 ? 'Bắt đầu' : 
+                               stop.order === 99 ? 'Kết thúc' : 
+                               stop.order;
+            
+            const type = stop.order === 0 ? 'Xuất phát' :
+                        stop.order === 99 ? 'Kết thúc' : 'Điểm dừng';
+            
             return {
-                order: stop.stop_order,
+                id: stop.id,
+                order: stop.order,
                 displayOrder: displayOrder,
-                name: stop.stop_name,
-                address: stop.stop_address,
-                type: stopType,
-                estimatedTime: actualTimeString,
-                studentCount: stop.student_pickup_count > 0 ? `${stop.student_pickup_count} học sinh` : '-',
-                status: index === 0 ? 'current' : 'pending',
-                coordinates: {
-                    latitude: parseFloat(stop.latitude),
-                    longitude: parseFloat(stop.longitude)
-                },
-                note: stop.stop_order === 0 ? 'Điểm khởi hành' :
-                     stop.stop_order === 99 ? 'Điểm đích' :
-                     stop.student_pickup_count > 0 ? 
-                     `Đón ${stop.student_pickup_count} học sinh` : 
-                     'Điểm dừng trung gian'
+                name: stop.name,
+                address: stop.address,
+                type: type,
+                estimatedTime: estimatedTime,
+                latitude: stop.latitude,
+                longitude: stop.longitude,
+                status: 'pending', // Mặc định chưa đến
+                note: ''
             };
         });
         
         res.json({
             success: true,
             data: {
-                scheduleId: scheduleId,
+                scheduleId: schedule.schedule_id,
                 routeId: schedule.route_id,
                 routeName: schedule.route_name,
-                totalStops: formattedStops.length,
-                stops: formattedStops
+                totalStops: stops.length,
+                stops: processedStops
             }
         });
-        
     } catch (error) {
-        console.error('Error fetching route stops:', error);
+        console.error('Error fetching driver schedule stops:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách điểm dừng',
@@ -427,34 +582,103 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
     }
 });
 
-// Helper functions
-function getStatusText(status) {
-    const statusMap = {
-        'scheduled': '⏳ Chưa bắt đầu',
-        'in_progress': '🚍 Đang chạy',
-        'completed': '✅ Hoàn thành',
-        'cancelled': '❌ Đã hủy'
-    };
-    return statusMap[status] || status;
-}
+// GET /api/schedules/:driverId/:id/stops - Lấy danh sách điểm dừng của lịch (legacy)
+router.get('/:driverId/:id/stops', async (req, res) => {
+    try {
+        const { driverId, id } = req.params;
+        
+        // Lấy thông tin schedule để biết route_id
+        const [scheduleRows] = await pool.execute(`
+            SELECT s.route_id, s.scheduled_start_time as start_time, s.date, r.route_name
+            FROM schedules s
+            INNER JOIN routes r ON s.route_id = r.id
+            WHERE s.id = ? AND s.driver_id = ?
+        `, [id, driverId]);
+        
+        if (scheduleRows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lịch làm việc'
+            });
+        }
+        
+        const schedule = scheduleRows[0];
+        
+        // Lấy danh sách stops của route này
+        const [stops] = await pool.execute(`
+            SELECT 
+                rs.route_id,
+                rs.stop_id,
+                rs.stop_order,
+                rs.estimated_arrival_time,
+                st.name as stop_name,
+                st.address as stop_address,
+                st.latitude,
+                st.longitude
+            FROM route_stops rs
+            INNER JOIN stops st ON rs.stop_id = st.id
+            WHERE rs.route_id = ?
+            ORDER BY rs.stop_order ASC
+        `, [schedule.route_id]);
+        
+        // Format dữ liệu cho frontend
+        const formattedStops = stops.map((stop, index) => {
+            // Tính thời gian dự kiến dựa trên estimated_arrival_time hoặc start_time + offset
+            let estimatedTime = schedule.start_time;
+            if (stop.estimated_arrival_time) {
+                estimatedTime = stop.estimated_arrival_time;
+            } else {
+                // Tính toán dựa trên start_time + (index * 5 phút)
+                const startTime = new Date(`${schedule.date} ${schedule.start_time}`);
+                startTime.setMinutes(startTime.getMinutes() + (index * 5));
+                estimatedTime = startTime.toTimeString().substring(0, 5);
+            }
+            
+            return {
+                routeId: stop.route_id,
+                stopId: stop.stop_id,
+                order: stop.stop_order,
+                displayOrder: stop.stop_order === 0 ? 'Bắt đầu' : 
+                            stop.stop_order === 99 ? 'Kết thúc' : 
+                            stop.stop_order,
+                name: stop.stop_name,
+                address: stop.stop_address,
+                type: stop.stop_order === 0 ? 'Điểm bắt đầu' :
+                      stop.stop_order === 99 ? 'Điểm kết thúc' : 'Điểm dừng',
+                estimatedTime: estimatedTime,
+                status: 'pending', // Có thể cập nhật logic status từ attendance table
+                note: null,
+                latitude: stop.latitude,
+                longitude: stop.longitude
+            };
+        });
+        
+        res.json({
+            success: true,
+            data: {
+                scheduleId: id,
+                routeId: schedule.route_id,
+                routeName: schedule.route_name,
+                stops: formattedStops
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching schedule stops:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách điểm dừng',
+            error: error.message
+        });
+    }
+});
 
-function getStatusColor(status) {
-    const colorMap = {
-        'scheduled': 'bg-gray-100 text-gray-700',
-        'in_progress': 'bg-blue-100 text-blue-700',
-        'completed': 'bg-green-100 text-green-700',
-        'cancelled': 'bg-red-100 text-red-700'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-700';
-}
-
-// GET /api/schedules/admin - Lấy schedules cho admin với thông tin students thật từ database
-router.get('/admin', async (req, res) => {
+// GET /api/admin-schedules - Lấy danh sách tất cả lịch trình (cho admin)
+router.get('/admin-schedules', async (req, res) => {
     try {
         const { date } = req.query;
         
         let dateCondition = '';
-        const params = [];
+        let params = [];
         
         if (date) {
             dateCondition = 'WHERE s.date = ?';
@@ -469,7 +693,6 @@ router.get('/admin', async (req, res) => {
                 s.id,
                 s.date,
                 s.shift_type,
-                s.shift_number,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
                 'Điểm bắt đầu' as start_point,
@@ -504,14 +727,14 @@ router.get('/admin', async (req, res) => {
     }
 });
 
-// GET /api/schedules/:id/students-by-route - Lấy students của schedule theo route từ database
+// GET /api/schedules/:id/students-by-route - Lấy students của schedule theo route từ database (cập nhật logic mới)
 router.get('/:id/students-by-route', async (req, res) => {
     try {
         const { id } = req.params;
         
         // Lấy thông tin schedule trước
         const [scheduleInfo] = await pool.execute(`
-            SELECT s.route_id, r.route_name, s.shift_type, s.shift_number
+            SELECT s.route_id, r.route_name, s.shift_type
             FROM schedules s
             INNER JOIN routes r ON s.route_id = r.id
             WHERE s.id = ?
@@ -524,8 +747,9 @@ router.get('/:id/students-by-route', async (req, res) => {
             });
         }
         
-        const routeId = scheduleInfo[0].route_id;
+        const schedule = scheduleInfo[0];
         
+        // Logic đơn giản hơn - sử dụng route_id của schedule
         // Lấy students thuộc route này từ database với thời gian từ schedule
         const [students] = await pool.execute(`
             SELECT 
@@ -542,31 +766,30 @@ router.get('/:id/students-by-route', async (req, res) => {
                 'Chưa đón' as status -- Mặc định status
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
-            LEFT JOIN routes r ON s.route_id = r.id
+            LEFT JOIN routes r ON (
+                (? = 'morning' AND s.morning_route_id = r.id) OR
+                (? = 'afternoon' AND s.afternoon_route_id = r.id) OR
+                (? NOT IN ('morning', 'afternoon') AND (s.morning_route_id = r.id OR s.afternoon_route_id = r.id))
+            )
             INNER JOIN schedules sch ON sch.id = ? -- Lấy thời gian từ schedule hiện tại
             LEFT JOIN buses b ON sch.bus_id = b.id
-            WHERE s.route_id = ? AND s.status = 'active'
-            ORDER BY s.name
-        `, [id, routeId]);
-        
-        // Format dữ liệu cho frontend với thời gian từ schedule
-        const formattedStudents = students.map(student => ({
-            id: student.id,
-            name: student.name,
-            class: student.class_name || student.class,
-            pickup: `Đón lúc ${student.pickup_time?.substring(0,5) || '06:30'}`, // Tất cả đón cùng lúc theo schedule
-            drop: `Trả lúc ${student.dropoff_time?.substring(0,5) || '16:30'}`,   // Tất cả trả cùng lúc theo schedule
-            status: student.status || 'Chưa đón'
-        }));
+            WHERE (
+                (? = 'morning' AND s.morning_route_id = ?) OR
+                (? = 'afternoon' AND s.afternoon_route_id = ?) OR
+                (? NOT IN ('morning', 'afternoon') AND (s.morning_route_id = ? OR s.afternoon_route_id = ?))
+            ) AND s.status = 'active'
+            ORDER BY s.pickup_time ASC
+        `, [schedule.shift_type, schedule.shift_type, schedule.shift_type, id, schedule.shift_type, schedule.route_id, schedule.shift_type, schedule.route_id, schedule.shift_type, schedule.route_id, schedule.route_id]);
         
         res.json({
             success: true,
-            data: formattedStudents,
-            count: formattedStudents.length,
-            route_info: {
-                route_name: scheduleInfo[0].route_name,
-                shift_type: scheduleInfo[0].shift_type,
-                shift_number: scheduleInfo[0].shift_number
+            data: {
+                scheduleInfo: {
+                    route_id: schedule.route_id,
+                    route_name: schedule.route_name,
+                    shift_type: schedule.shift_type
+                },
+                students: students
             }
         });
     } catch (error) {
@@ -578,5 +801,26 @@ router.get('/:id/students-by-route', async (req, res) => {
         });
     }
 });
+
+// Helper functions
+function getStatusText(status) {
+    switch (status) {
+        case 'scheduled': return 'Đã lên lịch';
+        case 'in_progress': return 'Đang thực hiện';
+        case 'completed': return 'Hoàn thành';
+        case 'cancelled': return 'Đã hủy';
+        default: return 'Không xác định';
+    }
+}
+
+function getStatusColor(status) {
+    switch (status) {
+        case 'scheduled': return 'bg-blue-100 text-blue-700';
+        case 'in_progress': return 'bg-yellow-100 text-yellow-700';
+        case 'completed': return 'bg-green-100 text-green-700';
+        case 'cancelled': return 'bg-red-100 text-red-700';
+        default: return 'bg-gray-100 text-gray-700';
+    }
+}
 
 export default router;

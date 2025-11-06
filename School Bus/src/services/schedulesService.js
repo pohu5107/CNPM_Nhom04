@@ -23,8 +23,9 @@ export const schedulesService = {
             
             const response = await apiClient.get(url);
             console.log('🔵 Driver schedules response:', response);
-            // Response đã được interceptor xử lý, trả về trực tiếp
-            return Array.isArray(response) ? response : [];
+            // Response đã được interceptor xử lý, trả về data array
+            return Array.isArray(response.data) ? response.data : 
+                   Array.isArray(response) ? response : [];
         } catch (error) {
             console.error('Error fetching driver schedules:', error);
             throw error;
@@ -32,9 +33,10 @@ export const schedulesService = {
     },
 
     // Lấy chi tiết một lịch làm việc (cho driver)
-    getScheduleById: async (id) => {
+    getScheduleById: async (id, driverId = 1) => {
         try {
-            const response = await apiClient.get(`${ENDPOINT}/${id}`);
+            // Sử dụng route driver-specific để đảm bảo chỉ lấy schedule của driver đó
+            const response = await apiClient.get(`${ENDPOINT}/${driverId}/${id}`);
             return response; // Response đã được interceptor xử lý
         } catch (error) {
             console.error('Error fetching schedule detail:', error);
@@ -135,7 +137,8 @@ export const schedulesService = {
         try {
             const params = date ? `?date=${date}` : '';
             const response = await apiClient.get(`${ENDPOINT}/driver/${driverId}/summary${params}`);
-            return response; // Response đã được interceptor xử lý
+            // Response được interceptor xử lý, trả về data
+            return response.data || response;
         } catch (error) {
             console.error('Error fetching driver summary:', error);
             throw error;
@@ -150,8 +153,10 @@ export const schedulesService = {
             
             // Interceptor đã xử lý response, trả về data object
             // Backend trả về: {scheduleId, routeId, routeName, totalStops, stops}
-            if (response && response.stops && Array.isArray(response.stops)) {
-                return response; // Trả về toàn bộ object chứa thông tin route và stops
+            if (response && response.data && response.data.stops && Array.isArray(response.data.stops)) {
+                return response.data; // Trả về toàn bộ object chứa thông tin route và stops
+            } else if (response && response.stops && Array.isArray(response.stops)) {
+                return response; // Fallback nếu data ở level cao hơn
             }
             
             return { stops: [] }; // Fallback với empty stops array

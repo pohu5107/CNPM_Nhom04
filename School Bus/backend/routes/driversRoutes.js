@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
                 u.username
             FROM drivers d
             LEFT JOIN users u ON d.user_id = u.id
-            ORDER BY d.id DESC
+            ORDER BY d.id ASC
         `);
         
         res.json({

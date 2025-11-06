@@ -12,6 +12,8 @@ const SchedulesPage = () => {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorDetails, setErrorDetails] = useState({ title: '', message: '' });
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
 
@@ -85,8 +87,27 @@ const SchedulesPage = () => {
       setSelectedSchedule(null);
       setError(null);
     } catch (err) {
-      setError('Lỗi khi lưu lịch trình: ' + err.message);
       console.error('Error saving schedule:', err);
+      
+      // Check for conflict errors
+      if (err.response?.status === 409) {
+        const response = err.response.data;
+        let title = 'Xung đột lịch trình';
+        let message = response.details || response.message || 'Có xung đột trong lịch trình';
+        
+        if (response.message === 'DRIVER_CONFLICT') {
+          title = 'Tài xế đã có lịch trình';
+          message = response.details || 'Tài xế này đã có lịch trình khác trong cùng thời gian';
+        } else if (response.message === 'BUS_CONFLICT') {
+          title = 'Xe bus đã có lịch trình'; 
+          message = response.details || 'Xe bus này đã có lịch trình khác trong cùng thời gian';
+        }
+        
+        setErrorDetails({ title, message });
+        setShowErrorModal(true);
+      } else {
+        setError('Lỗi khi lưu lịch trình: ' + err.message);
+      }
     }
   };
 
@@ -137,6 +158,35 @@ const SchedulesPage = () => {
         confirmText="Xóa"
         cancelText="Hủy"
       />
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title={errorDetails.title}
+        size="md"
+      >
+        <div className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-gray-700">{errorDetails.message}</p>
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => setShowErrorModal(false)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Đã hiểu
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

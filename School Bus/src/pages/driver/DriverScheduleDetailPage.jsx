@@ -23,13 +23,25 @@ export default function DriverScheduleDetailPage() {
   const fetchScheduleDetail = async () => {
     try {
       setLoading(true);
-      const response = await schedulesService.getScheduleById(id);
+      const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
       console.log('🔵 Schedule data received:', response);
       console.log('🔵 Schedule data type:', typeof response, 'Keys:', Object.keys(response || {}));
       
-      // Interceptor đã xử lý response, trả về data trực tiếp
-      if (response && (response.id || response.schedule_id)) {
-        setSchedule(response);
+      // Xử lý response - có thể là object hoặc array
+      let scheduleData = null;
+      if (Array.isArray(response) && response.length > 0) {
+        // Nếu là array, lấy phần tử đầu tiên
+        scheduleData = response[0];
+        console.log('📋 Found array response, taking first element:', scheduleData);
+      } else if (response && (response.id || response.schedule_id)) {
+        // Nếu là object với id
+        scheduleData = response;
+        console.log('📋 Found object response:', scheduleData);
+      }
+      
+      if (scheduleData) {
+        setSchedule(scheduleData);
+        console.log('✅ Schedule data set successfully');
       } else {
         console.log('❌ No valid schedule data found');
         setSchedule(null);
@@ -176,11 +188,12 @@ export default function DriverScheduleDetailPage() {
                 <span className="text-slate-600 font-medium min-w-[120px]">Ca:</span>
                 <span className="font-bold text-xl text-[#174D2C]">
                   {(() => {
-                    // Xác định loại ca dựa trên thời gian nếu không có shift_type
+                    // Xác định loại ca dựa trên shift_type
                     if (schedule.shift_type) {
                       const shiftTypeText = schedule.shift_type === 'morning' ? 'Sáng' : 
-                                           schedule.shift_type === 'afternoon' ? 'Chiều' : 'Tối';
-                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
+                                           schedule.shift_type === 'afternoon' ? 'Chiều' : 
+                                           schedule.shift_type === 'evening' ? 'Tối' : 'Khác';
+                      return `Ca ${shiftTypeText}`;
                     } else {
                       // Fallback: dựa vào thời gian
                       const startHour = schedule.start_time ? parseInt(schedule.start_time.split(':')[0]) : 0;
@@ -192,7 +205,7 @@ export default function DriverScheduleDetailPage() {
                       } else {
                         shiftTypeText = 'Tối';
                       }
-                      return `Ca ${schedule.shift_number} - ${shiftTypeText}`;
+                      return `Ca ${shiftTypeText}`;
                     }
                   })()}
                 </span>
@@ -430,7 +443,9 @@ export default function DriverScheduleDetailPage() {
                     }`}
                   >
                     <td className="px-6 py-4 font-bold text-slate-900 text-lg text-center">
-                      {stop.displayOrder}
+                      {stop.order === 0 ? '1' : 
+                       stop.order === 99 ? stops.length : 
+                       stop.order + 1}
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-900">{stop.name}</div>
