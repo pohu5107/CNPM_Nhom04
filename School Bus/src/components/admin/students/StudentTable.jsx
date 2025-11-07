@@ -66,7 +66,7 @@ const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, o
     { 
       key: 'phone', 
       header: 'SĐT',
-      render: (item) => item.phone || item.parent_phone || '-'
+      render: (value, row) => value || row?.parent_phone || '-'
     }
   ];
 
