@@ -22,3 +22,48 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (keep example files)
+.env
+.env.*
+!.env.example
+
+# Build / cache / coverage
+.cache
+.parcel-cache
+.next
+.turbo
+.vite
+.vitepress
+.umi
+coverage/
+.nyc_output
+.eslintcache
+
+# System files
+Thumbs.db
+desktop.ini
+
+# Logs and runtime files
+logs/
+*.log
+
+# OS X
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Ignore node_modules in any subfolder (already covered but keep explicit)
+**/node_modules/
+
+# Temporary files created by editors
+*.swp
+*.swo
+
+# Local dotenv files for VSCode or environment-specific
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
