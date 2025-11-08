@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
-const CURRENT_DRIVER_ID = 2;
+const CURRENT_DRIVER_ID = 1;
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
