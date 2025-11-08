@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
-const CURRENT_DRIVER_ID =1;
+const CURRENT_DRIVER_ID = 2;
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
@@ -41,9 +41,9 @@ export default function DriverScheduleDetailPage() {
       
       if (scheduleData) {
         setSchedule(scheduleData);
-        console.log('✅ Schedule data set successfully');
+        console.log(' Schedule data set successfully');
       } else {
-        console.log('❌ No valid schedule data found');
+        console.log(' No valid schedule data found');
         setSchedule(null);
       }
       setError(null);
@@ -69,10 +69,10 @@ export default function DriverScheduleDetailPage() {
       
       // Service đã xử lý để trả về object {scheduleId, routeId, routeName, stops}
       if (stopsData && stopsData.stops && Array.isArray(stopsData.stops)) {
-        console.log('✅ Valid stops data found:', stopsData.stops.length, 'stops');
+        console.log(' Valid stops data found:', stopsData.stops.length, 'stops');
         setStops(stopsData.stops);
       } else {
-        console.log('❌ No valid stops data found in response');
+        console.log(' No valid stops data found in response');
         setStops([]);
       }
     } catch (err) {
@@ -114,7 +114,7 @@ export default function DriverScheduleDetailPage() {
         <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center text-red-600">
-            <div className="text-6xl mb-4">⚠️</div>
+            <div className="text-6xl mb-4"></div>
             <p className="mb-4 text-lg">{error}</p>
             <button 
               onClick={() => navigate(-1)} 
@@ -149,10 +149,10 @@ export default function DriverScheduleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-green-50/30">
       <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
       
-      <div className="w-full px-6 py-4">
+      <div className="flex-1 overflow-y-auto w-full px-6 py-4">
         {/* Thông tin chuyến - Card chính */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
@@ -237,13 +237,13 @@ export default function DriverScheduleDetailPage() {
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Điểm bắt đầu:</span>
                 <span className="font-semibold text-green-600">
-                  📍 {schedule.start_point}
+                  {schedule.start_point || 'Không xác định'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Điểm kết thúc:</span>
                 <span className="font-semibold text-red-600">
-                  🏁 {schedule.end_point}
+                  {schedule.end_point || 'Không xác định'}
                 </span>
               </div>
               <div className="flex items-center gap-3">

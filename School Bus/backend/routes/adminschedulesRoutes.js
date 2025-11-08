@@ -1,5 +1,4 @@
-// /backend/routes/adminScheduleRouter.js
-
+// /backend/routes/adminSchedulesRoutes.js
 import express from 'express';
 import pool from '../config/db.js';
 
@@ -52,7 +51,7 @@ async function checkScheduleConflicts(driver_id, bus_id, date, shift_type, exclu
     return conflicts;
 }
 
-// GET /api/schedules - Lấy danh sách tất cả lịch trình
+// GET /api/admin-schedules - Lấy danh sách tất cả lịch trình
 router.get('/', async (req, res) => {
     try {
         const [rows] = await pool.execute(`
@@ -69,11 +68,7 @@ router.get('/', async (req, res) => {
                 s.shift_type,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
-                'Điểm bắt đầu' as start_point,
-                'Điểm kết thúc' as end_point,
-                60 as estimated_duration,
                 s.student_count,
-                25 as max_capacity,
                 s.status,
                 s.notes
             FROM schedules s
@@ -83,14 +78,11 @@ router.get('/', async (req, res) => {
             ORDER BY s.date DESC, s.scheduled_start_time ASC
         `);
 
-        // Format data để đồng bộ với driver format
         const formattedRows = rows.map(row => ({
             ...row,
-            id: `CH${String(row.id).padStart(3, '0')}`, // Format giống driver
-            schedule_id: row.id, // Giữ ID gốc để CRUD
-            shift_display: row.shift_type === 'morning' ? 'Ca Sáng' : 
-                          row.shift_type === 'afternoon' ? 'Ca Chiều' :
-                          row.shift_type
+            id: `CH${String(row.id).padStart(3, '0')}`,
+            schedule_id: row.id,
+            shift_display: row.shift_type === 'morning' ? 'Ca Sáng' : 'Ca Chiều'
         }));
 
         res.json({
@@ -108,7 +100,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET /api/schedules/:id - Lấy thông tin một lịch trình
+// GET /api/admin-schedules/:id - Lấy thông tin một lịch trình
 router.get('/:id', async (req, res) => {
     try {
         let { id } = req.params;
@@ -121,21 +113,17 @@ router.get('/:id', async (req, res) => {
         const [rows] = await pool.execute(`
             SELECT 
                 s.id,
-                d.name AS driver_name,
                 s.driver_id,
-                b.bus_number,
                 s.bus_id,
-                r.route_name,
                 s.route_id,
+                d.name AS driver_name,
+                b.bus_number,
+                r.route_name,
                 DATE_FORMAT(s.date, '%Y-%m-%d') as date,
                 s.shift_type,
                 s.scheduled_start_time as start_time,
                 s.scheduled_end_time as end_time,
-                'Điểm bắt đầu' as start_point,
-                'Điểm kết thúc' as end_point,
-                60 as estimated_duration,
                 s.student_count,
-                25 as max_capacity,
                 s.status,
                 s.notes
             FROM schedules s
@@ -152,14 +140,11 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        // Format response để đồng bộ
         const schedule = {
             ...rows[0],
             id: `CH${String(rows[0].id).padStart(3, '0')}`,
             schedule_id: rows[0].id,
-            shift_display: rows[0].shift_type === 'morning' ? 'Ca Sáng' : 
-                          rows[0].shift_type === 'afternoon' ? 'Ca Chiều' :
-                          rows[0].shift_type
+            shift_display: rows[0].shift_type === 'morning' ? 'Ca Sáng' : 'Ca Chiều'
         };
 
         res.json({
@@ -176,7 +161,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/schedules - Thêm lịch trình mới
+// POST /api/admin-schedules - Thêm lịch trình mới
 router.post('/', async (req, res) => {
     try {
         const {
@@ -187,11 +172,7 @@ router.post('/', async (req, res) => {
             shift_type,
             start_time,
             end_time,
-            start_point,
-            end_point,
-            estimated_duration,
             student_count,
-            max_capacity,
             notes
         } = req.body;
 
@@ -223,7 +204,6 @@ router.post('/', async (req, res) => {
             start_time, end_time, student_count || 0, notes || null
         ]);
 
-        // Get the newly created schedule
         const [newSchedule] = await pool.execute('SELECT * FROM schedules WHERE id = ?', [result.insertId]);
 
         res.status(201).json({
@@ -233,25 +213,6 @@ router.post('/', async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating schedule:', error);
-        
-        // Handle specific constraint violations
-        if (error.code === 'ER_DUP_ENTRY') {
-            if (error.message.includes('unique_driver_date_shift')) {
-                return res.status(409).json({
-                    success: false,
-                    message: 'Tài xế đã có lịch trình cho ca này trong ngày đã chọn',
-                    type: 'DRIVER_CONFLICT'
-                });
-            }
-            if (error.message.includes('unique_bus_date_shift')) {
-                return res.status(409).json({
-                    success: false,
-                    message: 'Xe buýt đã được sử dụng cho ca này trong ngày đã chọn',
-                    type: 'BUS_CONFLICT'
-                });
-            }
-        }
-        
         res.status(500).json({
             success: false,
             message: 'Lỗi khi thêm lịch trình',
@@ -260,12 +221,12 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT /api/schedules/:id - Cập nhật lịch trình
+// PUT /api/admin-schedules/:id - Cập nhật lịch trình
 router.put('/:id', async (req, res) => {
     try {
         let { id } = req.params;
         
-        // Xử lý ID format - nếu là "CH001" thì lấy số 1
+        // Xử lý ID format
         if (typeof id === 'string' && id.startsWith('CH')) {
             id = parseInt(id.substring(2));
         }
@@ -278,11 +239,7 @@ router.put('/:id', async (req, res) => {
             shift_type,
             start_time,
             end_time,
-            start_point,
-            end_point,
-            estimated_duration,
             student_count,
-            max_capacity,
             status,
             notes
         } = req.body;
@@ -296,7 +253,7 @@ router.put('/:id', async (req, res) => {
             });
         }
 
-        // Check for conflicts before updating (excluding current schedule)
+        // Check for conflicts before updating
         const conflicts = await checkScheduleConflicts(driver_id, bus_id, date, shift_type, id);
         if (conflicts.length > 0) {
             return res.status(409).json({
@@ -317,39 +274,15 @@ router.put('/:id', async (req, res) => {
             id
         ]);
 
-        // Get updated schedule với format mới
         const [updatedSchedule] = await pool.execute('SELECT * FROM schedules WHERE id = ?', [id]);
-        const formattedSchedule = {
-            ...updatedSchedule[0],
-            id: `CH${String(updatedSchedule[0].id).padStart(3, '0')}`,
-            schedule_id: updatedSchedule[0].id
-        };
 
         res.json({
             success: true,
             message: 'Cập nhật lịch trình thành công',
-            data: formattedSchedule
+            data: updatedSchedule[0]
         });
     } catch (error) {
-        console.error('Lỗi khi cập nhật lịch trình:', error);
-        
-        // Check for constraint violations
-        if (error.code === 'ER_DUP_ENTRY') {
-            if (error.message.includes('schedules_driver_date_shift')) {
-                return res.status(409).json({
-                    success: false,
-                    message: 'DRIVER_CONFLICT',
-                    details: `Tài xế đã có lịch trình khác vào ${date} ca ${shift_type === 'morning' ? 'sáng' : 'chiều'}`
-                });
-            } else if (error.message.includes('schedules_bus_date_shift')) {
-                return res.status(409).json({
-                    success: false,
-                    message: 'BUS_CONFLICT',
-                    details: `Xe bus đã có lịch trình khác vào ${date} ca ${shift_type === 'morning' ? 'sáng' : 'chiều'}`
-                });
-            }
-        }
-        
+        console.error('Error updating schedule:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi cập nhật lịch trình',
@@ -358,12 +291,12 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE /api/schedules/:id - Xóa lịch trình
+// DELETE /api/admin-schedules/:id - Xóa lịch trình
 router.delete('/:id', async (req, res) => {
     try {
         let { id } = req.params;
 
-        // Xử lý ID format - nếu là "CH001" thì lấy số 1
+        // Xử lý ID format
         if (typeof id === 'string' && id.startsWith('CH')) {
             id = parseInt(id.substring(2));
         }

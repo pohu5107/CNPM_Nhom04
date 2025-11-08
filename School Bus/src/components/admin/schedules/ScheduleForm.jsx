@@ -25,6 +25,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   const [drivers, setDrivers] = useState([]);
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
 
   // Load dữ liệu dropdowns
   useEffect(() => {
@@ -38,6 +39,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         setDrivers(driversData || []);
         setBuses(busesData || []);
         setRoutes(routesData || []);
+        setOptionsLoaded(true);
       } catch (error) {
         console.error('❌ Error fetching data:', error);
       }
@@ -46,22 +48,24 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   }, []);
 
   // Gán dữ liệu khi edit/view
+  // Wait until options are loaded before populating initial form values
   useEffect(() => {
-    if (schedule) {
+    if (schedule && optionsLoaded) {
       setFormData({
-        driver_id: schedule.driver_id || '',
-        bus_id: schedule.bus_id || '',
-        route_id: schedule.route_id || '',
+        // store IDs as strings so they match the <option value> produced by FormInput
+  driver_id: (schedule.driver_id !== undefined && schedule.driver_id !== null) ? String(schedule.driver_id) : '',
+  bus_id: (schedule.bus_id !== undefined && schedule.bus_id !== null) ? String(schedule.bus_id) : '',
+  route_id: (schedule.route_id !== undefined && schedule.route_id !== null) ? String(schedule.route_id) : '',
         date: schedule.date || '',
         shift_type: schedule.shift_type || '',
         start_time: schedule.start_time || schedule.scheduled_start_time || '',
         end_time: schedule.end_time || schedule.scheduled_end_time || '',
-        student_count: schedule.student_count || 0,
+  student_count: (schedule.student_count !== undefined && schedule.student_count !== null) ? Number(schedule.student_count) : 0,
         status: schedule.status || 'scheduled',
         notes: schedule.notes || '',
       });
     }
-  }, [schedule]);
+  }, [schedule, optionsLoaded]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -88,7 +92,16 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let newVal = value;
+    // normalize certain fields
+    if (name === 'student_count') {
+      newVal = value === '' ? 0 : Number(value);
+    } else if (name.endsWith('_id')) {
+      // keep IDs as strings so they match option values from the DOM
+      newVal = value ? String(value) : '';
+    }
+
+    setFormData(prev => ({ ...prev, [name]: newVal }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
@@ -103,7 +116,15 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     if (validateForm()) {
       setLoading(true);
       try {
-        await onSubmit(formData);
+        // convert ID strings back to numbers for the API payload
+        const payload = {
+          ...formData,
+          driver_id: formData.driver_id ? Number(formData.driver_id) : null,
+          bus_id: formData.bus_id ? Number(formData.bus_id) : null,
+          route_id: formData.route_id ? Number(formData.route_id) : null,
+          student_count: Number(formData.student_count) || 0,
+        };
+        await onSubmit(payload);
       } finally {
         setLoading(false);
       }
