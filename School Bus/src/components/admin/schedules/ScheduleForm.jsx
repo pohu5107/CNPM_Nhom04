@@ -13,11 +13,11 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     route_id: '',
     date: '',
     shift_type: '',
-    shift_number: '',
     start_time: '',
     end_time: '',
-    start_point: '',
-    end_point: '',
+    student_count: 0,
+    status: 'scheduled',
+    notes: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -25,6 +25,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   const [drivers, setDrivers] = useState([]);
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
 
   // Load dữ liệu dropdowns
   useEffect(() => {
@@ -38,6 +39,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         setDrivers(driversData || []);
         setBuses(busesData || []);
         setRoutes(routesData || []);
+        setOptionsLoaded(true);
       } catch (error) {
         console.error('❌ Error fetching data:', error);
       }
@@ -46,22 +48,24 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
   }, []);
 
   // Gán dữ liệu khi edit/view
+  // Wait until options are loaded before populating initial form values
   useEffect(() => {
-    if (schedule) {
+    if (schedule && optionsLoaded) {
       setFormData({
-        driver_id: schedule.driver_id || '',
-        bus_id: schedule.bus_id || '',
-        route_id: schedule.route_id || '',
+        // store IDs as strings so they match the <option value> produced by FormInput
+  driver_id: (schedule.driver_id !== undefined && schedule.driver_id !== null) ? String(schedule.driver_id) : '',
+  bus_id: (schedule.bus_id !== undefined && schedule.bus_id !== null) ? String(schedule.bus_id) : '',
+  route_id: (schedule.route_id !== undefined && schedule.route_id !== null) ? String(schedule.route_id) : '',
         date: schedule.date || '',
         shift_type: schedule.shift_type || '',
-        shift_number: schedule.shift_number || '',
-        start_time: schedule.start_time || '',
-        end_time: schedule.end_time || '',
-        start_point: schedule.start_point || '',
-        end_point: schedule.end_point || '',
+        start_time: schedule.start_time || schedule.scheduled_start_time || '',
+        end_time: schedule.end_time || schedule.scheduled_end_time || '',
+  student_count: (schedule.student_count !== undefined && schedule.student_count !== null) ? Number(schedule.student_count) : 0,
+        status: schedule.status || 'scheduled',
+        notes: schedule.notes || '',
       });
     }
-  }, [schedule]);
+  }, [schedule, optionsLoaded]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -71,14 +75,15 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     if (!formData.route_id) newErrors.route_id = 'Tuyến đường là bắt buộc';
     if (!formData.date) newErrors.date = 'Ngày là bắt buộc';
     if (!formData.shift_type) newErrors.shift_type = 'Loại ca là bắt buộc';
-    if (!formData.shift_number) newErrors.shift_number = 'Số ca là bắt buộc';
     if (!formData.start_time) newErrors.start_time = 'Giờ bắt đầu là bắt buộc';
     if (!formData.end_time) newErrors.end_time = 'Giờ kết thúc là bắt buộc';
-    if (!formData.start_point) newErrors.start_point = 'Điểm đầu là bắt buộc';
-    if (!formData.end_point) newErrors.end_point = 'Điểm cuối là bắt buộc';
 
     if (formData.start_time && formData.end_time && formData.start_time >= formData.end_time) {
       newErrors.end_time = 'Giờ kết thúc phải sau giờ bắt đầu';
+    }
+
+    if (formData.student_count < 0) {
+      newErrors.student_count = 'Số học sinh không thể âm';
     }
 
     setErrors(newErrors);
@@ -87,7 +92,16 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let newVal = value;
+    // normalize certain fields
+    if (name === 'student_count') {
+      newVal = value === '' ? 0 : Number(value);
+    } else if (name.endsWith('_id')) {
+      // keep IDs as strings so they match option values from the DOM
+      newVal = value ? String(value) : '';
+    }
+
+    setFormData(prev => ({ ...prev, [name]: newVal }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
@@ -102,7 +116,15 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     if (validateForm()) {
       setLoading(true);
       try {
-        await onSubmit(formData);
+        // convert ID strings back to numbers for the API payload
+        const payload = {
+          ...formData,
+          driver_id: formData.driver_id ? Number(formData.driver_id) : null,
+          bus_id: formData.bus_id ? Number(formData.bus_id) : null,
+          route_id: formData.route_id ? Number(formData.route_id) : null,
+          student_count: Number(formData.student_count) || 0,
+        };
+        await onSubmit(payload);
       } finally {
         setLoading(false);
       }
@@ -178,17 +200,6 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Số ca"
-          name="shift_number"
-          type="number"
-          value={formData.shift_number}
-          onChange={handleChange}
-          error={errors.shift_number}
-          required
-          readOnly={isReadOnly}
-        />
-
-        <FormInput
           label="Giờ bắt đầu"
           name="start_time"
           type="time"
@@ -211,24 +222,43 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Điểm đầu"
-          name="start_point"
-          type="text"
-          value={formData.start_point}
+          label="Số học sinh"
+          name="student_count"
+          type="number"
+          value={formData.student_count}
           onChange={handleChange}
-          error={errors.start_point}
-          required
+          error={errors.student_count}
+          min="0"
           readOnly={isReadOnly}
         />
 
         <FormInput
-          label="Điểm cuối"
-          name="end_point"
-          type="text"
-          value={formData.end_point}
+          label="Trạng thái"
+          name="status"
+          type="select"
+          value={formData.status}
           onChange={handleChange}
-          error={errors.end_point}
-          required
+          error={errors.status}
+          options={[
+            { value: 'scheduled', label: 'Đã lên lịch' },
+            { value: 'in_progress', label: 'Đang thực hiện' },
+            { value: 'completed', label: 'Hoàn thành' },
+            { value: 'cancelled', label: 'Đã hủy' },
+          ]}
+          readOnly={isReadOnly}
+        />
+      </div>
+
+      {/* Ghi chú full width */}
+      <div className="mt-4">
+        <FormInput
+          label="Ghi chú"
+          name="notes"
+          type="textarea"
+          value={formData.notes}
+          onChange={handleChange}
+          error={errors.notes}
+          rows={3}
           readOnly={isReadOnly}
         />
       </div>
