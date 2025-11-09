@@ -101,7 +101,7 @@ export default function DriverMapPage() {
   const confirmArrival = () => {
     if (currentStopIndex < stops.length - 1) {
       setCurrentStopIndex(prev => prev + 1);
-      addAlert('success', `✅ Đã đến ${currentStop.name}`);
+      addAlert('success', ` Đã đến ${currentStop.name}`);
     } else {
       // Đã đến điểm cuối
       addAlert('success', '🏁 Đã hoàn thành tuyến đường');
@@ -142,7 +142,7 @@ export default function DriverMapPage() {
             students: stop.students.map(student => {
               if (student.id === studentId) {
                 const newStatus = student.status === 'picked_up' ? 'waiting' : 'picked_up';
-                addAlert('success', `${newStatus === 'picked_up' ? '✅ Đã đón' : '⏳ Chưa đón'} ${student.name}`);
+                addAlert('success', `${newStatus === 'picked_up' ? ' Đã đón' : '⏳ Chưa đón'} ${student.name}`);
                 return { ...student, status: newStatus };
               }
               return student;
@@ -163,7 +163,7 @@ export default function DriverMapPage() {
             students: stop.students.map(student => {
               if (student.id === studentId) {
                 const newStatus = student.status === 'absent' ? 'waiting' : 'absent';
-                addAlert('warning', `${newStatus === 'absent' ? '❌ Vắng mặt' : '⏳ Có mặt'} ${student.name}`);
+                addAlert('warning', `${newStatus === 'absent' ? ' Vắng mặt' : '⏳ Có mặt'} ${student.name}`);
                 return { ...student, status: newStatus };
               }
               return student;
@@ -365,7 +365,7 @@ export default function DriverMapPage() {
             ) : (
               <div className="text-center py-2">
                 <div className="text-green-600 font-semibold">
-                  {tripStatus === 'completed' ? '🏁 Đã hoàn thành tuyến' : '🎯 Đã đến điểm cuối'}
+                  {tripStatus === 'completed' ? '🏁 Đã hoàn thành tuyến' : ' Đã đến điểm cuối'}
                 </div>
               </div>
             )}
@@ -432,7 +432,7 @@ export default function DriverMapPage() {
                   ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
-              title={nextStop ? "✅ Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
+              title={nextStop ? " Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
             >
               <CheckCircle className="w-7 h-7" />
             </button>
@@ -764,7 +764,7 @@ export default function DriverMapPage() {
                   onClick={() => setShowStudentsPanel(false)}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  🔵 Đóng danh sách
+                   Đóng danh sách
                 </button>
               </div>
             </div>

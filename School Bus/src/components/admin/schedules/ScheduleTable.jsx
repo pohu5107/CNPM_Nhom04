@@ -142,7 +142,7 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
 
   return (
     <div>
-      {/* ✅ Lọc ngày — float right */}
+      {/*  Lọc ngày — float right */}
       <div className="flex justify-end items-center gap-3 mb-4 px-8">
         <label className="text-sm text-gray-600">Từ ngày:</label>
         <input

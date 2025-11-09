@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 06, 2025 lúc 02:27 PM
+-- Thời gian đã tạo: Th10 09, 2025 lúc 07:01 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -261,7 +261,6 @@ CREATE TABLE `route_stops` (
   `route_id` int(11) NOT NULL,
   `stop_id` int(11) NOT NULL,
   `stop_order` int(11) NOT NULL,
-  `estimated_arrival_time` time DEFAULT NULL,
   `student_pickup_count` int(11) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -270,37 +269,37 @@ CREATE TABLE `route_stops` (
 -- Đang đổ dữ liệu cho bảng `route_stops`
 --
 
-INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `estimated_arrival_time`, `student_pickup_count`, `created_at`) VALUES
-(103, 1, 44, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(104, 1, 1, 1, '00:15:00', 3, '2025-10-31 12:08:03'),
-(105, 1, 46, 2, '00:30:00', 5, '2025-10-31 12:08:03'),
-(106, 1, 2, 3, '00:45:00', 4, '2025-10-31 12:08:03'),
-(107, 1, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
-(108, 2, 49, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(109, 2, 50, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
-(110, 2, 51, 2, '00:30:00', 3, '2025-10-31 12:08:03'),
-(111, 2, 52, 3, '00:45:00', 5, '2025-10-31 12:08:03'),
-(112, 2, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
-(113, 3, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(114, 3, 57, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
-(115, 3, 56, 2, '00:30:00', 7, '2025-10-31 12:08:03'),
-(116, 3, 55, 3, '00:45:00', 6, '2025-10-31 12:08:03'),
-(117, 3, 54, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
-(118, 4, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(119, 4, 52, 1, '00:15:00', 3, '2025-10-31 12:08:03'),
-(120, 4, 51, 2, '00:30:00', 6, '2025-10-31 12:08:03'),
-(121, 4, 53, 3, '00:45:00', 4, '2025-10-31 12:08:03'),
-(122, 4, 49, 99, '01:00:00', 0, '2025-10-31 12:08:03'),
-(123, 5, 43, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(124, 5, 2, 1, '00:15:00', 5, '2025-10-31 12:08:03'),
-(125, 5, 1, 2, '00:25:00', 8, '2025-10-31 12:08:03'),
-(126, 5, 48, 3, '00:40:00', 6, '2025-10-31 12:08:03'),
-(127, 5, 44, 99, '00:50:00', 0, '2025-10-31 12:08:03'),
-(128, 6, 54, 0, '00:00:00', 0, '2025-10-31 12:08:03'),
-(129, 6, 55, 1, '00:15:00', 4, '2025-10-31 12:08:03'),
-(130, 6, 56, 2, '00:30:00', 7, '2025-10-31 12:08:03'),
-(131, 6, 57, 3, '00:45:00', 5, '2025-10-31 12:08:03'),
-(132, 6, 43, 99, '01:00:00', 0, '2025-10-31 12:08:03');
+INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `student_pickup_count`, `created_at`) VALUES
+(103, 1, 44, 0, 0, '2025-10-31 12:08:03'),
+(104, 1, 1, 1, 3, '2025-10-31 12:08:03'),
+(105, 1, 46, 2, 5, '2025-10-31 12:08:03'),
+(106, 1, 2, 3, 4, '2025-10-31 12:08:03'),
+(107, 1, 43, 99, 0, '2025-10-31 12:08:03'),
+(108, 2, 49, 0, 0, '2025-10-31 12:08:03'),
+(109, 2, 50, 1, 4, '2025-10-31 12:08:03'),
+(110, 2, 51, 2, 3, '2025-10-31 12:08:03'),
+(111, 2, 52, 3, 5, '2025-10-31 12:08:03'),
+(112, 2, 43, 99, 0, '2025-10-31 12:08:03'),
+(113, 3, 43, 0, 0, '2025-10-31 12:08:03'),
+(114, 3, 57, 1, 4, '2025-10-31 12:08:03'),
+(115, 3, 56, 2, 7, '2025-10-31 12:08:03'),
+(116, 3, 55, 3, 6, '2025-10-31 12:08:03'),
+(117, 3, 54, 99, 0, '2025-10-31 12:08:03'),
+(118, 4, 43, 0, 0, '2025-10-31 12:08:03'),
+(119, 4, 52, 1, 3, '2025-10-31 12:08:03'),
+(120, 4, 51, 2, 6, '2025-10-31 12:08:03'),
+(121, 4, 53, 3, 4, '2025-10-31 12:08:03'),
+(122, 4, 49, 99, 0, '2025-10-31 12:08:03'),
+(123, 5, 43, 0, 0, '2025-10-31 12:08:03'),
+(124, 5, 2, 1, 5, '2025-10-31 12:08:03'),
+(125, 5, 1, 2, 8, '2025-10-31 12:08:03'),
+(126, 5, 48, 3, 6, '2025-10-31 12:08:03'),
+(127, 5, 44, 99, 0, '2025-10-31 12:08:03'),
+(128, 6, 54, 0, 0, '2025-10-31 12:08:03'),
+(129, 6, 55, 1, 4, '2025-10-31 12:08:03'),
+(130, 6, 56, 2, 7, '2025-10-31 12:08:03'),
+(131, 6, 57, 3, 5, '2025-10-31 12:08:03'),
+(132, 6, 43, 99, 0, '2025-10-31 12:08:03');
 
 -- --------------------------------------------------------
 
@@ -331,14 +330,14 @@ CREATE TABLE `schedules` (
 --
 
 INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift_type`, `scheduled_start_time`, `scheduled_end_time`, `student_count`, `status`, `actual_start_time`, `actual_end_time`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, '2025-10-23', 'morning', '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(3, 1, 2, 3, '2025-10-23', 'afternoon', '17:00:00', '18:00:00', 0, 'completed', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(4, 2, 2, 1, '2025-10-23', 'morning', '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(4, 2, 2, 2, '2025-10-23', 'morning', '06:30:00', '07:30:00', 14, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-08 14:28:43'),
 (6, 3, 3, 6, '2025-10-23', 'morning', '06:45:00', '07:45:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(7, 1, 1, 1, '2025-10-24', 'morning', '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(8, 1, 1, 4, '2025-10-24', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(9, 2, 2, 1, '2025-10-24', 'morning', '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(10, 3, 3, 3, '2025-10-24', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09');
+(10, 3, 3, 3, '2025-10-23', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-07 10:25:03'),
+(23, 1, 1, 5, '2025-10-23', 'afternoon', '17:30:00', '18:30:00', 0, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:26:54', '2025-11-07 10:31:22'),
+(24, 1, 1, 1, '2025-10-23', 'morning', '06:30:00', '07:30:00', 0, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:28:15', '2025-11-07 10:28:15'),
+(26, 2, 2, 4, '2025-10-23', 'afternoon', '17:30:00', '18:30:00', 13, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:42:35', '2025-11-07 10:42:35'),
+(28, 1, 2, 6, '2025-11-09', 'morning', '06:20:00', '07:10:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-08 16:02:52', '2025-11-09 05:47:39'),
+(31, 1, 2, 5, '2025-11-09', 'afternoon', '17:30:00', '18:55:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 05:23:17', '2025-11-09 05:29:22');
 
 -- --------------------------------------------------------
 
@@ -686,7 +685,7 @@ ALTER TABLE `attendance`
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `bus_locations`
@@ -704,7 +703,7 @@ ALTER TABLE `classes`
 -- AUTO_INCREMENT cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `notifications`
@@ -716,7 +715,7 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
@@ -734,7 +733,7 @@ ALTER TABLE `route_stops`
 -- AUTO_INCREMENT cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT cho bảng `stops`
@@ -746,13 +745,13 @@ ALTER TABLE `stops`
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

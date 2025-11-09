@@ -33,7 +33,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         setParents(parentsData || []);
         setClasses(classesData || []);
       } catch (error) {
-        console.error('❌ Error fetching data:', error);
+        console.error(' Error fetching data:', error);
         // Set empty arrays nếu lỗi để tránh undefined
         setParents([]);
         setClasses([]);
@@ -44,7 +44,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
   useEffect(() => {
     if (student) {
-      console.log('🎯 Setting form data with student:', student);
+      console.log(' Setting form data with student:', student);
       setFormData({
         name: student.name || '',
         grade: student.grade || '',
