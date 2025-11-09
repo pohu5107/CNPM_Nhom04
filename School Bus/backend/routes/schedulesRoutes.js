@@ -296,7 +296,6 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             SELECT 
                 rs.id,
                 rs.stop_order as \`order\`,
-                rs.estimated_arrival_time,
                 s.name,
                 s.address,
                 s.latitude,
