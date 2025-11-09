@@ -131,8 +131,8 @@ export const schedulesService = {
         return [
             { value: 'scheduled', label: 'Chưa bắt đầu', color: 'gray', icon: '⏳' },
             { value: 'in_progress', label: 'Đang chạy', color: 'blue', icon: '🚍' },
-            { value: 'completed', label: 'Hoàn thành', color: 'green', icon: '✅' },
-            { value: 'cancelled', label: 'Đã hủy', color: 'red', icon: '❌' }
+            { value: 'completed', label: 'Hoàn thành', color: 'green', icon: '' },
+            { value: 'cancelled', label: 'Đã hủy', color: 'red', icon: '' }
         ];
     },
 

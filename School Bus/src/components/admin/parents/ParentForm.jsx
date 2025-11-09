@@ -6,6 +6,7 @@ import { parentsService } from '../../../services/parentsService';
 const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     phone: '',
     relationship: '',
@@ -19,9 +20,10 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
   useEffect(() => {
     if (parent) {
-      console.log('🎯 Setting parent form data with:', parent);
+      console.log(' Setting parent form data with:', parent);
       setFormData({
         name: parent.name || '',
+        username: parent.username || '',
         email: parent.email || '',
         phone: parent.phone || '',
         relationship: parent.relationship || '',
@@ -36,12 +38,12 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       const fetchChildren = async () => {
         try {
           setChildrenLoading(true);
-          console.log('🔵 Fetching children for parent:', parent.id);
+          console.log(' Fetching children for parent:', parent.id);
           const data = await parentsService.getParentChildren(parent.id);
-          console.log('✅ Children data received:', data);
+          console.log(' Children data received:', data);
           setChildrenDetails(data);
         } catch (error) {
-          console.error('❌ Error fetching children:', error);
+          console.error(' Error fetching children:', error);
           setChildrenDetails([]);
         } finally {
           setChildrenLoading(false);
@@ -66,6 +68,11 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
+    }
+
+    // Nếu nhập email thì phải có username (tạo user để parent đăng nhập)
+    if (formData.email && (!formData.username || !/^[a-zA-Z0-9_.-]{3,30}$/.test(formData.username))) {
+      newErrors.username = 'Username hợp lệ (3-30 ký tự: chữ, số, _, -, .) là bắt buộc khi nhập email';
     }
 
     if (!formData.address.trim()) {
@@ -298,6 +305,16 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <FormInput
+        label="Username"
+        name="username"
+        value={formData.username}
+        onChange={handleChange}
+        error={errors.username}
+        placeholder="Tên đăng nhập (3-30 ký tự)"
+        required={false}
+        readOnly={isReadOnly}
+      />
       <FormInput
         label="Họ và tên"
         name="name"

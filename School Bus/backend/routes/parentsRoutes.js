@@ -2,6 +2,7 @@
 
 import express from 'express';
 import pool from '../config/db.js';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const sendError = (res, err, msg = 'Lỗi server') => {
 
 const getParentById = async (id) => {
   const [rows] = await pool.execute(
-    `SELECT p.id, p.name, COALESCE(u.email, 'Chưa có') AS email, p.phone, p.address, p.relationship, 'active' AS status, p.user_id
+    `SELECT p.id, p.name, COALESCE(u.email, 'Chưa có') AS email, COALESCE(u.username, '') AS username, p.phone, p.address, p.relationship, 'active' AS status, p.user_id
      FROM parents p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = ?`,
     [id]
   );
@@ -23,12 +24,12 @@ const getParentById = async (id) => {
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.execute(`
-      SELECT p.id, p.name, COALESCE(u.email, 'Chưa có') AS email, p.phone, p.address, p.relationship, 'active' AS status,
+      SELECT p.id, p.name, COALESCE(u.email, 'Chưa có') AS email, COALESCE(u.username, '') AS username, p.phone, p.address, p.relationship, 'active' AS status,
              COUNT(s.id) AS children_count, GROUP_CONCAT(s.name SEPARATOR ', ') AS children_names
       FROM parents p
       LEFT JOIN users u ON p.user_id = u.id
       LEFT JOIN students s ON p.id = s.parent_id
-      GROUP BY p.id, p.name, u.email, p.phone, p.address, p.relationship
+      GROUP BY p.id, p.name, u.email, u.username, p.phone, p.address, p.relationship
       ORDER BY p.id DESC
     `);
     res.json({ success: true, data: rows, count: rows.length });
@@ -83,7 +84,7 @@ router.get('/:id/children', async (req, res) => {
 // POST /api/parents - thêm phụ huynh
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, address, relationship } = req.body;
+  const { name, username, email, phone, address, relationship } = req.body;
     if (!name || !phone) return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc: tên và số điện thoại' });
 
     const [existingPhone] = await pool.execute('SELECT id FROM parents WHERE phone = ?', [phone]);
@@ -91,10 +92,21 @@ router.post('/', async (req, res) => {
 
     let user_id = null;
     if (email && email !== '') {
+      // Require username when creating a user for parent
+      if (!username) return res.status(400).json({ success: false, message: 'Username là bắt buộc khi tạo tài khoản phụ huynh' });
+
+      // Check username uniqueness
+      const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
+      if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
+
       const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
       if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
+
+      // Generate default password (temporary) and hash it
       const defaultPassword = '123456';
-      const [userResult] = await pool.execute('INSERT INTO users (email, password, role, status) VALUES (?, ?, "parent", "active")', [email, defaultPassword]);
+      const hashed = await bcrypt.hash(defaultPassword, 10);
+
+      const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, hashed]);
       user_id = userResult.insertId;
     }
 
@@ -110,7 +122,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, address, relationship } = req.body;
+  const { name, username, email, phone, address, relationship } = req.body;
     const [existing] = await pool.execute('SELECT id, user_id FROM parents WHERE id = ?', [id]);
     if (!existing.length) return res.status(404).json({ success: false, message: 'Không tìm thấy phụ huynh' });
 
@@ -120,14 +132,27 @@ router.put('/:id', async (req, res) => {
     let user_id = existing[0].user_id;
     if (email && email !== '' && email !== 'Chưa có') {
       if (user_id) {
+        // Update existing user email and optionally username
         const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ? AND id != ?', [email, user_id]);
         if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
-        await pool.execute('UPDATE users SET email = ? WHERE id = ?', [email, user_id]);
+        // If username provided, ensure uniqueness and update
+        if (username) {
+          const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ? AND id != ?', [username, user_id]);
+          if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
+          await pool.execute('UPDATE users SET email = ?, username = ? WHERE id = ?', [email, username, user_id]);
+        } else {
+          await pool.execute('UPDATE users SET email = ? WHERE id = ?', [email, user_id]);
+        }
       } else {
+        // Create new users record if parent didn't have one
+        if (!username) return res.status(400).json({ success: false, message: 'Username là bắt buộc khi tạo tài khoản phụ huynh' });
         const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
         if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
+        const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
+        if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
         const defaultPassword = '123456';
-        const [userResult] = await pool.execute('INSERT INTO users (email, password, role, status) VALUES (?, ?, "parent", "active")', [email, defaultPassword]);
+        const hashed = await bcrypt.hash(defaultPassword, 10);
+        const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, hashed]);
         user_id = userResult.insertId;
       }
     } else if ((!email || email === '' || email === 'Chưa có') && user_id) {

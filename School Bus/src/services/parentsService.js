@@ -9,7 +9,7 @@ export const parentsService = {
     getAllParents: async () => {
         try {
             const response = await apiClient.get(ENDPOINT);
-            console.log('🔵 Parents response from API:', response);
+            console.log(' Parents response from API:', response);
             return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching parents:', error);
@@ -31,9 +31,9 @@ export const parentsService = {
     // Lấy danh sách con của phụ huynh
     getParentChildren: async (id) => {
         try {
-            console.log('🔵 Getting children for parent:', id);
+            console.log(' Getting children for parent:', id);
             const response = await apiClient.get(`${ENDPOINT}/${id}/children`);
-            console.log('✅ Children response:', response);
+            console.log('  Children response:', response);
             return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching parent children:', error);
@@ -44,7 +44,7 @@ export const parentsService = {
     // Tạo phụ huynh mới
     createParent: async (parentData) => {
         try {
-            console.log('🔵 Creating parent with data:', parentData);
+            console.log(' Creating parent with data:', parentData);
             const response = await apiClient.post(ENDPOINT, parentData);
             return response || null;
         } catch (error) {
@@ -56,7 +56,7 @@ export const parentsService = {
     // Cập nhật phụ huynh
     updateParent: async (id, parentData) => {
         try {
-            console.log('🔵 Updating parent with data:', parentData);
+            console.log(' Updating parent with data:', parentData);
             const response = await apiClient.put(`${ENDPOINT}/${id}`, parentData);
             return response || null;
         } catch (error) {

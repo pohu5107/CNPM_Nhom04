@@ -8,12 +8,12 @@ export const busesService = {
     // Lấy tất cả xe buýt
     getAllBuses: async () => {
         try {
-            console.log('🔵 Calling GET /buses...');
+            console.log(' Calling GET /buses...');
             const response = await apiClient.get(ENDPOINT);
-            console.log('✅ Response from interceptor:', response);
+            console.log(' Response from interceptor:', response);
             return Array.isArray(response) ? response : [];
         } catch (error) {
-            console.error('❌ Error fetching buses:', error);
+            console.error(' Error fetching buses:', error);
             throw error;
         }
     },
@@ -24,7 +24,7 @@ export const busesService = {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
             return response;
         } catch (error) {
-            console.error('❌ Error fetching bus:', error);
+            console.error(' Error fetching bus:', error);
             throw error;
         }
     },
@@ -35,7 +35,7 @@ export const busesService = {
             const response = await apiClient.post(ENDPOINT, busData);
             return response;
         } catch (error) {
-            console.error('❌ Error creating bus:', error);
+            console.error(' Error creating bus:', error);
             throw error;
         }
     },
@@ -46,7 +46,7 @@ export const busesService = {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, busData);
             return response;
         } catch (error) {
-            console.error('❌ Error updating bus:', error);
+            console.error(' Error updating bus:', error);
             throw error;
         }
     },
@@ -57,7 +57,7 @@ export const busesService = {
             const response = await apiClient.delete(`${ENDPOINT}/${id}`);
             return response;
         } catch (error) {
-            console.error('❌ Error deleting bus:', error);
+            console.error(' Error deleting bus:', error);
             throw error;
         }
     },
