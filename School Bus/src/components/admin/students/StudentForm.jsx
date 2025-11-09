@@ -28,8 +28,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           parentsService.getAllParents(),
           classesService.getAllClasses()
         ]);
-        console.log('📚 Loaded classes:', classesData); // Debug log
-        console.log('👨‍👩‍👧 Loaded parents:', parentsData); // Debug log
+      
         setParents(parentsData || []);
         setClasses(classesData || []);
       } catch (error) {

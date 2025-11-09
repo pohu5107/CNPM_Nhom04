@@ -8,7 +8,7 @@ export const classesService = {
     try {
       const response = await api.get('/classes');
       console.log(' Classes response from API:', response);
-      return Array.isArray(response) ? response : [];  // response đã được interceptor xử lý
+      return Array.isArray(response) ? response : []; 
     } catch (error) {
       console.error('Error in getAllClasses:', error);
       throw error;
