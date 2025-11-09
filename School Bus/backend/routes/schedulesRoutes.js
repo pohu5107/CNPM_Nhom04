@@ -178,7 +178,7 @@ router.get('/driver/:driverId', async (req, res) => {
 router.get('/:driverId/:id', async (req, res) => {
     try {
         const { driverId, id } = req.params;
-        console.log('🔵 Fetching schedule detail with driverId:', driverId, 'and id:', id);
+        console.log(' Fetching schedule detail with driverId:', driverId, 'and id:', id);
         
         const [rows] = await pool.execute(`
             SELECT 
@@ -210,7 +210,7 @@ router.get('/:driverId/:id', async (req, res) => {
         `, [id, driverId]);
 
         if (rows.length === 0) {
-            console.log('🔴 No schedule found for driverId:', driverId, 'and id:', id);
+            console.log(' No schedule found for driverId:', driverId, 'and id:', id);
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -218,7 +218,7 @@ router.get('/:driverId/:id', async (req, res) => {
         }
 
         const schedule = rows[0];
-        console.log('🟢 Schedule found:', schedule.id);
+        console.log(' Schedule found:', schedule.id);
         
         // Lấy danh sách học sinh
         const [students] = await pool.execute(`
@@ -251,7 +251,7 @@ router.get('/:driverId/:id', async (req, res) => {
             data: detailData
         });
     } catch (error) {
-        console.error('🔴 Error fetching schedule detail:', error);
+        console.error(' Error fetching schedule detail:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy chi tiết lịch làm việc',
@@ -264,7 +264,7 @@ router.get('/:driverId/:id', async (req, res) => {
 router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
     try {
         const { driverId, scheduleId } = req.params;
-        console.log('🔵 Fetching stops with driverId:', driverId, 'and scheduleId:', scheduleId);
+        console.log(' Fetching stops with driverId:', driverId, 'and scheduleId:', scheduleId);
 
         // Lấy thông tin schedule
         const [scheduleRows] = await pool.execute(`
@@ -272,6 +272,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 s.id as schedule_id,
                 s.shift_type,
                 s.scheduled_start_time,
+                s.scheduled_end_time,
                 s.route_id,
                 r.route_name
             FROM schedules s
@@ -280,7 +281,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         `, [scheduleId, driverId]);
 
         if (scheduleRows.length === 0) {
-            console.log('🔴 No schedule found for driverId:', driverId, 'and scheduleId:', scheduleId);
+            console.log(' No schedule found for driverId:', driverId, 'and scheduleId:', scheduleId);
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -288,7 +289,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         }
 
         const schedule = scheduleRows[0];
-        console.log('🟢 Schedule found for stops:', schedule.schedule_id);
+        console.log(' Schedule found for stops:', schedule.schedule_id);
 
         // Lấy danh sách điểm dừng
         const [stops] = await pool.execute(`
@@ -306,44 +307,43 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
 
-        console.log('🟢 Stops found:', stops.length);
+        console.log(' Stops found:', stops.length);
 
         const startTime = schedule.scheduled_start_time;
+        const endTime = schedule.scheduled_end_time;
 
+        // Tính thời gian đơn giản: điểm đầu = start, điểm cuối = end, các điểm giữa chia đều
         const processedStops = stops.map((stop, index) => {
-            // Tính toán thời gian dự kiến
-            let estimatedTime = startTime;
+            let estimatedTime;
             
-            if (stop.estimated_arrival_time) {
-                // Nếu có estimated_arrival_time trong DB
-                const [startHours, startMinutes] = startTime.split(':').map(Number);
-                const offsetStr = stop.estimated_arrival_time.toString();
-                const [offsetHours, offsetMinutes] = offsetStr.split(':').map(Number);
-                
-                let totalMinutes = (startHours * 60 + startMinutes) + (offsetHours * 60 + offsetMinutes);
-                const finalHours = Math.floor(totalMinutes / 60) % 24;
-                const finalMins = totalMinutes % 60;
-                
-                estimatedTime = `${finalHours.toString().padStart(2, '0')}:${finalMins.toString().padStart(2, '0')}`;
+            if (stops.length === 1) {
+                // Chỉ có 1 điểm thì = startTime
+                estimatedTime = startTime?.substring(0, 5) || '00:00';
+            } else if (index === 0) {
+                // Điểm đầu = startTime
+                estimatedTime = startTime?.substring(0, 5) || '00:00';
+            } else if (index === stops.length - 1) {
+                // Điểm cuối = endTime
+                estimatedTime = endTime?.substring(0, 5) || startTime?.substring(0, 5) || '00:00';
             } else {
-                // Tự động tính thời gian dựa trên thứ tự
-                const startDateTime = new Date(`1970-01-01T${startTime}:00`);
-                
-                if (stop.order === 0) {
-                    // Điểm xuất phát = thời gian bắt đầu
-                    estimatedTime = startTime;
-                } else if (stop.order === 99) {
-                    // Điểm kết thúc = thời gian bắt đầu + 60 phút
-                    startDateTime.setMinutes(startDateTime.getMinutes() + 60);
-                    estimatedTime = startDateTime.toTimeString().substring(0, 5);
+                // Các điểm giữa: phân bố đều giữa start và end
+                if (startTime && endTime) {
+                    const [sH, sM] = startTime.split(':').map(Number);
+                    const [eH, eM] = endTime.split(':').map(Number);
+                    const startMinutes = sH * 60 + sM;
+                    const endMinutes = eH * 60 + eM;
+                    const totalDiff = endMinutes - startMinutes;
+                    const stepSize = totalDiff / (stops.length - 1);
+                    const currentMinutes = startMinutes + Math.round(stepSize * index);
+                    const h = Math.floor(currentMinutes / 60) % 24;
+                    const m = currentMinutes % 60;
+                    estimatedTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
                 } else {
-                    // Điểm dừng = startTime + (thứ tự * 10 phút)
-                    startDateTime.setMinutes(startDateTime.getMinutes() + (stop.order * 10));
-                    estimatedTime = startDateTime.toTimeString().substring(0, 5);
+                    estimatedTime = startTime?.substring(0, 5) || '00:00';
                 }
             }
             
-            // Xác định loại điểm dừng
+            // Xác định loại điểm
             let displayOrder = stop.order;
             let type = 'Điểm dừng';
             
@@ -381,7 +381,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('🔴 Error fetching stops:', error);
+        console.error(' Error fetching stops:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách điểm dừng',

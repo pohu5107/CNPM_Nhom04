@@ -111,7 +111,7 @@ export default function DriverSchedulePage() {
             {[
               { value: "today", label: "Hôm nay", icon: "📅" },
               { value: "week", label: "Tuần này", icon: "🗓️" },
-              { value: "all", label: "Tất cả", icon: "📋" }
+              { value: "all", label: "Tất cả", icon: "" }
             ].map(({ value, label, icon }) => (
               <button
                 key={value}
@@ -256,7 +256,7 @@ export default function DriverSchedulePage() {
           </div>
           
           <div className="bg-white p-6 rounded-xl shadow-lg border border-[#D8E359]/20 text-center hover:shadow-xl transition-shadow duration-200">
-            <div className="text-4xl mb-3">✅</div>
+            <div className="text-4xl mb-3"></div>
             <div className="text-sm text-slate-600 font-medium">Hoàn thành</div>
             <div className="text-3xl font-bold text-green-600">
               {summary.completed || 0}

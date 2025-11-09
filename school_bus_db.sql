@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 06, 2025 lúc 02:27 PM
+-- Thời gian đã tạo: Th10 09, 2025 lúc 06:00 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -331,14 +331,13 @@ CREATE TABLE `schedules` (
 --
 
 INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift_type`, `scheduled_start_time`, `scheduled_end_time`, `student_count`, `status`, `actual_start_time`, `actual_end_time`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, '2025-10-23', 'morning', '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(3, 1, 2, 3, '2025-10-23', 'afternoon', '17:00:00', '18:00:00', 0, 'completed', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(4, 2, 2, 1, '2025-10-23', 'morning', '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
+(4, 2, 2, 2, '2025-10-23', 'morning', '06:30:00', '07:30:00', 14, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-08 14:28:43'),
 (6, 3, 3, 6, '2025-10-23', 'morning', '06:45:00', '07:45:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(7, 1, 1, 1, '2025-10-24', 'morning', '06:30:00', '07:30:00', 2, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(8, 1, 1, 4, '2025-10-24', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(9, 2, 2, 1, '2025-10-24', 'morning', '07:00:00', '08:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09'),
-(10, 3, 3, 3, '2025-10-24', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-10-30 05:23:09');
+(10, 3, 3, 3, '2025-10-23', 'afternoon', '17:00:00', '18:00:00', 0, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-07 10:25:03'),
+(23, 1, 1, 5, '2025-10-23', 'afternoon', '17:30:00', '18:30:00', 0, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:26:54', '2025-11-07 10:31:22'),
+(24, 1, 1, 1, '2025-10-23', 'morning', '06:30:00', '07:30:00', 0, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:28:15', '2025-11-07 10:28:15'),
+(26, 2, 2, 4, '2025-10-23', 'afternoon', '17:30:00', '18:30:00', 13, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:42:35', '2025-11-07 10:42:35'),
+(28, 1, 2, 6, '2025-11-09', 'morning', '06:30:00', '07:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-08 16:02:52', '2025-11-08 16:42:05');
 
 -- --------------------------------------------------------
 
@@ -686,7 +685,7 @@ ALTER TABLE `attendance`
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `bus_locations`
@@ -704,7 +703,7 @@ ALTER TABLE `classes`
 -- AUTO_INCREMENT cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `notifications`
@@ -716,7 +715,7 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
@@ -734,7 +733,7 @@ ALTER TABLE `route_stops`
 -- AUTO_INCREMENT cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT cho bảng `stops`
@@ -746,13 +745,13 @@ ALTER TABLE `stops`
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

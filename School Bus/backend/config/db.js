@@ -23,10 +23,10 @@ const pool = mysql.createPool({
 async function checkConnection() {
     try {
         const connection = await pool.getConnection(); // Mượn 1 kết nối
-        console.log("✅ Kết nối CSDL MySQL thành công!");
+        console.log(" Kết nối CSDL MySQL thành công!");
         connection.release(); // Trả kết nối về pool
     } catch (err) {
-        console.error("❌ Kết nối CSDL MySQL thất bại:", err.message);
+        console.error(" Kết nối CSDL MySQL thất bại:", err.message);
     }
 }
 

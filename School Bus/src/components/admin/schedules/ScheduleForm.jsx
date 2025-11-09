@@ -41,7 +41,7 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
         setRoutes(routesData || []);
         setOptionsLoaded(true);
       } catch (error) {
-        console.error('❌ Error fetching data:', error);
+        console.error(' Error fetching data:', error);
       }
     };
     fetchData();

@@ -23,11 +23,11 @@ export default function RoutePage() {
         try {
           setLoading(true);
           setError(null);
-          console.log('🔵 Fetching routes from API...');
+          console.log(' Fetching routes from API...');
           const response = await axios.get('http://localhost:5000/api/routes', {
             timeout: 15000 // 15 giây thay vì 10 giây
           });
-          console.log('✅ Routes response:', response.data);
+          console.log(' Routes response:', response.data);
           
           if (response.data && response.data.data) {
             // Map backend data to frontend format
@@ -41,7 +41,7 @@ export default function RoutePage() {
             setRoutes([]);
           }
         } catch (error) {
-          console.error('❌ Error fetching routes:', error);
+          console.error(' Error fetching routes:', error);
           setError('Không thể tải danh sách tuyến đường. Vui lòng thử lại.');
           setRoutes([]); // Set empty array nếu lỗi
         } finally {

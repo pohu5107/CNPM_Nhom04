@@ -8,12 +8,12 @@ export const routesService = {
     // Lấy tất cả tuyến
     getAllRoutes: async () => {
         try {
-            console.log('🔵 Calling GET /routes...');
+            console.log(' Calling GET /routes...');
             const response = await apiClient.get(ENDPOINT);
-            console.log('✅ Response from interceptor:', response);
+            console.log(' Response from interceptor:', response);
             return Array.isArray(response) ? response : [];
         } catch (error) {
-            console.error('❌ Error fetching routes:', error);
+            console.error(' Error fetching routes:', error);
             throw error;
         }
     },
@@ -24,7 +24,7 @@ export const routesService = {
             const response = await apiClient.get(`${ENDPOINT}/${id}`);
             return response;
         } catch (error) {
-            console.error('❌ Error fetching route:', error);
+            console.error(' Error fetching route:', error);
             throw error;
         }
     },
@@ -35,7 +35,7 @@ export const routesService = {
             const response = await apiClient.post(ENDPOINT, routeData);
             return response;
         } catch (error) {
-            console.error('❌ Error creating route:', error);
+            console.error(' Error creating route:', error);
             throw error;
         }
     },
@@ -46,7 +46,7 @@ export const routesService = {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, routeData);
             return response;
         } catch (error) {
-            console.error('❌ Error updating route:', error);
+            console.error(' Error updating route:', error);
             throw error;
         }
     },
@@ -57,7 +57,7 @@ export const routesService = {
             const response = await apiClient.delete(`${ENDPOINT}/${id}`);
             return response;
         } catch (error) {
-            console.error('❌ Error deleting route:', error);
+            console.error(' Error deleting route:', error);
             throw error;
         }
     },
