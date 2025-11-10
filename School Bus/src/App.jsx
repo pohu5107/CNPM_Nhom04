@@ -25,9 +25,9 @@ function NavbarSelector() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full h-[100vh] ">
         <NavbarSelector />
-        <main className="flex-1 w-full overflow-hidden">
+        <main className="flex-auto p-4 overflow-hidden">
           <AppRouter />
         </main>
       </div>

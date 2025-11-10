@@ -64,12 +64,14 @@ router.post("/", async (req, res) => {
     }
 
     const [result] = await pool.execute(
-      "INSERT INTO buses (bus_number, license_plate, status, created_at) VALUES (?, ?, ?, NOW())",
+      "INSERT INTO buses (bus_number, license_plate, status) VALUES (?, ?, ?)",
       [bus_number, license_plate, status || "active"]
     );
 
     // Lấy thông tin xe vừa tạo
-    const [newBus] = await pool.execute("SELECT * FROM buses WHERE id = ?", [result.insertId]);
+    const [newBus] = await pool.execute("SELECT * FROM buses WHERE id = ?", [
+      result.insertId,
+    ]);
 
     res.status(201).json({
       success: true,
@@ -112,7 +114,10 @@ router.put("/:id", async (req, res) => {
     }
 
     // Lấy thông tin xe đã cập nhật
-    const [updatedBus] = await pool.execute("SELECT * FROM buses WHERE id = ?", [id]);
+    const [updatedBus] = await pool.execute(
+      "SELECT * FROM buses WHERE id = ?",
+      [id]
+    );
 
     res.json({
       success: true,
