@@ -21,8 +21,17 @@ export const schedulesService = {
             const queryString = new URLSearchParams(params).toString();
             const url = `${ENDPOINT}/driver/${driverId}${queryString ? `?${queryString}` : ''}`;
             const response = await apiClient.get(url);
-            return Array.isArray(response.data) ? response.data : 
-                   Array.isArray(response) ? response : [];
+            
+            // Handle response format from backend
+            if (response && response.data && Array.isArray(response.data.data)) {
+                return response.data.data;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                return response.data;
+            } else if (Array.isArray(response)) {
+                return response;
+            }
+            
+            return [];
         } catch (error) {
             console.error('Error fetching driver schedules:', error);
             throw error;
@@ -98,17 +107,7 @@ export const schedulesService = {
         }
     },
 
-    // Lấy thống kê tổng quan
-    getDriverSummary: async (driverId, date = null) => {
-        try {
-            const params = date ? `?date=${date}` : '';
-            const response = await apiClient.get(`${ENDPOINT}/driver/${driverId}/summary${params}`);
-            return response.data || response;
-        } catch (error) {
-            console.error('Error fetching driver summary:', error);
-            throw error;
-        }
-    },
+ 
 
     // Lấy danh sách điểm dừng thực tế cho một lịch trình
     getScheduleStops: async (driverId, scheduleId) => {

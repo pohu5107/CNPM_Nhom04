@@ -10,7 +10,6 @@ export default function DriverSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("2025-10-23");
   const [timeFilter, setTimeFilter] = useState("today"); // today, week, all
   const [schedules, setSchedules] = useState([]);
-  const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentDriver, setCurrentDriver] = useState({ name: 'Đang tải...', driverCode: 'TX001' });
@@ -19,7 +18,6 @@ export default function DriverSchedulePage() {
   // Load data when component mounts or filters change
   useEffect(() => {
     fetchSchedules();
-    fetchSummary();
   }, [selectedDate, timeFilter]);
 
   const fetchSchedules = async () => {
@@ -41,14 +39,7 @@ export default function DriverSchedulePage() {
     }
   };
 
-  const fetchSummary = async () => {
-    try {
-      const summaryData = await schedulesService.getDriverSummary(CURRENT_DRIVER_ID, selectedDate);
-      setSummary(summaryData);
-    } catch (err) {
-      console.error('Error fetching summary:', err);
-    }
-  };
+
 
   // Lấy thông tin driver hiện tại từ localStorage hoặc context
   useEffect(() => {
@@ -72,6 +63,10 @@ export default function DriverSchedulePage() {
 
   const handleViewDetail = (scheduleId) => {
     navigate(`/driver/schedule/${scheduleId}`);
+  };
+
+  const handleStartRoute = (scheduleId) => {
+    navigate(`/driver/map/${scheduleId}`);
   };
 
   return (
@@ -141,17 +136,21 @@ export default function DriverSchedulePage() {
 
         {/* Main Schedule Table */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 overflow-hidden">
-          {loading ? (
+          {loading && (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#D8E359] border-t-[#174D2C] mx-auto mb-4"></div>
               <p className="text-[#174D2C] font-medium">Đang tải lịch làm việc...</p>
             </div>
-          ) : schedules.length === 0 ? (
+          )}
+
+          {!loading && schedules.length === 0 && (
             <div className="p-12 text-center">
               <div className="text-6xl mb-4">📅</div>
               <p className="text-slate-500 text-lg">Không có lịch làm việc nào trong thời gian này.</p>
             </div>
-          ) : (
+          )}
+
+          {!loading && schedules.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -160,10 +159,6 @@ export default function DriverSchedulePage() {
                     <th className="px-6 py-4 text-left font-semibold">THỜI GIAN</th>
                     <th className="px-6 py-4 text-left font-semibold">TUYẾN ĐƯỜNG</th>
                     <th className="px-6 py-4 text-left font-semibold">XE BUÝT</th>
-                    <th className="px-6 py-4 text-left font-semibold">ĐIỂM BẮT ĐẦU</th>
-                    <th className="px-6 py-4 text-left font-semibold">ĐIỂM KẾT THÚC</th>
-                    <th className="px-6 py-4 text-center font-semibold">SỐ ĐIỂM DỪNG</th>
-                    <th className="px-6 py-4 text-center font-semibold">HỌC SINH</th>
                     <th className="px-6 py-4 text-center font-semibold">TRẠNG THÁI</th>
                     <th className="px-6 py-4 text-center font-semibold">THAO TÁC</th>
                   </tr>
@@ -190,38 +185,28 @@ export default function DriverSchedulePage() {
                           {schedule.busNumber}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-600 max-w-[150px]">
-                          📍 {schedule.startPoint || 'Điểm bắt đầu'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-600 max-w-[150px]">
-                          🏁 {schedule.endPoint || 'Điểm kết thúc'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                          {schedule.stopCount} điểm
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          {schedule.actualStudentCount || schedule.studentCount.split('/')[0]}/{schedule.studentCount.split('/')[1]} học sinh
-                        </span>
-                      </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${schedule.statusColor}`}>
                           {schedule.statusText}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleViewDetail(schedule.id)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-slate-600 hover:bg-slate-700 transition-colors"
-                        >
-                          Xem chi tiết
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleViewDetail(schedule.id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-slate-600 hover:bg-slate-700 transition-colors"
+                          >
+                            Xem chi tiết
+                          </button>
+                          {(schedule.statusText === 'Chưa bắt đầu' || schedule.status === 'not_started') && (
+                            <button
+                              onClick={() => handleStartRoute(schedule.id)}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                            >
+                              🚀 Bắt đầu tuyến
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -231,38 +216,7 @@ export default function DriverSchedulePage() {
           )}
         </div>
 
-        {/* Summary Cards - Admin style */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-[#D8E359]/20 text-center hover:shadow-xl transition-shadow duration-200">
-            <div className="text-4xl mb-3">🚍</div>
-            <div className="text-sm text-slate-600 font-medium">Tổng số ca</div>
-            <div className="text-3xl font-bold text-[#174D2C]">{summary.total_shifts || 0}</div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-[#D8E359]/20 text-center hover:shadow-xl transition-shadow duration-200">
-            <div className="text-4xl mb-3">⏳</div>
-            <div className="text-sm text-slate-600 font-medium">Chưa bắt đầu</div>
-            <div className="text-3xl font-bold text-gray-600">
-              {summary.pending || 0}
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-[#D8E359]/20 text-center hover:shadow-xl transition-shadow duration-200">
-            <div className="text-4xl mb-3">🚍</div>
-            <div className="text-sm text-slate-600 font-medium">Đang chạy</div>
-            <div className="text-3xl font-bold text-blue-600">
-              {summary.in_progress || 0}
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-[#D8E359]/20 text-center hover:shadow-xl transition-shadow duration-200">
-            <div className="text-4xl mb-3"></div>
-            <div className="text-sm text-slate-600 font-medium">Hoàn thành</div>
-            <div className="text-3xl font-bold text-green-600">
-              {summary.completed || 0}
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

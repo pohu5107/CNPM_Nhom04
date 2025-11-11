@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
 import { parentsService } from '../../../services/parentsService';
@@ -20,7 +21,6 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
   useEffect(() => {
     if (parent) {
-      console.log(' Setting parent form data with:', parent);
       setFormData({
         name: parent.name || '',
         username: parent.username || '',
@@ -38,12 +38,10 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       const fetchChildren = async () => {
         try {
           setChildrenLoading(true);
-          console.log(' Fetching children for parent:', parent.id);
           const data = await parentsService.getParentChildren(parent.id);
-          console.log(' Children data received:', data);
           setChildrenDetails(data);
         } catch (error) {
-          console.error(' Error fetching children:', error);
+          console.error('Error fetching children:', error);
           setChildrenDetails([]);
         } finally {
           setChildrenLoading(false);
@@ -193,7 +191,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
             Danh sách con em ({childrenDetails.length})
           </h4>
           
-          {childrenLoading ? (
+          {childrenLoading && (
             <div className="text-center py-8">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
@@ -201,88 +199,78 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
               </div>
               <p className="text-gray-500 mt-4">Đang tải danh sách con em...</p>
             </div>
-          ) : childrenDetails.length > 0 ? (
-            <div className="grid gap-4">
-              {childrenDetails.map((child, index) => (
+          )}
+
+          {!childrenLoading && childrenDetails.length > 0 && (
+            <div className="space-y-4">
+              {childrenDetails.map((child) => (
                 <div key={child.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Student Basic Info */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-bold text-blue-600">
-                            {child.name.split(' ').slice(-1)[0].charAt(0)}
-                          </span>
+                  {/* Thông tin cơ bản */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-bold text-blue-600">
+                        {child.name ? child.name.charAt(0).toUpperCase() : '?'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-gray-900">{child.name}</h5>
+                      <div className="text-sm text-gray-600">
+                        Lớp {child.class_name || child.class} • Khối {child.grade}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        📍 {child.address} • 📞 {child.phone || 'Chưa có SĐT'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thông tin tuyến đường và điểm đón */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                    {/* Tuyến sáng */}
+                    <div className="bg-white rounded-lg p-3 border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-6 h-6 bg-yellow-100 rounded flex items-center justify-center text-sm">
+                          🌅
+                        </span>
+                        <span className="font-medium text-gray-800">Sáng</span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div>
+                          <span className="text-gray-600">Tuyến: </span>
+                          <span className="font-medium">{child.morning_route_name || 'Chưa phân tuyến'}</span>
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">{child.name}</div>
-                          <div className="text-sm text-gray-600">
-                            Lớp {child.class || child.class_name} • Khối {child.grade}
-                          </div>
+                          <span className="text-gray-600">Điểm đón: </span>
+                          <span>{child.morning_pickup_stop_name || 'Chưa có'}</span>
                         </div>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <div>📍 {child.address}</div>
-                        <div>📞 {child.phone || 'Chưa có SĐT'}</div>
                       </div>
                     </div>
 
-                    {/* Transportation Info */}
-                    <div>
-                      {child.route_name ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-orange-100 rounded flex items-center justify-center">
-                              🚌
-                            </span>
-                            <span className="text-sm font-medium text-gray-900">{child.route_name}</span>
-                          </div>
-                          {child.bus_number && (
-                            <div className="text-xs text-gray-600 ml-8">
-                              Xe {child.bus_number} - {child.license_plate}
-                            </div>
-                          )}
-                          {child.schedule_date && (
-                            <div className="text-xs text-gray-600 ml-8">
-                              Ngày: {new Date(child.schedule_date).toLocaleDateString('vi-VN')}
-                            </div>
-                          )}
+                    {/* Tuyến chiều */}
+                    <div className="bg-white rounded-lg p-3 border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-6 h-6 bg-orange-100 rounded flex items-center justify-center text-sm">
+                          🌆
+                        </span>
+                        <span className="font-medium text-gray-800">Chiều</span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div>
+                          <span className="text-gray-600">Tuyến: </span>
+                          <span className="font-medium">{child.afternoon_route_name || 'Chưa phân tuyến'}</span>
                         </div>
-                      ) : (
-                        <div className="text-center py-2">
-                          <div className="text-gray-400 text-sm">Chưa có xe đưa đón</div>
+                        <div>
+                          <span className="text-gray-600">Điểm trả: </span>
+                          <span>{child.afternoon_dropoff_stop_name || 'Chưa có'}</span>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Schedule Times */}
-                    <div>
-                      {child.route_name && (child.schedule_start_time || child.schedule_end_time) ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-green-50 rounded p-2 text-center">
-                            <div className="text-sm font-bold text-gray-800">
-                              {child.schedule_start_time ? child.schedule_start_time.substring(0,5) : '--:--'}
-                            </div>
-                            <div className="text-xs text-gray-500">Đón</div>
-                          </div>
-                          <div className="bg-red-50 rounded p-2 text-center">
-                            <div className="text-sm font-bold text-gray-800">
-                              {child.schedule_end_time ? child.schedule_end_time.substring(0,5) : '--:--'}
-                            </div>
-                            <div className="text-xs text-gray-500">Trả</div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-2">
-                          <div className="text-gray-400 text-sm">Chưa có lịch trình</div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
+          )}
+
+          {!childrenLoading && childrenDetails.length === 0 && (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 👨‍👩‍👧‍👦
@@ -382,6 +370,8 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
         rows={3}
       />
 
+
+
       <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
         <Button variant="secondary" onClick={onCancel}>
           {isReadOnly ? 'Đóng' : 'Hủy'}
@@ -394,6 +384,21 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       </div>
     </form>
   );
+};
+
+ParentForm.propTypes = {
+  parent: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    username: PropTypes.string,
+    email: PropTypes.string,
+    phone: PropTypes.string,
+    relationship: PropTypes.string,
+    address: PropTypes.string,
+  }),
+  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 export default ParentForm;

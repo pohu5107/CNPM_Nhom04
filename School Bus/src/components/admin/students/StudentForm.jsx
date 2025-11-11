@@ -4,6 +4,7 @@ import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
 import { parentsService } from '../../../services/parentsService';
 import { classesService } from '../../../services/classesService';
+import { routesService } from '../../../services/routesService';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -12,13 +13,20 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     class: '',
     parent_id: '',
     phone: '',
-    address: ''
+    address: '',
+    morning_route_id: '',
+    morning_pickup_stop_id: '',
+    afternoon_route_id: '',
+    afternoon_dropoff_stop_id: ''
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [parents, setParents] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [allRoutes, setAllRoutes] = useState([]);
+  const [routeStops, setRouteStops] = useState([]);
+  const [afternoonRouteStops, setAfternoonRouteStops] = useState([]); // stops for selected route
 
   // Load parents and classes for dropdown
   useEffect(() => {
@@ -31,6 +39,14 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       
         setParents(parentsData || []);
         setClasses(classesData || []);
+        // Load all routes for assignment dropdowns
+        try {
+          const routes = await routesService.getAllRoutes();
+          setAllRoutes(routes || []);
+        } catch (rErr) {
+          console.warn('Could not load routes for student form', rErr);
+          setAllRoutes([]);
+        }
       } catch (error) {
         console.error(' Error fetching data:', error);
         // Set empty arrays nếu lỗi để tránh undefined
@@ -47,11 +63,57 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       setFormData({
         name: student.name || '',
         grade: student.grade || '',
-        class: student.class_name || student.class || '', // Ưu tiên class_name từ API
+        class: student.class_name || student.class || '', 
         parent_id: student.parent_id || '',
         phone: student.phone || '',
-        address: student.address || ''
+        address: student.address || '',
+        morning_route_id: student.morning_route_id || '',
+        morning_pickup_stop_id: student.morning_pickup_stop_id || '',
+        afternoon_route_id: student.afternoon_route_id || '',
+        afternoon_dropoff_stop_id: student.afternoon_dropoff_stop_id || ''
       });
+
+     
+      (async () => {
+        // Load morning route stops
+        if (student.morning_route_id) {
+          try {
+            const stopsData = await routesService.getRouteStops(student.morning_route_id);
+            setRouteStops(stopsData || []);
+          } catch (err) {
+            console.warn('Could not fetch morning route stops for student', err);
+            setRouteStops([]);
+          }
+        } else {
+          setRouteStops([]);
+        }
+
+        // Load afternoon route stops and auto-set dropoff to last stop (prefer stop_order === 99)
+        if (student.afternoon_route_id) {
+          try {
+            const stopsData = await routesService.getRouteStops(student.afternoon_route_id);
+            const stops = stopsData || [];
+            setAfternoonRouteStops(stops);
+
+        
+            let lastStop = stops.find(s => Number(s.stop_order) === 99);
+            if (!lastStop && stops.length > 0) {
+              lastStop = stops.reduce((acc, cur) => {
+                return (Number(cur.stop_order) > Number(acc.stop_order)) ? cur : acc;
+              }, stops[0]);
+            }
+
+            if (lastStop) {
+              setFormData(prev => ({ ...prev, afternoon_dropoff_stop_id: lastStop.stop_id }));
+            }
+          } catch (err) {
+            console.warn('Could not fetch afternoon route stops for student', err);
+            setAfternoonRouteStops([]);
+          }
+        } else {
+          setAfternoonRouteStops([]);
+        }
+      })();
     }
   }, [student]);
 
@@ -105,7 +167,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Auto-fill grade when class is selected
+
     if (name === 'class' && value && classes.length > 0) {
       const selectedClass = classes.find(cls => cls.class_name === value);
       if (selectedClass) {
@@ -115,7 +177,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           grade: selectedClass.grade // Tự động điền khối từ lớp được chọn
         }));
         
-        // Clear both class and grade errors
+
         if (errors[name] || errors.grade) {
           setErrors(prev => ({
             ...prev,
@@ -125,6 +187,70 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         }
         return;
       }
+    }
+    
+
+    if (name === 'morning_route_id') {
+      const routeId = value;
+ 
+      setFormData(prev => ({ ...prev, morning_route_id: routeId, morning_pickup_stop_id: '' }));
+      if (routeId) {
+        (async () => {
+          try {
+            const stopsData = await routesService.getRouteStops(routeId);
+            setRouteStops(stopsData || []);
+          } catch (err) {
+            console.warn('Could not load stops for route', err);
+            setRouteStops([]);
+          }
+        })();
+      } else {
+        setRouteStops([]);
+      }
+      // clear errors related
+      if (errors.morning_route_id || errors.morning_pickup_stop_id) {
+        setErrors(prev => ({ ...prev, morning_route_id: '', morning_pickup_stop_id: '' }));
+      }
+      return;
+    }
+
+    // When selecting afternoon route, load its stops  
+    if (name === 'afternoon_route_id') {
+      const routeId = value;
+
+      setFormData(prev => ({ ...prev, afternoon_route_id: routeId, afternoon_dropoff_stop_id: '' }));
+      if (routeId) {
+        (async () => {
+          try {
+            const stopsData = await routesService.getRouteStops(routeId);
+            const stops = stopsData || [];
+            setAfternoonRouteStops(stops);
+
+       
+            let lastStop = stops.find(s => Number(s.stop_order) === 99);
+            if (!lastStop && stops.length > 0) {
+              lastStop = stops.reduce((acc, cur) => {
+                return (Number(cur.stop_order) > Number(acc.stop_order)) ? cur : acc;
+              }, stops[0]);
+            }
+
+            if (lastStop) {
+
+              setFormData(prev => ({ ...prev, afternoon_dropoff_stop_id: lastStop.stop_id }));
+            }
+          } catch (err) {
+            console.warn('Could not load stops for afternoon route', err);
+            setAfternoonRouteStops([]);
+          }
+        })();
+      } else {
+        setAfternoonRouteStops([]);
+      }
+      // clear errors related
+      if (errors.afternoon_route_id || errors.afternoon_dropoff_stop_id) {
+        setErrors(prev => ({ ...prev, afternoon_route_id: '', afternoon_dropoff_stop_id: '' }));
+      }
+      return;
     }
     
     setFormData(prev => ({
@@ -161,25 +287,23 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
   const isReadOnly = mode === 'view';
 
-  // Log để debug
-  console.log('🔍 Current state:', { 
-    classes: classes?.length, 
-    parents: parents?.length,
-    formData 
-  });
 
   // Render detailed view for student information
   if (mode === 'view' && student) {
+    // derive names from loaded route stops / routes if available
+    const morningRouteName = student.morning_route_name || (allRoutes.find(r => String(r.id) === String(student.morning_route_id))?.route_name) || '';
+    const afternoonRouteName = student.afternoon_route_name || (allRoutes.find(r => String(r.id) === String(student.afternoon_route_id))?.route_name) || '';
+    const morningPickupName = (routeStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || student.morning_pickup_stop_name || '';
+    const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name) || student.afternoon_dropoff_stop_name || '';
+
     return (
       <div className="space-y-6 max-h-[85vh] overflow-y-auto">
-        {/* Student Basic Info Header */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-xl font-bold text-blue-600">
-                  {student.name.split(' ').slice(-1)[0].charAt(0)}
-                </span>
+                <span className="text-xl font-bold text-blue-600">{(student.name||'').slice(-1).charAt(0) || ''}</span>
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-800">{student.name}</h3>
@@ -188,175 +312,60 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
                   <span className="text-sm font-medium text-gray-700">Lớp {student.class_name || student.class}</span>
                   <span className="text-gray-400">•</span>
                   <span className="text-sm text-gray-600">Khối {student.grade}</span>
-                  {student.homeroom_teacher && (
-                    <>
-                      <span className="text-gray-400">•</span>
-                      <span className="text-sm text-gray-600">GVCN: {student.homeroom_teacher}</span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
-            <div className={`px-3 py-2 rounded-full text-sm font-medium ${
-              student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-            }`}>
+            <div className={`px-3 py-2 rounded-full text-sm font-medium ${student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
               {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
             </div>
           </div>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Contact & Parent Info */}
           <div className="space-y-4">
-            {/* Contact Information */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                  📞
-                </span>
-                Thông tin liên hệ
-              </h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-500">SĐT học sinh</span>
-                  <span className="text-sm text-gray-800 font-medium">{student.phone || student.student_phone || 'Chưa có'}</span>
-                </div>
-                <div className="py-2">
-                  <span className="text-sm font-medium text-gray-500 block mb-1">Địa chỉ</span>
-                  <p className="text-sm text-gray-800">{student.address || 'Chưa có'}</p>
-                </div>
-              </div>
+              <h4 className="text-lg font-semibold mb-3">Thông tin liên hệ</h4>
+              <div className="text-sm text-gray-800">SĐT: {student.phone || student.student_phone || 'Chưa có'}</div>
+              <div className="text-sm text-gray-800 mt-2">Địa chỉ: {student.address || 'Chưa có'}</div>
             </div>
 
-            {/* Parent Information */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                  👨‍👩‍👧
-                </span>
-                Thông tin phụ huynh
-              </h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-500">Họ tên</span>
-                  <span className="text-sm text-gray-800 font-medium">{student.parent_name || 'Chưa có'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-500">Mối quan hệ</span>
-                  <span className="text-sm text-gray-800 font-medium">{student.relationship || 'Chưa có'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-500">SĐT phụ huynh</span>
-                  <span className="text-sm text-gray-800 font-medium">{student.parent_phone || 'Chưa có'}</span>
-                </div>
-                {student.parent_address && (
-                  <div className="py-2">
-                    <span className="text-sm font-medium text-gray-500 block mb-1">Địa chỉ phụ huynh</span>
-                    <p className="text-sm text-gray-800">{student.parent_address}</p>
-                  </div>
-                )}
-              </div>
+              <h4 className="text-lg font-semibold mb-3">Thông tin phụ huynh</h4>
+              <div className="text-sm text-gray-800">Họ tên: {student.parent_name || 'Chưa có'}</div>
+              <div className="text-sm text-gray-800">Quan hệ: {student.relationship || 'Chưa có'}</div>
+              <div className="text-sm text-gray-800">SĐT: {student.parent_phone || 'Chưa có'}</div>
             </div>
           </div>
 
-          {/* Right Column - Transportation Info */}
           <div className="space-y-4">
-            {(student.route_name || student.bus_number) ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                    🚌
-                  </span>
-                  Thông tin xe buýt
-                </h4>
-                
-                {/* Route & Bus Info */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-orange-50 rounded-lg p-3 text-center">
-                      <div className="text-lg font-bold text-gray-800">{student.route_name || 'Chưa có'}</div>
-                      <div className="text-xs text-gray-500 mt-1">Tuyến đường</div>
-                    </div>
-                    <div className="bg-blue-50 rounded-lg p-3 text-center">
-                      <div className="text-lg font-bold text-gray-800">{student.bus_number || 'Chưa có'}</div>
-                      <div className="text-xs text-gray-500 mt-1">Số xe</div>
-                      {student.license_plate && (
-                        <div className="text-xs text-gray-600 mt-1 font-mono">{student.license_plate}</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Schedule Times */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <div className="text-lg font-bold text-gray-800">
-                        {student.schedule_start_time ? 
-                          student.schedule_start_time.substring(0,5) : 
-                          'Chưa có'
-                        }
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">Giờ đón</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-3 text-center">
-                      <div className="text-lg font-bold text-gray-800">
-                        {student.schedule_end_time ? 
-                          student.schedule_end_time.substring(0,5) : 
-                          'Chưa có'
-                        }
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">Giờ trả</div>
-                    </div>
-                  </div>
-
-                  {/* Route Points */}
-                  <div className="space-y-3">
-                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                        <span className="text-sm font-medium text-green-700">Điểm đón</span>
-                      </div>
-                      <p className="text-sm text-gray-800 pl-5">
-                        {student.schedule_start_point || 'Chưa có thông tin điểm đón'}
-                      </p>
-                    </div>
-                    <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-3 h-3 bg-red-500 rounded-full"></span>
-                        <span className="text-sm font-medium text-red-700">Điểm trả</span>
-                      </div>
-                      <p className="text-sm text-gray-800 pl-5">
-                        {student.schedule_end_point || 'Chưa có thông tin điểm trả'}
-                      </p>
-                    </div>
-                  </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h4 className="text-lg font-semibold mb-3">Tuyến & Điểm</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border rounded">
+                  <div className="text-sm text-gray-600">Tuyến đón (Sáng)</div>
+                  <div className="font-medium text-gray-800">{morningRouteName || 'Chưa phân tuyến'}</div>
+                  <div className="text-sm text-gray-600 mt-2">Điểm đón</div>
+                  <div className="text-sm text-gray-800">{morningPickupName || 'Chưa có'}</div>
+                </div>
+                <div className="p-3 border rounded">
+                  <div className="text-sm text-gray-600">Tuyến trả (Chiều)</div>
+                  <div className="font-medium text-gray-800">{afternoonRouteName || 'Chưa phân tuyến'}</div>
+                  <div className="text-sm text-gray-600 mt-2">Điểm trả</div>
+                  <div className="text-sm text-gray-800">{afternoonDropoffName || 'Chưa có'}</div>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    �
-                  </div>
-                  <p className="text-gray-600">Chưa có thông tin xe buýt</p>
-                  <p className="text-sm text-gray-500 mt-1">Học sinh chưa được phân xe</p>
-                </div>
-              </div>
-            )}
+            </div>
+
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-          <Button variant="secondary" onClick={onCancel}>
-            Đóng
-          </Button>
+        <div className="flex justify-end pt-4 border-t border-gray-200">
+          <Button variant="secondary" onClick={onCancel}>Đóng</Button>
         </div>
       </div>
     );
   }
 
-  // Regular form for add/edit modes
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -429,6 +438,69 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           error={errors.phone}
           placeholder="Nhập số điện thoại"
           readOnly={isReadOnly}
+        />
+
+        <FormInput
+          label="Tuyến đón (Sáng)"
+          name="morning_route_id"
+          type="select"
+          value={formData.morning_route_id}
+          onChange={handleChange}
+          error={errors.morning_route_id}
+          options={[{ value: '', label: 'Chọn tuyến' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
+          readOnly={isReadOnly}
+        />
+
+        <FormInput
+          label="Điểm đón (Sáng)"
+          name="morning_pickup_stop_id"
+          type="select"
+          value={formData.morning_pickup_stop_id}
+          onChange={handleChange}
+          error={errors.morning_pickup_stop_id}
+          options={[
+            { value: '', label: 'Chọn điểm đón' }, 
+            ...(routeStops || [])
+              .filter(s => s.stop_order !== 0 && s.stop_order !== 99) 
+              .map(s => ({ 
+                value: s.stop_id, 
+                label: `${s.name} - ${s.address}` 
+              }))
+          ]}
+          readOnly={isReadOnly}
+        />
+
+        <FormInput
+          label="Tuyến trả (Chiều)"
+          name="afternoon_route_id"
+          type="select"
+          value={formData.afternoon_route_id}
+          onChange={handleChange}
+          error={errors.afternoon_route_id}
+          options={[{ value: '', label: 'Chọn tuyến' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
+          readOnly={isReadOnly}
+        />
+
+        <FormInput
+          label="Điểm trả (Chiều)"
+          name="afternoon_dropoff_stop_id"
+          type="select"
+          value={formData.afternoon_dropoff_stop_id}
+          onChange={handleChange}
+          error={errors.afternoon_dropoff_stop_id}
+          options={(() => {
+            const stops = afternoonRouteStops || [];
+            if (stops.length === 0) return [{ value: '', label: 'Chọn điểm trả' }];
+        
+            let lastStop = stops.find(s => Number(s.stop_order) === 99);
+            if (!lastStop) {
+              lastStop = stops.reduce((acc, cur) => (Number(cur.stop_order) > Number(acc.stop_order) ? cur : acc), stops[0]);
+            }
+            if (!lastStop) return [{ value: '', label: 'Chọn điểm trả' }];
+            return [{ value: lastStop.stop_id, label: `${lastStop.name} - ${lastStop.address}` }];
+          })()}
+
+          readOnly={true}
         />
       </div>
 

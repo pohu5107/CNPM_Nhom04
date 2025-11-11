@@ -40,6 +40,42 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// GET /api/routes/:id/stops - Lấy điểm dừng của tuyến
+router.get('/:id/stops', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const [stops] = await pool.execute(`
+            SELECT 
+                rs.id,
+                rs.stop_id,
+                s.name,
+                s.address,
+                s.latitude,
+                s.longitude,
+                rs.stop_order,
+                rs.student_pickup_count
+            FROM route_stops rs
+            INNER JOIN stops s ON rs.stop_id = s.id  
+            WHERE rs.route_id = ?
+            ORDER BY rs.stop_order ASC
+        `, [id]);
+
+        res.json({
+            success: true,
+            data: stops,
+            count: stops.length,
+            message: `Lấy ${stops.length} điểm dừng của tuyến thành công`
+        });
+    } catch (error) {
+        console.error('Error fetching route stops:', error);
+        res.status(500).json({
+            success: false, 
+            message: 'Lỗi khi lấy điểm dừng của tuyến'
+        });
+    }
+});
+
 // -- Thêm MỚI ---
 router.post("/", async (req, res) => {
   try {
