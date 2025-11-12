@@ -54,7 +54,7 @@ const ScheduleCalendar = ({ driver }) => {
 
       {availableDates.length > 0 ? (
         <div className="p-6">
-          {/* Date Picker */}
+          {/* Bộ chọn ngày */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Chọn ngày làm việc
@@ -228,7 +228,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
 
   const isReadOnly = mode === 'view';
 
-  // Render detailed view for driver information
+  // Hiển thị chế độ xem chi tiết thông tin tài xế
   const renderDetailedView = () => {
     if (mode !== 'view') {
       return null;
@@ -312,7 +312,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit}>
       {mode === 'view' ? (
-        // Detailed view layout
+          // Bố cục chế độ xem chi tiết
         <div>
           {renderDetailedView()}
           <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
@@ -322,7 +322,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           </div>
         </div>
       ) : (
-        // Standard form layout for add/edit modes
+        // Bố cục form chuẩn cho thêm/sửa
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <FormInput

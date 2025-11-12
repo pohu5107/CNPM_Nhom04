@@ -7,264 +7,145 @@ import { classesService } from '../../../services/classesService';
 import { routesService } from '../../../services/routesService';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
+  // Trạng thái form
   const [formData, setFormData] = useState({
-    name: '',
-    grade: '',
-    class: '',
-    parent_id: '',
-    phone: '',
-    address: '',
-    morning_route_id: '',
-    morning_pickup_stop_id: '',
-    afternoon_route_id: '',
-    afternoon_dropoff_stop_id: ''
+    name: '', grade: '', class: '', parent_id: '', phone: '', address: '',
+    morning_route_id: '', morning_pickup_stop_id: '', afternoon_route_id: '', afternoon_dropoff_stop_id: ''
   });
-
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  
+  // Dữ liệu cho các dropdown (phụ huynh, lớp, tuyến)
   const [parents, setParents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [allRoutes, setAllRoutes] = useState([]);
-  const [routeStops, setRouteStops] = useState([]);
-  const [afternoonRouteStops, setAfternoonRouteStops] = useState([]); // stops for selected route
+  const [morningRouteStops, setMorningRouteStops] = useState([]);
+  const [afternoonRouteStops, setAfternoonRouteStops] = useState([]); 
 
-  // Load parents and classes for dropdown
+  // Tải dữ liệu cho dropdown (parents, classes, routes)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [parentsData, classesData] = await Promise.all([
+        const [parentsData, classesData, routesData] = await Promise.all([
           parentsService.getAllParents(),
-          classesService.getAllClasses()
+          classesService.getAllClasses(), 
+          routesService.getAllRoutes()
         ]);
-      
         setParents(parentsData || []);
         setClasses(classesData || []);
-        // Load all routes for assignment dropdowns
-        try {
-          const routes = await routesService.getAllRoutes();
-          setAllRoutes(routes || []);
-        } catch (rErr) {
-          console.warn('Could not load routes for student form', rErr);
-          setAllRoutes([]);
-        }
+        setAllRoutes(routesData || []);
       } catch (error) {
-        console.error(' Error fetching data:', error);
-        // Set empty arrays nếu lỗi để tránh undefined
+        console.error('Error loading data:', error);
         setParents([]);
         setClasses([]);
+        setAllRoutes([]);
       }
     };
     fetchData();
   }, []);
 
+  // Tải dữ liệu học sinh và điểm dừng của tuyến
   useEffect(() => {
-    if (student) {
-      console.log(' Setting form data with student:', student);
-      setFormData({
-        name: student.name || '',
-        grade: student.grade || '',
-        class: student.class_name || student.class || '', 
-        parent_id: student.parent_id || '',
-        phone: student.phone || '',
-        address: student.address || '',
-        morning_route_id: student.morning_route_id || '',
-        morning_pickup_stop_id: student.morning_pickup_stop_id || '',
-        afternoon_route_id: student.afternoon_route_id || '',
-        afternoon_dropoff_stop_id: student.afternoon_dropoff_stop_id || ''
-      });
+    if (!student) return;
+    
+    setFormData({
+      name: student.name || '', grade: student.grade || '', class: student.class_name || student.class || '',
+      parent_id: student.parent_id || '', phone: student.phone || '', address: student.address || '',
+      morning_route_id: student.morning_route_id || '', morning_pickup_stop_id: student.morning_pickup_stop_id || '',
+      afternoon_route_id: student.afternoon_route_id || '', afternoon_dropoff_stop_id: student.afternoon_dropoff_stop_id || ''
+    });
 
-     
-      (async () => {
-        // Load morning route stops
-        if (student.morning_route_id) {
-          try {
-            const stopsData = await routesService.getRouteStops(student.morning_route_id);
-            setRouteStops(stopsData || []);
-          } catch (err) {
-            console.warn('Could not fetch morning route stops for student', err);
-            setRouteStops([]);
-          }
-        } else {
-          setRouteStops([]);
-        }
-
-        // Load afternoon route stops and auto-set dropoff to last stop (prefer stop_order === 99)
-        if (student.afternoon_route_id) {
-          try {
-            const stopsData = await routesService.getRouteStops(student.afternoon_route_id);
-            const stops = stopsData || [];
-            setAfternoonRouteStops(stops);
-
-        
-            let lastStop = stops.find(s => Number(s.stop_order) === 99);
-            if (!lastStop && stops.length > 0) {
-              lastStop = stops.reduce((acc, cur) => {
-                return (Number(cur.stop_order) > Number(acc.stop_order)) ? cur : acc;
-              }, stops[0]);
-            }
-
-            if (lastStop) {
-              setFormData(prev => ({ ...prev, afternoon_dropoff_stop_id: lastStop.stop_id }));
-            }
-          } catch (err) {
-            console.warn('Could not fetch afternoon route stops for student', err);
-            setAfternoonRouteStops([]);
-          }
-        } else {
-          setAfternoonRouteStops([]);
-        }
-      })();
-    }
+  // Hàm tải các điểm dừng cho một tuyến (dùng lại cho sáng/chiều)
+  const loadStops = async (routeId, setStops) => {
+      if (!routeId) return;
+      try {
+        const stops = await routesService.getRouteStops(routeId);
+        setStops(stops || []);
+      } catch (err) {
+        console.warn('Could not load route stops:', err);
+        setStops([]);
+      }
+    };
+    
+    loadStops(student.morning_route_id, setMorningRouteStops);
+    loadStops(student.afternoon_route_id, setAfternoonRouteStops);
   }, [student]);
 
   const validateForm = () => {
     const newErrors = {};
+    
+    if (!formData.name.trim()) newErrors.name = 'Họ tên là bắt buộc';
+    if (!formData.address.trim()) newErrors.address = 'Địa chỉ là bắt buộc';
+    if (mode === 'add' && !formData.parent_id) newErrors.parent_id = 'Phụ huynh là bắt buộc';
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Họ tên là bắt buộc';
-    }
-
+    // Grade validation
+    const availableGrades = [...new Set(classes.map(cls => cls.grade))];
     if (!formData.grade.trim()) {
       newErrors.grade = 'Khối là bắt buộc';
-    } else {
-      // Kiểm tra grade có tồn tại trong database không
-      const availableGrades = [...new Set(classes.map(cls => cls.grade))];
-      if (!availableGrades.includes(formData.grade)) {
-        newErrors.grade = `Khối ${formData.grade} không tồn tại. Chỉ có khối: ${availableGrades.join(', ')}`;
-      }
+    } else if (!availableGrades.includes(formData.grade)) {
+      newErrors.grade = `Khối không hợp lệ. Có: ${availableGrades.join(', ')}`;
     }
 
+    // Class validation
+    const selectedClass = classes.find(cls => cls.class_name === formData.class);
     if (!formData.class.trim()) {
       newErrors.class = 'Lớp học là bắt buộc';
-    } else {
-      // Kiểm tra class có tồn tại trong database không
-      const classExists = classes.some(cls => cls.class_name === formData.class);
-      if (!classExists) {
-        newErrors.class = 'Lớp này không tồn tại trong hệ thống';
-      }
-      
-      // Kiểm tra grade và class có match nhau không
-      if (formData.grade && classExists) {
-        const selectedClass = classes.find(cls => cls.class_name === formData.class);
-        if (selectedClass && selectedClass.grade !== formData.grade) {
-          newErrors.grade = `Khối ${formData.grade} không khớp với lớp ${formData.class} (khối ${selectedClass.grade})`;
-        }
-      }
-    }
-
-    if (mode === 'add' && !formData.parent_id) {
-      newErrors.parent_id = 'Phụ huynh là bắt buộc';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Địa chỉ là bắt buộc';
+    } else if (!selectedClass) {
+      newErrors.class = 'Lớp không tồn tại';
+    } else if (selectedClass.grade !== formData.grade) {
+      newErrors.grade = `Lớp ${formData.class} thuộc khối ${selectedClass.grade}`;
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Hàm trợ giúp: tải điểm dừng cho tuyến (sử dụng khi thay đổi tuyến)
+  const loadRouteStops = async (routeId, setStops) => {
+    if (!routeId) {
+      setStops([]);
+      return;
+    }
+    try {
+      const stops = await routesService.getRouteStops(routeId);
+      setStops(stops || []);
+    } catch (err) {
+      console.warn('Could not load route stops:', err);
+      setStops([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
 
-    if (name === 'class' && value && classes.length > 0) {
+    // Tự động điền khối khi chọn lớp
+    if (name === 'class' && value) {
       const selectedClass = classes.find(cls => cls.class_name === value);
       if (selectedClass) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          grade: selectedClass.grade // Tự động điền khối từ lớp được chọn
-        }));
-        
-
-        if (errors[name] || errors.grade) {
-          setErrors(prev => ({
-            ...prev,
-            [name]: '',
-            grade: ''
-          }));
-        }
+        setFormData(prev => ({ ...prev, class: value, grade: selectedClass.grade }));
+        setErrors(prev => ({ ...prev, class: '', grade: '' }));
         return;
       }
     }
-    
 
+    // Tải điểm dừng khi thay đổi tuyến (sáng / chiều)
     if (name === 'morning_route_id') {
-      const routeId = value;
- 
-      setFormData(prev => ({ ...prev, morning_route_id: routeId, morning_pickup_stop_id: '' }));
-      if (routeId) {
-        (async () => {
-          try {
-            const stopsData = await routesService.getRouteStops(routeId);
-            setRouteStops(stopsData || []);
-          } catch (err) {
-            console.warn('Could not load stops for route', err);
-            setRouteStops([]);
-          }
-        })();
-      } else {
-        setRouteStops([]);
-      }
-      // clear errors related
-      if (errors.morning_route_id || errors.morning_pickup_stop_id) {
-        setErrors(prev => ({ ...prev, morning_route_id: '', morning_pickup_stop_id: '' }));
-      }
+      setFormData(prev => ({ ...prev, morning_route_id: value, morning_pickup_stop_id: '' }));
+      loadRouteStops(value, setMorningRouteStops);
+      setErrors(prev => ({ ...prev, morning_route_id: '', morning_pickup_stop_id: '' }));
       return;
     }
-
-    // When selecting afternoon route, load its stops  
+    
     if (name === 'afternoon_route_id') {
-      const routeId = value;
-
-      setFormData(prev => ({ ...prev, afternoon_route_id: routeId, afternoon_dropoff_stop_id: '' }));
-      if (routeId) {
-        (async () => {
-          try {
-            const stopsData = await routesService.getRouteStops(routeId);
-            const stops = stopsData || [];
-            setAfternoonRouteStops(stops);
-
-       
-            let lastStop = stops.find(s => Number(s.stop_order) === 99);
-            if (!lastStop && stops.length > 0) {
-              lastStop = stops.reduce((acc, cur) => {
-                return (Number(cur.stop_order) > Number(acc.stop_order)) ? cur : acc;
-              }, stops[0]);
-            }
-
-            if (lastStop) {
-
-              setFormData(prev => ({ ...prev, afternoon_dropoff_stop_id: lastStop.stop_id }));
-            }
-          } catch (err) {
-            console.warn('Could not load stops for afternoon route', err);
-            setAfternoonRouteStops([]);
-          }
-        })();
-      } else {
-        setAfternoonRouteStops([]);
-      }
-      // clear errors related
-      if (errors.afternoon_route_id || errors.afternoon_dropoff_stop_id) {
-        setErrors(prev => ({ ...prev, afternoon_route_id: '', afternoon_dropoff_stop_id: '' }));
-      }
+      setFormData(prev => ({ ...prev, afternoon_route_id: value, afternoon_dropoff_stop_id: '' }));
+      loadRouteStops(value, setAfternoonRouteStops);
+      setErrors(prev => ({ ...prev, afternoon_route_id: '', afternoon_dropoff_stop_id: '' }));
       return;
     }
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    // Cập nhật giá trị trường mặc định
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -288,12 +169,11 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const isReadOnly = mode === 'view';
 
 
-  // Render detailed view for student information
+  
   if (mode === 'view' && student) {
-    // derive names from loaded route stops / routes if available
     const morningRouteName = student.morning_route_name || (allRoutes.find(r => String(r.id) === String(student.morning_route_id))?.route_name) || '';
     const afternoonRouteName = student.afternoon_route_name || (allRoutes.find(r => String(r.id) === String(student.afternoon_route_id))?.route_name) || '';
-    const morningPickupName = (routeStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || student.morning_pickup_stop_name || '';
+    const morningPickupName = (morningRouteStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || student.morning_pickup_stop_name || '';
     const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name) || student.afternoon_dropoff_stop_name || '';
 
     return (
@@ -339,17 +219,19 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold mb-3">Tuyến & Điểm</h4>
+              <h4 className="text-lg font-semibold mb-3">Thông tin tuyến xe</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến đón (Sáng)</div>
+                  <div className="text-sm text-gray-600">Tuyến đi (Sáng)</div>
                   <div className="font-medium text-gray-800">{morningRouteName || 'Chưa phân tuyến'}</div>
                   <div className="text-sm text-gray-600 mt-2">Điểm đón</div>
                   <div className="text-sm text-gray-800">{morningPickupName || 'Chưa có'}</div>
+                  <div className="text-xs text-gray-500 mt-1 italic">Trả tại trường</div>
                 </div>
                 <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến trả (Chiều)</div>
+                  <div className="text-sm text-gray-600">Tuyến về (Chiều)</div>
                   <div className="font-medium text-gray-800">{afternoonRouteName || 'Chưa phân tuyến'}</div>
+                  <div className="text-xs text-gray-500 mt-1 italic">Đón tại trường</div>
                   <div className="text-sm text-gray-600 mt-2">Điểm trả</div>
                   <div className="text-sm text-gray-800">{afternoonDropoffName || 'Chưa có'}</div>
                 </div>
@@ -441,13 +323,13 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         />
 
         <FormInput
-          label="Tuyến đón (Sáng)"
+          label="Tuyến đi (Sáng)"
           name="morning_route_id"
           type="select"
           value={formData.morning_route_id}
           onChange={handleChange}
           error={errors.morning_route_id}
-          options={[{ value: '', label: 'Chọn tuyến' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
+          options={[{ value: '', label: 'Chọn tuyến đi' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
           readOnly={isReadOnly}
         />
 
@@ -460,47 +342,46 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
           error={errors.morning_pickup_stop_id}
           options={[
             { value: '', label: 'Chọn điểm đón' }, 
-            ...(routeStops || [])
-              .filter(s => s.stop_order !== 0 && s.stop_order !== 99) 
+            ...(morningRouteStops || [])
+              .filter(s => s.stop_order !== 0 && s.stop_order !== 99)
               .map(s => ({ 
                 value: s.stop_id, 
                 label: `${s.name} - ${s.address}` 
               }))
           ]}
           readOnly={isReadOnly}
+          disabled={!formData.morning_route_id}
         />
 
         <FormInput
-          label="Tuyến trả (Chiều)"
+          label="Tuyến về (Chiều)"
           name="afternoon_route_id"
           type="select"
           value={formData.afternoon_route_id}
           onChange={handleChange}
           error={errors.afternoon_route_id}
-          options={[{ value: '', label: 'Chọn tuyến' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
+          options={[{ value: '', label: 'Chọn tuyến về' }, ...(allRoutes || []).map(r => ({ value: r.id, label: r.route_name || r.name || `Tuyến ${r.id}` }))]}
           readOnly={isReadOnly}
         />
 
         <FormInput
-          label="Điểm trả (Chiều)"
+          label="Điểm trả (Chiều)" 
           name="afternoon_dropoff_stop_id"
           type="select"
           value={formData.afternoon_dropoff_stop_id}
           onChange={handleChange}
           error={errors.afternoon_dropoff_stop_id}
-          options={(() => {
-            const stops = afternoonRouteStops || [];
-            if (stops.length === 0) return [{ value: '', label: 'Chọn điểm trả' }];
-        
-            let lastStop = stops.find(s => Number(s.stop_order) === 99);
-            if (!lastStop) {
-              lastStop = stops.reduce((acc, cur) => (Number(cur.stop_order) > Number(acc.stop_order) ? cur : acc), stops[0]);
-            }
-            if (!lastStop) return [{ value: '', label: 'Chọn điểm trả' }];
-            return [{ value: lastStop.stop_id, label: `${lastStop.name} - ${lastStop.address}` }];
-          })()}
-
-          readOnly={true}
+          options={[
+            { value: '', label: 'Chọn điểm trả' },
+            ...(afternoonRouteStops || [])
+              .filter(s => s.stop_order !== 0 && s.stop_order !== 99)
+              .map(s => ({ 
+                value: s.stop_id, 
+                label: `${s.name} - ${s.address}` 
+              }))
+          ]}
+          readOnly={isReadOnly}
+          disabled={!formData.afternoon_route_id}
         />
       </div>
 

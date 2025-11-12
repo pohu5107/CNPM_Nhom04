@@ -76,6 +76,45 @@ router.get('/:id/stops', async (req, res) => {
     }
 });
 
+// GET /api/routes/:id/pickup-drop-info - Lấy thông tin điểm đón/trả mặc định
+router.get('/:id/pickup-drop-info', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Lấy điểm đầu tiên (stop_order = 1) và điểm cuối (stop_order = 99)
+        const [pickupStop] = await pool.execute(`
+            SELECT s.id, s.name, s.address, rs.stop_order
+            FROM route_stops rs
+            INNER JOIN stops s ON rs.stop_id = s.id  
+            WHERE rs.route_id = ? AND rs.stop_order = 1
+            LIMIT 1
+        `, [id]);
+        
+        const [dropoffStop] = await pool.execute(`
+            SELECT s.id, s.name, s.address, rs.stop_order
+            FROM route_stops rs
+            INNER JOIN stops s ON rs.stop_id = s.id  
+            WHERE rs.route_id = ? AND rs.stop_order = 99
+            LIMIT 1
+        `, [id]);
+
+        res.json({
+            success: true,
+            data: {
+                pickup_stop: pickupStop[0] || null,
+                dropoff_stop: dropoffStop[0] || null
+            },
+            message: 'Lấy thông tin điểm đón/trả thành công'
+        });
+    } catch (error) {
+        console.error('Error fetching route pickup-drop info:', error);
+        res.status(500).json({
+            success: false, 
+            message: 'Lỗi khi lấy thông tin điểm đón/trả'
+        });
+    }
+});
+
 // -- Thêm MỚI ---
 router.post("/", async (req, res) => {
   try {
