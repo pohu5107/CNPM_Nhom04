@@ -125,32 +125,7 @@ export const schedulesService = {
         }
     },
 
-    // Lấy trạng thái có sẵn
-    getStatuses: () => {
-        return [
-            { value: 'scheduled', label: 'Chưa bắt đầu', color: 'gray', icon: '⏳' },
-            { value: 'in_progress', label: 'Đang chạy', color: 'blue', icon: '🚍' },
-            { value: 'completed', label: 'Hoàn thành', color: 'green', icon: '' },
-            { value: 'cancelled', label: 'Đã hủy', color: 'red', icon: '' }
-        ];
-    },
 
-    // Format thời gian
-    formatTime: (timeString) => {
-        if (!timeString) return '';
-        return timeString.substring(0, 5);
-    },
-
-    // Format ngày
-    formatDate: (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
 };
 
 export default schedulesService;
