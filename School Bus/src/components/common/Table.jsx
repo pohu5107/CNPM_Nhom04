@@ -1,3 +1,4 @@
+import React from 'react';
 import { Search, Eye, Edit, Trash2 } from 'lucide-react';
 
 const Table = ({
@@ -61,17 +62,17 @@ const Table = ({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto overflow-y-auto rounded-lg border max-h-[700px]">
+      <div className="overflow-x-auto overflow-y-auto rounded-lg border h-[73vh]">
         <table className="min-w-full divide-y divide-slate-200 bg-white">
           <thead>
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
+              <th className="sticky top-0 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
               {columns.map((column, index) => (
-                <th key={index} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
+                <th key={index} className="sticky top-0 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
                   {column.header}
                 </th>
               ))}
-              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 w-80">Thao tác</th>
+              <th className="sticky top-0 px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 w-80">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -96,7 +97,20 @@ const Table = ({
                   <td className="px-6 py-4 text-slate-700">{index + 1}</td>
                   {columns.map((column) => (
                     <td key={column.key} className="px-6 py-4 text-slate-700">
-                      {column.render ? column.render(item) : item[column.key]}
+                      {(() => {
+                        const value = item[column.key];
+                        // Allow custom render; pass both value and full item for flexibility
+                        const rendered = column.render ? column.render(value, item) : value;
+                        // Guard: React can't render plain objects directly (but allow valid React elements)
+                        if (rendered !== null && typeof rendered === 'object' && !React.isValidElement(rendered)) {
+                          try {
+                            return JSON.stringify(rendered);
+                          } catch (e) {
+                            return String(rendered);
+                          }
+                        }
+                        return rendered;
+                      })()}
                     </td>
                   ))}
                   <td className="px-6 py-4 w-80">

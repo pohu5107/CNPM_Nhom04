@@ -69,12 +69,34 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
     { key: 'license_plate', header: 'Xe buýt' },
     { key: 'route_name', header: 'Tuyến' },
     { key: 'date', header: 'Ngày' },
-    { key: 'shift_type', header: 'Loại ca' },
-    { key: 'shift_number', header: 'Số ca' },
+    { 
+      key: 'shift_type', 
+      header: 'Loại ca',
+      render: (value) => {
+        switch(value) {
+          case 'morning': return 'Ca sáng';
+          case 'afternoon': return 'Ca chiều';
+          case 'evening': return 'Ca tối';
+          default: return value;
+        }
+      }
+    },
     { key: 'start_time', header: 'Giờ bắt đầu' },
     { key: 'end_time', header: 'Giờ kết thúc' },
-    { key: 'start_point', header: 'Điểm đầu' },
-    { key: 'end_point', header: 'Điểm cuối' },
+    { key: 'student_count', header: 'Số học sinh' },
+    { 
+      key: 'status', 
+      header: 'Trạng thái',
+      render: (value) => {
+        switch(value) {
+          case 'scheduled': return 'Đã lên lịch';
+          case 'in_progress': return 'Đang thực hiện';
+          case 'completed': return 'Hoàn thành';
+          case 'cancelled': return 'Đã hủy';
+          default: return value;
+        }
+      }
+    },
   ];
 
   const filters = [
@@ -120,7 +142,7 @@ const ScheduleTable = ({ schedules = [], loading = false, onAdd, onEdit, onView,
 
   return (
     <div>
-      {/* ✅ Lọc ngày — float right */}
+      {/*  Lọc ngày — float right */}
       <div className="flex justify-end items-center gap-3 mb-4 px-8">
         <label className="text-sm text-gray-600">Từ ngày:</label>
         <input

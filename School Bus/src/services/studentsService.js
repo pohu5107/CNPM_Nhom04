@@ -8,13 +8,13 @@ export const studentsService = {
     // Lấy tất cả học sinh
     getAllStudents: async () => {
         try {
-            console.log('🔵 Calling GET /students...');
+            console.log(' Calling GET /students...');
             const response = await apiClient.get(ENDPOINT);
-            console.log('✅ Response from interceptor:', response);
+            console.log(' Response from interceptor:', response);
             // Interceptor đã xử lý và trả về data trực tiếp
             return Array.isArray(response) ? response : [];
         } catch (error) {
-            console.error('❌ Error fetching students:', error);
+            console.error(' Error fetching students:', error);
             throw error;
         }
     },

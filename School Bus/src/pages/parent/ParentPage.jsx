@@ -2,7 +2,14 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin } from 'lucide-react';
+
+// Simple MapPin SVG Icon component
+const MapPin = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
 
 // --- ICONS ---
 // Fix for default marker icon
@@ -116,7 +123,6 @@ const ParentPage = () => {
     <div className="p-4 md:p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Trang thông tin cho Phụ Huynh</h1>
       <div className="flex flex-col gap-6">
-        
         {/* 1. Trip Status */}
         <TripStatusCard statusInfo={tripStatusData} />
 
@@ -141,15 +147,13 @@ const ParentPage = () => {
         </div>
 
         {/* 3. Student Information */}
-       <div className="bg-yellow-50 p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Thông tin học sinh</h2>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
-            <p><strong>Họ và tên:</strong> {studentInfo.name}</p>
-            <p><strong>Lớp:</strong> {studentInfo.class}</p>
-          </div>
-        </div>
-
-        {/* 4. Bus Information */}
+        <div className="bg-yellow-50 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Thông tin học sinh</h2>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
+            <p><strong>Họ và tên:</strong> {studentInfo.name}</p>
+            <p><strong>Lớp:</strong> {studentInfo.class}</p>
+          </div>
+        </div>        {/* 4. Bus Information */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-5">
           <h2 className="text-xl font-semibold mb-4 border-b pb-2">Thông tin xe buýt</h2>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">

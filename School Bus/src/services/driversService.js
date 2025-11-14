@@ -9,7 +9,7 @@ export const driversService = {
     getAllDrivers: async () => {
         try {
             const response = await apiClient.get(ENDPOINT);
-            console.log('🔵 Drivers response from API:', response);
+            console.log(' Drivers response from API:', response);
             return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching drivers:', error);

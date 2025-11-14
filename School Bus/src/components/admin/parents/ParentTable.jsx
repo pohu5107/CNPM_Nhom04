@@ -44,9 +44,9 @@ const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onD
     { 
       key: 'email', 
       header: 'Email',
-      render: (item) => (
+      render: (value) => (
         <div style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {item.email || 'Chưa có'}
+          {value || 'Chưa có'}
         </div>
       )
     },
@@ -57,17 +57,17 @@ const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onD
     { 
       key: 'address', 
       header: 'Địa chỉ',
-      render: (item) => (
+      render: (value) => (
         <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {item.address}
+          {value}
         </div>
       )
     },
     { 
-      key: 'children', 
+      key: 'children_count', 
       header: 'Con em',
-      render: (item) => {
-        const childrenCount = item.children_count || 0;
+      render: (value, row) => {
+        const childrenCount = (value ?? row?.children_count) || 0;
         
         if (childrenCount === 0) {
           return <span style={{ color: '#64748b', fontStyle: 'italic' }}>Chưa có</span>;
@@ -93,13 +93,13 @@ const ParentTable = ({ parents = [], loading = false, onAdd, onEdit, onView, onD
     { 
       key: 'status', 
       header: 'Trạng thái',
-      render: (item) => (
+      render: (value) => (
         <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-          item.status === 'active' 
+          value === 'active' 
             ? 'bg-green-100 text-green-700' 
             : 'bg-slate-200 text-slate-600'
         }`}>
-          {item.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+          {value === 'active' ? 'Hoạt động' : 'Không hoạt động'}
         </span>
       )
     }

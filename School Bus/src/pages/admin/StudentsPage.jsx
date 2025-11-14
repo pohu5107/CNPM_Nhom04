@@ -24,6 +24,7 @@ const StudentsPage = () => {
     try {
       setLoading(true);
       const data = await studentsService.getAllStudents();
+
       setStudents(data);
       setError(null);
     } catch (err) {
@@ -101,7 +102,9 @@ const StudentsPage = () => {
         onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDelete}
-      />
+      /> 
+
+ 
 
       {/* Form Modal */}
       <Modal

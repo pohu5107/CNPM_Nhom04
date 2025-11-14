@@ -12,8 +12,9 @@ import DriverScheduleDetailPage from "../pages/driver/DriverScheduleDetailPage";
 import DriverMapPage from "../pages/driver/DriverMapPage";
 // Layouts
 import DriverLayout from "../layouts/DriverLayout";
-import ParentPage from "../pages/parent/ParentPage";
 import ParentLayout from "../layouts/ParentLayout";
+// Parent pages
+import ParentPage from "../pages/parent/ParentPage";
 
 // import ReportsPage  from "../pages/admin/ReportsPage.jsx";
 

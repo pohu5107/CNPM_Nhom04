@@ -79,7 +79,6 @@ export default function DriverMapPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Debug - kiểm tra dữ liệu
   useEffect(() => {
     console.log('🚗 DriverMapPage Debug:', {
       scheduleId,
@@ -102,7 +101,7 @@ export default function DriverMapPage() {
   const confirmArrival = () => {
     if (currentStopIndex < stops.length - 1) {
       setCurrentStopIndex(prev => prev + 1);
-      addAlert('success', `✅ Đã đến ${currentStop.name}`);
+      addAlert('success', ` Đã đến ${currentStop.name}`);
     } else {
       // Đã đến điểm cuối
       addAlert('success', '🏁 Đã hoàn thành tuyến đường');
@@ -143,7 +142,7 @@ export default function DriverMapPage() {
             students: stop.students.map(student => {
               if (student.id === studentId) {
                 const newStatus = student.status === 'picked_up' ? 'waiting' : 'picked_up';
-                addAlert('success', `${newStatus === 'picked_up' ? '✅ Đã đón' : '⏳ Chưa đón'} ${student.name}`);
+                addAlert('success', `${newStatus === 'picked_up' ? ' Đã đón' : '⏳ Chưa đón'} ${student.name}`);
                 return { ...student, status: newStatus };
               }
               return student;
@@ -164,7 +163,7 @@ export default function DriverMapPage() {
             students: stop.students.map(student => {
               if (student.id === studentId) {
                 const newStatus = student.status === 'absent' ? 'waiting' : 'absent';
-                addAlert('warning', `${newStatus === 'absent' ? '❌ Vắng mặt' : '⏳ Có mặt'} ${student.name}`);
+                addAlert('warning', `${newStatus === 'absent' ? ' Vắng mặt' : '⏳ Có mặt'} ${student.name}`);
                 return { ...student, status: newStatus };
               }
               return student;
@@ -202,7 +201,7 @@ export default function DriverMapPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* ================== HEADER TOPBAR - Sticky ================== */}
+      {/*  HEADER TOPBAR - Sticky  */}
       <div className="bg-white shadow-lg border-b z-40 relative flex-shrink-0 sticky top-0">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
@@ -274,7 +273,7 @@ export default function DriverMapPage() {
         </div>
       </div>
 
-      {/* ================== TOAST NOTIFICATIONS ================== */}
+   
       {alerts.length > 0 && (
         <div className="fixed top-20 right-4 z-50 space-y-2">
           {alerts.slice(0, 3).map(alert => (
@@ -291,7 +290,7 @@ export default function DriverMapPage() {
         </div>
       )}
 
-      {/* ================== MAIN MAP CONTAINER ================== */}
+      {/*  MAIN MAP CONTAINER */}
       <div className="flex-1 relative overflow-hidden">
         {/* Map wrapper with low z so overlays can sit above it */}
         <div className="absolute inset-0 z-0"> 
@@ -302,7 +301,7 @@ export default function DriverMapPage() {
           />
         </div>
 
-        {/* ================== STOP OVERLAY - Bottom Panel ================== */}
+        {/* STOP OVERLAY - Bottom Panel  */}
         <div className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-4 z-50 min-w-80 border border-gray-200">
           <div className="space-y-3">
             {/* Status & Progress */}
@@ -366,7 +365,7 @@ export default function DriverMapPage() {
             ) : (
               <div className="text-center py-2">
                 <div className="text-green-600 font-semibold">
-                  {tripStatus === 'completed' ? '🏁 Đã hoàn thành tuyến' : '🎯 Đã đến điểm cuối'}
+                  {tripStatus === 'completed' ? '🏁 Đã hoàn thành tuyến' : ' Đã đến điểm cuối'}
                 </div>
               </div>
             )}
@@ -394,7 +393,7 @@ export default function DriverMapPage() {
         
     
 
-        {/* ================== FLOATING ACTION BUTTONS - Góc phải dưới ================== */}
+        {/* FLOATING ACTION BUTTONS - Góc phải dưới  */}
         <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
           {/* Nút Bắt đầu chuyến - chỉ hiện khi chưa bắt đầu */}
           {tripStatus === 'not_started' && (
@@ -407,7 +406,7 @@ export default function DriverMapPage() {
             </button>
           )}
 
-          {/* 1️⃣ Nút Danh sách học sinh - chỉ hiện khi đã bắt đầu */}
+          {/* 1️ Nút Danh sách học sinh - chỉ hiện khi đã bắt đầu */}
           {tripStatus !== 'not_started' && (
             <button
               onClick={() => setShowStudentsPanel(true)}
@@ -423,7 +422,7 @@ export default function DriverMapPage() {
             </button>
           )}
 
-          {/* 2️⃣ Nút Xác nhận đến điểm đón - chỉ hiện khi đã bắt đầu */}
+          {/* 2️ Nút Xác nhận đến điểm đón - chỉ hiện khi đã bắt đầu */}
           {tripStatus !== 'not_started' && (
             <button
               onClick={() => setShowArrivalModal(true)}
@@ -433,13 +432,13 @@ export default function DriverMapPage() {
                   ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
-              title={nextStop ? "✅ Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
+              title={nextStop ? " Xác nhận đến điểm đón" : "Không có điểm đón tiếp theo"}
             >
               <CheckCircle className="w-7 h-7" />
             </button>
           )}
 
-          {/* 3️⃣ Nút Báo sự cố */}
+          {/* 3️Nút Báo sự cố */}
           <button
             onClick={() => setShowIncidentModal(true)}
             className="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-red-200"
@@ -448,7 +447,7 @@ export default function DriverMapPage() {
             <AlertTriangle className="w-7 h-7" />
           </button>
 
-          {/* 4️⃣ Nút Liên hệ khẩn cấp */}
+          {/* 4️ Nút Liên hệ khẩn cấp */}
           <button
             onClick={() => window.open('tel:1900-1234')}
             className="w-16 h-16 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-yellow-200"
@@ -460,7 +459,7 @@ export default function DriverMapPage() {
        
         </div>
 
-        {/* ================== POPUP: XÁC NHẬN ĐẾN ĐIỂM ================== */}
+        {/*  POPUP: XÁC NHẬN ĐẾN ĐIỂM */}
         {showArrivalModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
@@ -491,7 +490,7 @@ export default function DriverMapPage() {
           </div>
         )}
 
-        {/* ================== POPUP: BÁO SỰ CỐ ================== */}
+        {/* POPUP: BÁO SỰ CỐ */}
         {showIncidentModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 w-full border shadow-2xl">
@@ -558,7 +557,7 @@ export default function DriverMapPage() {
           </div>
         )}
 
-        {/* ================== POPUP: KẾT THÚC CHUYẾN ================== */}
+        {/*  POPUP: KẾT THÚC CHUYẾN */}
         {showEndTripModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
@@ -592,7 +591,7 @@ export default function DriverMapPage() {
         )}
       </div>
       
-      {/* ================== PANEL HỌC SINH - Trượt từ bên phải ================== */}
+      {/* PANEL HỌC SINH - Trượt từ bên phải  */}
       {showStudentsPanel && (
         <>
           <div 
@@ -765,7 +764,7 @@ export default function DriverMapPage() {
                   onClick={() => setShowStudentsPanel(false)}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  🔵 Đóng danh sách
+                   Đóng danh sách
                 </button>
               </div>
             </div>
