@@ -75,7 +75,7 @@ const TripStatusCard = ({ statusInfo }) => {
       <div className="md:flex-1">
         <h2 className="text-xl font-bold mb-4">Trạng thái chuyến đi</h2>
         {isLate && <div className="font-bold text-lg mb-4">CẢNH BÁO: XE ĐẾN TRỄ</div>}
-
+        
         <div className="space-y-2 text-sm">
           <p><strong>Trạm kế tiếp:</strong> {statusInfo.nextStop}</p>
           {isLate && <p><strong>Lý do trễ:</strong> {statusInfo.incident}</p>}
@@ -123,7 +123,6 @@ const ParentPage = () => {
     <div className="p-4 md:p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Trang thông tin cho Phụ Huynh</h1>
       <div className="flex flex-col gap-6">
-
         {/* 1. Trip Status */}
         <TripStatusCard statusInfo={tripStatusData} />
 
@@ -148,15 +147,13 @@ const ParentPage = () => {
         </div>
 
         {/* 3. Student Information */}
-       <div className="bg-yellow-50 p-6 rounded-lg shadow-md">
+        <div className="bg-yellow-50 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 border-b pb-2">Thông tin học sinh</h2>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
             <p><strong>Họ và tên:</strong> {studentInfo.name}</p>
             <p><strong>Lớp:</strong> {studentInfo.class}</p>
           </div>
-        </div>
-
-        {/* 4. Bus Information */}
+        </div>        {/* 4. Bus Information */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-5">
           <h2 className="text-xl font-semibold mb-4 border-b pb-2">Thông tin xe buýt</h2>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-gray-700">
