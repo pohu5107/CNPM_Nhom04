@@ -12,6 +12,9 @@ import DriverScheduleDetailPage from "../pages/driver/DriverScheduleDetailPage";
 import DriverMapPage from "../pages/driver/DriverMapPage";
 // Layouts
 import DriverLayout from "../layouts/DriverLayout";
+import ParentLayout from "../layouts/ParentLayout";
+// Parent pages
+import ParentPage from "../pages/parent/ParentPage";
 
 // import ReportsPage  from "../pages/admin/ReportsPage.jsx";
 
@@ -38,6 +41,11 @@ export default function AppRouter() {
           <Route path="schedule/:id" element={<DriverScheduleDetailPage />} />
           <Route path="map" element={<DriverMapPage />} />
           <Route path="map/:scheduleId" element={<DriverMapPage />} />
+        </Route>
+
+        {/* Parent Routes */}
+        <Route path="/parents" element={<ParentLayout />}>
+          <Route index element={<ParentPage />} />
         </Route>
       
         {/* <Route path="/admin/reports"  element={<ReportsPage />} /> */}

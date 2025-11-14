@@ -7,8 +7,8 @@ import DriverNavbar from "./components/driver/DriverNavbar.jsx";
 function NavbarSelector() {
   const location = useLocation();
   
-  // Don't show navbar for /driver paths - DriverLayout handles its own navbar
-  if (location.pathname.startsWith('/driver')) {
+  // Don't show navbar for /driver or /parents paths, as their layouts handle their own navbars
+  if (location.pathname.startsWith('/driver') || location.pathname.startsWith('/parents')) {
     return null;
   }
   
@@ -25,9 +25,9 @@ function NavbarSelector() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen w-full h-[100vh] ">
+      <div className="flex min-h-screen w-full">
         <NavbarSelector />
-        <main className="flex-auto p-4 overflow-hidden">
+        <main className="flex-1 w-full overflow-hidden">
           <AppRouter />
         </main>
       </div>
