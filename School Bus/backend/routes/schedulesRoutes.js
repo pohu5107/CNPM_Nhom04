@@ -4,71 +4,7 @@ import pool from '../config/db.js';
 
 const router = express.Router();
 
-// Helper functions
-function getStatusText(status) {
-    switch (status) {
-        case 'scheduled': return 'Chưa bắt đầu';
-        case 'in_progress': return 'Đang chạy';
-        case 'completed': return 'Hoàn thành';
-        case 'cancelled': return 'Đã hủy';
-        default: return 'Không xác định';
-    }
-}
 
-function getStatusColor(status) {
-    switch (status) {
-        case 'scheduled': return 'gray';
-        case 'in_progress': return 'blue';
-        case 'completed': return 'green';
-        case 'cancelled': return 'red';
-        default: return 'gray';
-    }
-}
-
-// GET /api/schedules/driver/:driverId/summary - Lấy thống kê tổng quan cho driver
-router.get('/driver/:driverId/summary', async (req, res) => {
-    try {
-        const { driverId } = req.params;
-        const { date } = req.query;
-        
-        let dateCondition = 'AND s.date = CURDATE()';
-        let params = [driverId];
-        
-        if (date) {
-            dateCondition = 'AND s.date = ?';
-            params.push(date);
-        }
-        
-        const [summary] = await pool.execute(`
-            SELECT 
-                COUNT(*) as total_shifts,
-                SUM(CASE WHEN s.status = 'scheduled' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN s.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN s.status = 'completed' THEN 1 ELSE 0 END) as completed,
-                SUM(CASE WHEN s.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
-            FROM schedules s
-            WHERE s.driver_id = ? ${dateCondition}
-        `, params);
-        
-        res.json({
-            success: true,
-            data: summary[0] || {
-                total_shifts: 0,
-                pending: 0,
-                in_progress: 0,
-                completed: 0,
-                cancelled: 0
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching driver summary:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy thống kê tổng quan',
-            error: error.message
-        });
-    }
-});
 
 // GET /api/schedules/driver/:driverId - Lấy danh sách lịch làm việc của tài xế
 router.get('/driver/:driverId', async (req, res) => {
@@ -95,51 +31,18 @@ router.get('/driver/:driverId', async (req, res) => {
                 s.status,
                 s.notes,
                 s.route_id,
-                b.license_plate,
-                r.route_name,
-                r.distance,
-                -- Điểm bắt đầu (stop_order = 0)
-                start_stop.name as start_point,
-                start_stop.address as start_address,
-                -- Điểm kết thúc (stop_order = 99) 
-                end_stop.name as end_point,
-                end_stop.address as end_address,
-                -- Số điểm dừng
-                COALESCE(stop_count.total_stops, 0) as stop_count
+                COALESCE(b.license_plate, 'N/A') as license_plate,
+                COALESCE(r.route_name, 'Tuyến chưa xác định') as route_name,
+                COALESCE(r.distance, 0) as distance
             FROM schedules s
             LEFT JOIN buses b ON s.bus_id = b.id
             LEFT JOIN routes r ON s.route_id = r.id
-            -- Lấy điểm bắt đầu
-            LEFT JOIN route_stops rs_start ON r.id = rs_start.route_id AND rs_start.stop_order = 0
-            LEFT JOIN stops start_stop ON rs_start.stop_id = start_stop.id
-            -- Lấy điểm kết thúc
-            LEFT JOIN route_stops rs_end ON r.id = rs_end.route_id AND rs_end.stop_order = 99
-            LEFT JOIN stops end_stop ON rs_end.stop_id = end_stop.id
-            -- Đếm số điểm dừng
-            LEFT JOIN (
-                SELECT route_id, COUNT(*) as total_stops 
-                FROM route_stops 
-                WHERE stop_order BETWEEN 1 AND 98
-                GROUP BY route_id
-            ) stop_count ON r.id = stop_count.route_id
             WHERE s.driver_id = ? ${dateCondition}
             ORDER BY s.date DESC, s.scheduled_start_time ASC
         `, params);
         
-        // Lấy số học sinh thực tế cho từng schedule
-        const schedules = await Promise.all(rows.map(async (row) => {
-            // Đếm số học sinh thực tế theo route và shift_type
-            const [studentCount] = await pool.execute(`
-                SELECT COUNT(*) as actual_count
-                FROM students st
-                WHERE (
-                    (? = 'morning' AND st.morning_route_id = ?) OR
-                    (? = 'afternoon' AND st.afternoon_route_id = ?)
-                ) AND st.status = 'active'
-            `, [row.shift_type, row.route_id, row.shift_type, row.route_id]);
 
-            const actualStudentCount = studentCount[0]?.actual_count || 0;
-
+        const data = rows.map(row => {
             return {
                 id: row.id,
                 date: row.date,
@@ -147,22 +50,19 @@ router.get('/driver/:driverId', async (req, res) => {
                 time: `${row.start_time?.substring(0, 5)} - ${row.end_time?.substring(0, 5)}`,
                 route: row.route_name,
                 busNumber: row.license_plate,
-                startPoint: row.start_point || 'Điểm bắt đầu',
-                endPoint: row.end_point || 'Điểm kết thúc', 
-                stopCount: row.stop_count || 0,
-                studentCount: `${actualStudentCount}/25`,
-                actualStudentCount: actualStudentCount,
-                status: row.status,
-                statusText: getStatusText(row.status),
-                statusColor: getStatusColor(row.status),
-                notes: row.notes,
-                distance: row.distance
+                status: row.status || 'pending',
+                statusText: row.status === 'pending' ? 'Chưa bắt đầu' : 
+                           row.status === 'in_progress' ? 'Đang chạy' : 
+                           row.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
+                statusColor: row.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+                            row.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
+                            row.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
             };
-        }));
+        });
         
         res.json({
             success: true,
-            data: schedules
+            data: data
         });
     } catch (error) {
         console.error('Error fetching driver schedules:', error);
@@ -173,6 +73,8 @@ router.get('/driver/:driverId', async (req, res) => {
         });
     }
 });
+
+
 
 // GET /api/schedules/:driverId/:id - Lấy chi tiết một lịch làm việc
 router.get('/:driverId/:id', async (req, res) => {
@@ -240,8 +142,12 @@ router.get('/:driverId/:id', async (req, res) => {
 
         const detailData = {
             ...schedule,
-            statusText: getStatusText(schedule.status),
-            statusColor: getStatusColor(schedule.status),
+            statusText: schedule.status === 'pending' ? 'Chưa bắt đầu' : 
+                       schedule.status === 'in_progress' ? 'Đang chạy' : 
+                       schedule.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
+            statusColor: schedule.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+                        schedule.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
+                        schedule.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700',
             students: students,
             studentCount: students.length
         };

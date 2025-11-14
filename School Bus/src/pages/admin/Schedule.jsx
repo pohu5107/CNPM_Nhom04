@@ -253,7 +253,7 @@ function renderConflictHints(rawMessage, schedule) {
         <p className="font-medium text-gray-700 mb-1">Gợi ý khắc phục:</p>
         <ul className="list-disc ml-4 space-y-1">
           <li>Chọn tuyến đường khác chưa được sử dụng trong khoảng thời gian này.</li>
-          <li>Điều chỉnh ngày hoặc giờ để tránh trùng tuyến.</li>
+         
         </ul>
       </div>
     );

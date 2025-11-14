@@ -5,7 +5,7 @@ import pool from '../config/db.js';
 const router = express.Router();
 
 // Helper function to check schedule conflicts
-async function checkScheduleConflicts(driver_id, bus_id, date, shift_type, excludeId = null) {
+async function checkScheduleConflicts(driver_id, bus_id, route_id, date, shift_type, excludeId = null) {
     const conflicts = [];
     
     // Check driver conflict
@@ -45,6 +45,25 @@ async function checkScheduleConflicts(driver_id, bus_id, date, shift_type, exclu
         conflicts.push({
             type: 'BUS_CONFLICT',
             message: `Xe bus đã có lịch trình khác vào ${date} ca ${shift_type === 'morning' ? 'sáng' : 'chiều'}`
+        });
+    }
+    
+    // Check route conflict
+    let routeQuery = `
+        SELECT id FROM schedules 
+        WHERE route_id = ? AND date = ? AND shift_type = ?
+    `;
+    let routeParams = [route_id, date, shift_type];
+    if (excludeId) {
+        routeQuery += ' AND id != ?';
+        routeParams.push(excludeId);
+    }
+
+    const [routeConflict] = await pool.execute(routeQuery, routeParams);
+    if (routeConflict.length > 0) {
+        conflicts.push({
+            type: 'ROUTE_CONFLICT',
+            message: `Tuyến đã có lịch trình khác vào ${date} ca ${shift_type === 'morning' ? 'sáng' : 'chiều'}`
         });
     }
     
@@ -184,8 +203,8 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Check for conflicts before inserting
-        const conflicts = await checkScheduleConflicts(driver_id, bus_id, date, shift_type, null);
+    // Check for conflicts before inserting
+    const conflicts = await checkScheduleConflicts(driver_id, bus_id, route_id, date, shift_type, null);
         if (conflicts.length > 0) {
             return res.status(409).json({
                 success: false,
@@ -253,8 +272,8 @@ router.put('/:id', async (req, res) => {
             });
         }
 
-        // Check for conflicts before updating
-        const conflicts = await checkScheduleConflicts(driver_id, bus_id, date, shift_type, id);
+    // Check for conflicts before updating
+    const conflicts = await checkScheduleConflicts(driver_id, bus_id, route_id, date, shift_type, id);
         if (conflicts.length > 0) {
             return res.status(409).json({
                 success: false,

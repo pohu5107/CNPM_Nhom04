@@ -305,8 +305,7 @@ export default function DriverScheduleDetailPage() {
                       <th className="px-6 py-4 text-left font-semibold">STT</th>
                       <th className="px-6 py-4 text-left font-semibold">HỌ TÊN</th>
                       <th className="px-6 py-4 text-left font-semibold">LỚP</th>
-                      <th className="px-6 py-4 text-left font-semibold">ĐỊA CHỈ</th>
-                      <th className="px-6 py-4 text-left font-semibold">THỜI GIAN ĐÓN</th>
+                
                       <th className="px-6 py-4 text-left font-semibold">PHỤ HUYNH</th>
                       <th className="px-6 py-4 text-left font-semibold">LIÊN HỆ</th>
                     </tr>
@@ -315,7 +314,7 @@ export default function DriverScheduleDetailPage() {
                     {!schedule.students || schedule.students.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="px-6 py-12 text-center">
-                          <div className="text-6xl mb-4">👥</div>
+                          <div className="text-6xl mb-4"></div>
                           <p className="text-slate-500 text-lg">Chưa có học sinh được phân công cho chuyến này</p>
                           <p className="text-slate-400 text-sm mt-2">Vui lòng liên hệ quản trị viên để cập nhật danh sách</p>
                         </td>
@@ -339,23 +338,8 @@ export default function DriverScheduleDetailPage() {
                             {student.class} - Khối {student.grade}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-slate-900 max-w-xs">
-                            {student.address}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-mono text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <span className="text-green-600">🚌</span>
-                              <span>{student.pickup_time?.substring(0, 5) || 'Chưa có'}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-orange-600">🏠</span>
-                              <span className="text-sm text-slate-500">{student.dropoff_time?.substring(0, 5) || 'Chưa có'}</span>
-                            </div>
-                          </div>
-                        </td>
+                     
+                      
                         <td className="px-6 py-4">
                           <div className="font-semibold text-slate-900">
                             {student.parent_name || 'Chưa có thông tin'}
@@ -380,25 +364,7 @@ export default function DriverScheduleDetailPage() {
                 </table>
               </div>
               
-              {/* Modal Footer */}
-              {schedule.students && schedule.students.length > 0 && (
-                <div className="bg-gradient-to-r from-slate-50 to-green-50/30 p-6 border-t">
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-slate-600">
-                      📊 Tổng cộng: <span className="font-bold text-slate-900">{schedule.students.length}</span> học sinh
-                    </div>
-                    <div className="text-sm text-slate-600">
-                      Sức chứa xe: <span className="font-bold text-slate-900">{schedule.students.length}/{schedule.max_capacity}</span>
-                    </div>
-                    <button
-                      onClick={() => setShowStudentsModal(false)}
-                      className="px-6 py-2 bg-gradient-to-r from-[#174D2C] to-[#1a5530] text-white rounded-lg hover:from-[#0f3820] hover:to-[#134025] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                    >
-                      ✓ Đóng
-                    </button>
-                  </div>
-                </div>
-              )}
+          
             </div>
           </div>
         )}
@@ -422,15 +388,14 @@ export default function DriverScheduleDetailPage() {
                     <th className="px-6 py-4 text-left font-semibold">TÊN ĐIỂM DỪNG</th>
                     <th className="px-6 py-4 text-center font-semibold">LOẠI</th>
                     <th className="px-6 py-4 text-center font-semibold">THỜI GIAN DỰ KIẾN</th>
-                    <th className="px-6 py-4 text-center font-semibold">TRẠNG THÁI</th>
                     <th className="px-6 py-4 text-left font-semibold">GHI CHÚ</th>
                   </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {stops.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <div className="text-6xl mb-4">🛑</div>
+                    <td colSpan="5" className="px-6 py-12 text-center">
+                      <div className="text-6xl mb-4"></div>
                       <p className="text-slate-500 text-lg">Chưa có thông tin điểm dừng cho tuyến này</p>
                       <p className="text-slate-400 text-sm mt-2">Vui lòng liên hệ quản trị viên để cập nhật</p>
                     </td>
@@ -462,16 +427,6 @@ export default function DriverScheduleDetailPage() {
                     </td>
                     <td className="px-6 py-4 font-mono text-slate-900 text-center font-semibold">
                       {stop.estimatedTime}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        stop.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        stop.status === 'current' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {stop.status === 'completed' ? ' Hoàn thành' :
-                         stop.status === 'current' ? '🟡 Hiện tại' : '⏳ Chưa đến'}
-                      </span>
                     </td>
                     <td className="px-6 py-4 text-slate-600">
                       {stop.note}

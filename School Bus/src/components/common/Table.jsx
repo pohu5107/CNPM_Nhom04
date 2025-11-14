@@ -62,17 +62,17 @@ const Table = ({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto overflow-y-auto rounded-lg border max-h-[700px]">
+      <div className="overflow-x-auto overflow-y-auto rounded-lg border h-[73vh]">
         <table className="min-w-full divide-y divide-slate-200 bg-white">
           <thead>
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
+              <th className="sticky top-0 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">STT</th>
               {columns.map((column, index) => (
-                <th key={index} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
+                <th key={index} className="sticky top-0 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700">
                   {column.header}
                 </th>
               ))}
-              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 w-80">Thao tác</th>
+              <th className="sticky top-0 px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 w-80">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

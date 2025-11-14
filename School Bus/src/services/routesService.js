@@ -62,6 +62,19 @@ export const routesService = {
         }
     },
 
+    // Lấy điểm dừng của tuyến
+    getRouteStops: async (routeId) => {
+        try {
+            console.log(' Calling GET /routes/' + routeId + '/stops...');
+            const response = await apiClient.get(`${ENDPOINT}/${routeId}/stops`);
+            console.log(' Route stops response:', response);
+            return Array.isArray(response) ? response : [];
+        } catch (error) {
+            console.error(' Error fetching route stops:', error);
+            throw error;
+        }
+    },
+
     // Validate dữ liệu tuyến trước khi gửi lên API
     validateRouteData: (data) => {
         const errors = {};
