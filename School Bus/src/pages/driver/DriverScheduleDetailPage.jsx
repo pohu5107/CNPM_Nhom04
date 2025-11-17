@@ -24,15 +24,14 @@ export default function DriverScheduleDetailPage() {
     try {
       setLoading(true);
       const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
-      console.log(' Schedule data received:', response);
-      console.log(' Schedule data type:', typeof response, 'Keys:', Object.keys(response || {}));
+   
       
       // Xử lý response - có thể là object hoặc array
       let scheduleData = null;
       if (Array.isArray(response) && response.length > 0) {
         // Nếu là array, lấy phần tử đầu tiên
         scheduleData = response[0];
-        console.log(' Found array response, taking first element:', scheduleData);
+
       } else if (response && (response.id || response.schedule_id)) {
         // Nếu là object với id
         scheduleData = response;
@@ -41,9 +40,8 @@ export default function DriverScheduleDetailPage() {
       
       if (scheduleData) {
         setSchedule(scheduleData);
-        console.log(' Schedule data set successfully');
       } else {
-        console.log(' No valid schedule data found');
+ 
         setSchedule(null);
       }
       setError(null);
