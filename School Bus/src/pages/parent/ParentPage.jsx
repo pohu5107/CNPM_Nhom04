@@ -35,11 +35,11 @@ const schoolIcon = new L.Icon({
 /// --- PLACEHOLDER DATA ---
 
 const tripStatusData = {
-  status: 'ontime',   /// To test, change status to 'ontime' or 'late'
-  nextStop: 'Nhà Văn hóa Thanh Niên',
+  status: 'late',  
+  nextStop: 'Trường THCS Nguyễn Du',
   eta: '20 phút',
   incident: 'Kẹt xe nghiêm trọng tại khu vực trung tâm.',
-  passedStops: ['Công viên 23/9', 'Trường THCS Nguyễn Du'],
+  passedStops: ['Công viên 23/9', 'Nhà Văn hóa Thanh Niên'],
 };
 
 const studentInfo = {
@@ -66,7 +66,7 @@ const TripStatusCard = ({ statusInfo }) => {
   const isLate = (statusInfo.status || '').toLowerCase() === 'late';
   const cardStyle = isLate ? 'bg-red-100 border-l-4 border-red-500 text-red-800' : 'bg-blue-100 border-l-4 border-blue-500 text-blue-800';
   const eta = isLate ? statusInfo.eta : '5 phút';
-  const etaNumber = eta.split(' ')[0]; // Extract number from ETA string
+  const etaNumber = eta.split(' ')[0]; 
 
   return (
   <div className={`p-6 rounded-lg shadow-md ${cardStyle}`}>

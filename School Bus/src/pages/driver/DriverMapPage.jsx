@@ -23,7 +23,10 @@ export default function DriverMapPage() {
   const [incidentText, setIncidentText] = useState('');
   const [isTracking, setIsTracking] = useState(true);
 
-  // Mock data cho demo - sẽ được thay thế bằng API call thực tế
+  // Dữ liệu mock dùng để demo khi chưa có phản hồi từ backend.
+  // Khi API hoạt động, useEffect phía dưới sẽ gọi endpoint `GET /api/schedules/:id`
+  // và gọi `setSchedule`, `setStops`, `setRouteLine`, `setMapCenter` để ghi đè
+  // các giá trị mock này. Giữ mock ở đây để UI không bị crash khi chờ dữ liệu.
   const mockSchedule = {
     id: scheduleId || 1,
     routeName: "Tuyến Quận 1 - Sáng",
@@ -36,6 +39,10 @@ export default function DriverMapPage() {
     currentLocation: "Nhà Văn hóa Thanh Niên"
   };
 
+  // Danh sách điểm dừng (mockStops) — dùng làm fallback khi API chưa trả dữ liệu.
+  // Mỗi phần tử stop nên có cấu trúc tối thiểu: { id, name, time, students: [...], latitude?, longitude? }
+  // Lưu ý: nếu backend trả thêm `latitude`/`longitude` thì `DriverMapView` sẽ dùng để vẽ Marker.
+  // Khi fetch thành công, parent sẽ gọi `setStops(data.stops)` để ghi đè giá trị này.
   const mockStops = [
     {
       id: 1,
@@ -65,7 +72,13 @@ export default function DriverMapPage() {
     }
   ];
 
+  // `stops` sẽ được load từ backend; khởi tạo bằng mock để UI không lỗi khi server chưa trả
   const [stops, setStops] = useState(mockStops);
+  const [schedule, setSchedule] = useState(null);
+  const [routeLine, setRouteLine] = useState([]);
+  const [mapCenter, setMapCenter] = useState(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const [scheduleError, setScheduleError] = useState(null);
 
   // Mock thông tin tracking hiện tại
   const currentStop = stops[currentStopIndex];
@@ -78,6 +91,44 @@ export default function DriverMapPage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Parent-fetch: fetch schedule + stops + routeLine từ backend, lưu vào state của parent
+  useEffect(() => {
+    if (!scheduleId) return; // nếu không có id thì không fetch
+    let cancelled = false;
+    setLoadingSchedule(true);
+    (async () => {
+      try {
+        // Endpoint giả định: GET /api/schedules/:id -> { schedule, stops, route_geometry }
+        const res = await fetch(`/api/schedules/${scheduleId}`);
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setSchedule(data.schedule || null);
+        setStops(Array.isArray(data.stops) && data.stops.length ? data.stops : mockStops);
+        setRouteLine(Array.isArray(data.route_geometry) ? data.route_geometry : []);
+        // mapCenter ưu tiên route_geometry đầu tiên, nếu không có thì lấy tọa độ điểm dừng đầu
+        if (data.route_geometry && data.route_geometry.length) {
+          setMapCenter(data.route_geometry[0]);
+        } else if (data.stops && data.stops[0] && data.stops[0].latitude && data.stops[0].longitude) {
+          setMapCenter([data.stops[0].latitude, data.stops[0].longitude]);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setScheduleError(err.message);
+        setAlerts(prev => [
+          { id: Date.now(), type: 'error', message: `Không tải lịch: ${err.message}`, time: new Date() },
+          ...prev.slice(0, 4)
+        ]);
+        // fallback giữ mockStops
+        setStops(mockStops);
+      } finally {
+        if (!cancelled) setLoadingSchedule(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [scheduleId]);
 
   useEffect(() => {
     console.log('🚗 DriverMapPage Debug:', {
@@ -292,12 +343,24 @@ export default function DriverMapPage() {
 
       {/*  MAIN MAP CONTAINER */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Map wrapper with low z so overlays can sit above it */}
+  
         <div className="absolute inset-0 z-0"> 
+          {/*
+            Truyền dữ liệu từ parent xuống `DriverMapView` qua props:
+            - `stops`: danh sách điểm dừng (lấy từ API hoặc fallback `mockStops`)
+            - `routeLine`: mảng tọa độ (polyline) của tuyến (nếu backend trả về)
+            - `mapCenter`: tọa độ để khởi tạo/thu phóng bản đồ (ưu tiên từ route geometry)
+            - `focusedStopIndex`: index của điểm dừng hiện tại (để child có thể focus/zoom)
+
+          */}
           <DriverMapView 
-            routeId={1} 
-            scheduleId={mockSchedule.id} 
+            routeId={schedule?.routeId || 1}
+            scheduleId={scheduleId}
             driverId={1}
+            stops={stops}
+            routeLine={routeLine}
+            mapCenter={mapCenter}
+            focusedStopIndex={currentStopIndex}
           />
         </div>
 

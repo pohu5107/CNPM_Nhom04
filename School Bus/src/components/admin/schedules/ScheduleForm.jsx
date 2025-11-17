@@ -47,12 +47,12 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
     fetchData();
   }, []);
 
-  // Gán dữ liệu khi edit/view
-  // Wait until options are loaded before populating initial form values
+
+  // Gán dữ liệu khi edit/view: lấy từ prop `schedule` (cha truyền xuống)
   useEffect(() => {
     if (schedule && optionsLoaded) {
       setFormData({
-        // store IDs as strings so they match the <option value> produced by FormInput
+  
   driver_id: (schedule.driver_id !== undefined && schedule.driver_id !== null) ? String(schedule.driver_id) : '',
   bus_id: (schedule.bus_id !== undefined && schedule.bus_id !== null) ? String(schedule.bus_id) : '',
   route_id: (schedule.route_id !== undefined && schedule.route_id !== null) ? String(schedule.route_id) : '',
@@ -103,7 +103,8 @@ const ScheduleForm = ({ schedule, mode, onSubmit, onCancel }) => {
 
     setFormData(prev => ({ ...prev, [name]: newVal }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
+  }; 
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
