@@ -35,7 +35,7 @@ export default function DriverScheduleDetailPage() {
       } else if (response && (response.id || response.schedule_id)) {
         // Nếu là object với id
         scheduleData = response;
-        console.log(' Found object response:', scheduleData);
+       
       }
       
       if (scheduleData) {

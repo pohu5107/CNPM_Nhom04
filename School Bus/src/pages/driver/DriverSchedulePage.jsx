@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 
@@ -7,8 +7,12 @@ import Header from "../../components/admin/Header";
 const CURRENT_DRIVER_ID = 1; // Đổi sang driver khác để test nếu chưa có đăng nhập
 
 export default function DriverSchedulePage() {
-  const [selectedDate, setSelectedDate] = useState("2025-11-9");
-  const [timeFilter, setTimeFilter] = useState("today"); 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const today = new Date().toISOString().slice(0, 10);
+  const initialFilter = searchParams.get('filter') || 'today';
+  const initialDate = initialFilter === 'all' ? '' : (searchParams.get('date') || today);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [timeFilter, setTimeFilter] = useState(initialFilter);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,7 +27,7 @@ export default function DriverSchedulePage() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      // Only send `date` when filtering by today. For 'week' and 'all' we omit date
+      
       const params = {};
       if (timeFilter === 'today' && selectedDate) {
         params.date = selectedDate;
@@ -42,9 +46,9 @@ export default function DriverSchedulePage() {
 
 
 
-  // Lấy thông tin driver hiện tại từ localStorage hoặc context
+
   useEffect(() => {
-    // Giả lập thông tin driver - trong thực tế sẽ lấy từ authentication context
+
     const driverInfo = {
       1: { name: 'Nguyễn Văn A', driverCode: 'TX001' },
       2: { name: 'Trần Thị B', driverCode: 'TX002' },
@@ -56,6 +60,10 @@ export default function DriverSchedulePage() {
   
   const handleDateChange = (newDate) => {
     setSelectedDate(newDate);
+    const params = {};
+    params.filter = timeFilter;
+    if (newDate) params.date = newDate;
+    setSearchParams(params);
   };
 
   const handleTimeFilterChange = (newFilter) => {
@@ -63,21 +71,28 @@ export default function DriverSchedulePage() {
     
     if (newFilter !== 'today') {
       setSelectedDate('');
+      setSearchParams({ filter: 'all' });
     } else {
-    
-      if (!selectedDate) {
-        const today = new Date().toISOString().slice(0, 10);
-        setSelectedDate(today);
-      }
+      const dateToSet = selectedDate || today;
+      setSelectedDate(dateToSet);
+      setSearchParams({ filter: 'today', date: dateToSet });
     }
   };
 
   const handleViewDetail = (scheduleId) => {
-    navigate(`/driver/schedule/${scheduleId}`);
+    const params = new URLSearchParams();
+    params.set('filter', timeFilter);
+    if (selectedDate) params.set('date', selectedDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    navigate(`/driver/schedule/${scheduleId}${query}`);
   };
 
   const handleStartRoute = (scheduleId) => {
-    navigate(`/driver/map/${scheduleId}`);
+    const params = new URLSearchParams();
+    params.set('filter', timeFilter);
+    if (selectedDate) params.set('date', selectedDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    navigate(`/driver/map/${scheduleId}${query}`);
   };
 
   return (
