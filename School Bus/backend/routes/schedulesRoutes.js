@@ -1,6 +1,8 @@
 // /backend/routes/schedulesRoutes.js
 import express from 'express';
 import pool from '../config/db.js';
+// Cần cài thêm axios: npm install axios
+import axios from 'axios';
 
 const router = express.Router();
 
@@ -76,11 +78,169 @@ router.get('/driver/:driverId', async (req, res) => {
 
 
 
+// GET /api/schedules/:id/map-data - Lấy dữ liệu cho bản đồ 
+router.get('/:id/map-data', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        
+        // Lấy thông tin schedule và route
+        const [scheduleRows] = await pool.execute(`
+            SELECT 
+                s.id,
+                s.route_id,
+                s.shift_type,
+                s.scheduled_start_time,
+                s.scheduled_end_time,
+                s.status,
+                s.driver_id,
+                r.route_name,
+                r.distance
+            FROM schedules s
+            LEFT JOIN routes r ON s.route_id = r.id
+            WHERE s.id = ?
+        `, [id]);
+
+        if (scheduleRows.length === 0) {
+     
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy lịch trình'
+            });
+        }
+
+        const schedule = scheduleRows[0];
+        
+        // Lấy danh sách điểm dừng với tọa độ theo thứ tự
+        const [stops] = await pool.execute(`
+            SELECT 
+                rs.id,
+                rs.stop_order,
+                s.id as stop_id,
+                s.name,
+                s.address,
+                s.latitude,
+                s.longitude,
+                rs.student_pickup_count
+            FROM route_stops rs
+            INNER JOIN stops s ON rs.stop_id = s.id
+            WHERE rs.route_id = ?
+            ORDER BY rs.stop_order ASC
+        `, [schedule.route_id]);
+
+        // 1. Lấy danh sách coordinates thô cho OSRM
+        const rawCoordinates = stops
+            .filter(stop => stop.latitude && stop.longitude)
+            .map(stop => `${stop.longitude},${stop.latitude}`) // OSRM dùng format: "long,lat"
+            .join(';');
+
+       
+        let routeGeometry = [];
+        try {
+            if (rawCoordinates) {
+                const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${rawCoordinates}?overview=full&geometries=geojson`;
+                console.log('\ud83d\ude97 Calling OSRM for route geometry:', osrmUrl);
+                const routingResponse = await axios.get(osrmUrl, { timeout: 5000 });
+                
+                if (routingResponse.data.code === 'Ok' && routingResponse.data.routes.length > 0) {
+                    // OSRM trả về format [long, lat], cần đảo lại thành [lat, long] cho Leaflet/Frontend
+                    const coordinates = routingResponse.data.routes[0].geometry.coordinates;
+                    routeGeometry = coordinates.map(coord => [coord[1], coord[0]]);
+                    
+                    // Cập nhật luôn distance thực tế (mét) từ routing engine
+                    const actualDistance = Math.round(routingResponse.data.routes[0].distance / 1000 * 10) / 10; // km, 1 chữ số thập phân
+                  
+                } else {
+                    console.warn('\u26a0\ufe0f OSRM returned no valid routes, using fallback');
+                    throw new Error('No valid routes from OSRM');
+                }
+            } else {
+                throw new Error('No valid coordinates for routing');
+            }
+        } catch (err) {
+ 
+            routeGeometry = stops
+                .filter(stop => stop.latitude && stop.longitude)
+                .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]);
+        }
+
+        // 3. Xử lý stops với thông tin bổ sung
+        const processedStops = stops.map((stop, index) => {
+      
+            const totalStops = stops.length;
+            const startTime = new Date(`1970-01-01T${schedule.scheduled_start_time}Z`);
+            const endTime = new Date(`1970-01-01T${schedule.scheduled_end_time}Z`);
+            const totalDuration = endTime - startTime;
+            
+            let estimatedTime;
+            if (stop.stop_order === 0) {
+                estimatedTime = schedule.scheduled_start_time;
+            } else if (stop.stop_order === 99) {
+                estimatedTime = schedule.scheduled_end_time;
+            } else {
+                const timePerStop = totalDuration / Math.max(totalStops - 2, 1);
+                const stopTime = new Date(startTime.getTime() + (stop.stop_order * timePerStop));
+                estimatedTime = stopTime.toTimeString().substring(0, 5);
+            }
+
+            return {
+                id: stop.stop_id,
+                name: stop.name,
+                address: stop.address,
+                latitude: stop.latitude ? parseFloat(stop.latitude) : null,
+                longitude: stop.longitude ? parseFloat(stop.longitude) : null,
+                order: stop.stop_order,
+                student_count: stop.student_pickup_count || 0,
+                time: estimatedTime,
+                students: [] // Sẽ được populate từ database nếu cần
+            };
+        });
+
+        // Tính map center (trung điểm của tuyến)
+        let mapCenter = [10.776, 106.700]; // Default HCM center
+        if (routeGeometry.length > 0) {
+            const firstStop = routeGeometry[0];
+            mapCenter = firstStop;
+        }
+
+        const responseData = {
+            schedule: {
+                id: schedule.id,
+                routeId: schedule.route_id,
+                routeName: schedule.route_name,
+                shiftType: schedule.shift_type,
+                startTime: schedule.scheduled_start_time,
+                endTime: schedule.scheduled_end_time,
+                status: schedule.status,
+                distance: schedule.distance
+            },
+            stops: processedStops,
+            route_geometry: routeGeometry,
+            map_center: mapCenter
+        };
+
+        console.log(`\u2705 Map data ready: ${stops.length} stops, ${routeGeometry.length} geometry points`);
+        
+        res.json({
+            success: true,
+            data: responseData
+        });
+        
+    } catch (error) {
+        console.error('\u274c Error fetching map data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy dữ liệu bản đồ',
+            error: error.message
+        });
+    }
+});
+
 // GET /api/schedules/:driverId/:id - Lấy chi tiết một lịch làm việc
 router.get('/:driverId/:id', async (req, res) => {
     try {
         const { driverId, id } = req.params;
-        console.log(' Fetching schedule detail with driverId:', driverId, 'and id:', id);
+
         
         const [rows] = await pool.execute(`
             SELECT 
@@ -120,7 +280,7 @@ router.get('/:driverId/:id', async (req, res) => {
         }
 
         const schedule = rows[0];
-        console.log(' Schedule found:', schedule.id);
+
         
         // Lấy danh sách học sinh
         const [students] = await pool.execute(`
@@ -157,7 +317,7 @@ router.get('/:driverId/:id', async (req, res) => {
             data: detailData
         });
     } catch (error) {
-        console.error(' Error fetching schedule detail:', error);
+      
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy chi tiết lịch làm việc',
@@ -290,220 +450,6 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách điểm dừng',
-            error: error.message
-        });
-    }
-});
-
-// POST /api/schedules/:driverId/:id/start - Bắt đầu chuyến
-// router.post('/:driverId/:id/start', async (req, res) => {
-//     try {
-//         const { driverId, id } = req.params;
-        
-//         const [existing] = await pool.execute(
-//             'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
-//             [id, driverId]
-//         );
-        
-//         if (existing.length === 0) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: 'Không tìm thấy lịch làm việc'
-//             });
-//         }
-        
-//         if (existing[0].status !== 'scheduled') {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Chỉ có thể bắt đầu lịch làm việc có trạng thái "scheduled"'
-//             });
-//         }
-        
-//         await pool.execute(`
-//             UPDATE schedules 
-//             SET status = 'in_progress', actual_start_time = NOW()
-//             WHERE id = ? AND driver_id = ?
-//         `, [id, driverId]);
-        
-//         res.json({
-//             success: true,
-//             message: 'Đã bắt đầu chuyến thành công'
-//         });
-//     } catch (error) {
-//         console.error('Error starting schedule:', error);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Lỗi khi bắt đầu chuyến',
-//             error: error.message
-//         });
-//     }
-// });
-
-// POST /api/schedules/:driverId/:id/complete - Hoàn thành chuyến
-// router.post('/:driverId/:id/complete', async (req, res) => {
-//     try {
-//         const { driverId, id } = req.params;
-//         const { notes } = req.body;
-        
-//         const [existing] = await pool.execute(
-//             'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
-//             [id, driverId]
-//         );
-        
-//         if (existing.length === 0) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: 'Không tìm thấy lịch làm việc'
-//             });
-//         }
-        
-//         if (existing[0].status !== 'in_progress') {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Chỉ có thể hoàn thành lịch làm việc đang thực hiện'
-//             });
-//         }
-        
-//         await pool.execute(`
-//             UPDATE schedules 
-//             SET status = 'completed', actual_end_time = NOW(), notes = ?
-//             WHERE id = ? AND driver_id = ?
-//         `, [notes || null, id, driverId]);
-        
-//         res.json({
-//             success: true,
-//             message: 'Đã hoàn thành chuyến thành công'
-//         });
-//     } catch (error) {
-//         console.error('Error completing schedule:', error);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Lỗi khi hoàn thành chuyến',
-//             error: error.message
-//         });
-//     }
-// });
-
-// GET /api/schedules/:id/map-data - Lấy dữ liệu cho bản đồ
-router.get('/:id/map-data', async (req, res) => {
-    try {
-        const { id } = req.params;
-        console.log('🗺️ Fetching map data for schedule:', id);
-        
-        // Lấy thông tin schedule và route
-        const [scheduleRows] = await pool.execute(`
-            SELECT 
-                s.id,
-                s.route_id,
-                s.shift_type,
-                s.scheduled_start_time,
-                s.scheduled_end_time,
-                s.status,
-                r.route_name,
-                r.distance
-            FROM schedules s
-            LEFT JOIN routes r ON s.route_id = r.id
-            WHERE s.id = ?
-        `, [id]);
-
-        if (scheduleRows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy lịch trình'
-            });
-        }
-
-        const schedule = scheduleRows[0];
-        
-        // Lấy danh sách điểm dừng với tọa độ theo thứ tự
-        const [stops] = await pool.execute(`
-            SELECT 
-                rs.id,
-                rs.stop_order,
-                s.id as stop_id,
-                s.name,
-                s.address,
-                s.latitude,
-                s.longitude,
-                rs.student_pickup_count
-            FROM route_stops rs
-            INNER JOIN stops s ON rs.stop_id = s.id
-            WHERE rs.route_id = ?
-            ORDER BY rs.stop_order ASC
-        `, [schedule.route_id]);
-
-        // Tạo route geometry từ các điểm dừng (polyline)
-        const routeGeometry = stops
-            .filter(stop => stop.latitude && stop.longitude)
-            .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]);
-
-        // Xử lý stops với thông tin bổ sung
-        const processedStops = stops.map((stop, index) => {
-            // Tính thời gian ước tính cho từng điểm
-            const totalStops = stops.length;
-            const startTime = new Date(`1970-01-01T${schedule.scheduled_start_time}Z`);
-            const endTime = new Date(`1970-01-01T${schedule.scheduled_end_time}Z`);
-            const totalDuration = endTime - startTime;
-            
-            let estimatedTime;
-            if (stop.stop_order === 0) {
-                estimatedTime = schedule.scheduled_start_time;
-            } else if (stop.stop_order === 99) {
-                estimatedTime = schedule.scheduled_end_time;
-            } else {
-                const timePerStop = totalDuration / Math.max(totalStops - 2, 1);
-                const stopTime = new Date(startTime.getTime() + (stop.stop_order * timePerStop));
-                estimatedTime = stopTime.toTimeString().substring(0, 5);
-            }
-
-            return {
-                id: stop.stop_id,
-                name: stop.name,
-                address: stop.address,
-                latitude: stop.latitude ? parseFloat(stop.latitude) : null,
-                longitude: stop.longitude ? parseFloat(stop.longitude) : null,
-                order: stop.stop_order,
-                student_count: stop.student_pickup_count || 0,
-                time: estimatedTime,
-                students: [] // Sẽ được populate từ database nếu cần
-            };
-        });
-
-        // Tính map center (trung điểm của tuyến)
-        let mapCenter = [10.776, 106.700]; // Default HCM center
-        if (routeGeometry.length > 0) {
-            const firstStop = routeGeometry[0];
-            mapCenter = firstStop;
-        }
-
-        const responseData = {
-            schedule: {
-                id: schedule.id,
-                routeId: schedule.route_id,
-                routeName: schedule.route_name,
-                shiftType: schedule.shift_type,
-                startTime: schedule.scheduled_start_time,
-                endTime: schedule.scheduled_end_time,
-                status: schedule.status,
-                distance: schedule.distance
-            },
-            stops: processedStops,
-            route_geometry: routeGeometry,
-            map_center: mapCenter
-        };
-
-        console.log(`✅ Map data ready: ${stops.length} stops, ${routeGeometry.length} geometry points`);
-        
-        res.json({
-            success: true,
-            data: responseData
-        });
-        
-    } catch (error) {
-        console.error('❌ Error fetching map data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy dữ liệu bản đồ',
             error: error.message
         });
     }

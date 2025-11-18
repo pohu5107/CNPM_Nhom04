@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 14, 2025 lúc 06:14 AM
+-- Thời gian đã tạo: Th10 18, 2025 lúc 12:18 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -62,7 +62,8 @@ INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `capacity`, `status`, 
 (1, 'BUS-04', '51K-123.45', 20, 'active', '2025-10-20 13:44:19'),
 (2, 'BUS-02', '51K-678.90', 20, 'active', '2025-10-20 13:44:19'),
 (3, 'BUS-03', '51K-111.22', 15, 'active', '2025-10-20 13:44:19'),
-(6, 'BUS-05', '51K-123.94', 25, 'active', '2025-11-10 15:15:58');
+(6, 'BUS-05', '51K-123.94', 25, 'active', '2025-11-10 15:15:58'),
+(7, 'BUS-06', '51K-123.43', 25, 'active', '2025-11-14 05:48:49');
 
 -- --------------------------------------------------------
 
@@ -240,36 +241,34 @@ CREATE TABLE `route_stops` (
 --
 
 INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `student_pickup_count`, `created_at`) VALUES
-(103, 1, 44, 0, 0, '2025-10-31 12:08:03'),
-(104, 1, 1, 1, 3, '2025-10-31 12:08:03'),
-(105, 1, 46, 2, 5, '2025-10-31 12:08:03'),
-(106, 1, 2, 3, 4, '2025-10-31 12:08:03'),
-(107, 1, 43, 99, 0, '2025-10-31 12:08:03'),
-(108, 2, 49, 0, 0, '2025-10-31 12:08:03'),
-(109, 2, 50, 1, 4, '2025-10-31 12:08:03'),
-(110, 2, 51, 2, 3, '2025-10-31 12:08:03'),
-(111, 2, 52, 3, 5, '2025-10-31 12:08:03'),
-(112, 2, 43, 99, 0, '2025-10-31 12:08:03'),
-(113, 3, 43, 0, 0, '2025-10-31 12:08:03'),
-(114, 3, 57, 1, 4, '2025-10-31 12:08:03'),
-(115, 3, 56, 2, 7, '2025-10-31 12:08:03'),
-(116, 3, 55, 3, 6, '2025-10-31 12:08:03'),
-(117, 3, 54, 99, 0, '2025-10-31 12:08:03'),
-(118, 4, 43, 0, 0, '2025-10-31 12:08:03'),
-(119, 4, 52, 1, 3, '2025-10-31 12:08:03'),
-(120, 4, 51, 2, 6, '2025-10-31 12:08:03'),
-(121, 4, 53, 3, 4, '2025-10-31 12:08:03'),
-(122, 4, 49, 99, 0, '2025-10-31 12:08:03'),
-(123, 5, 43, 0, 0, '2025-10-31 12:08:03'),
-(124, 5, 2, 1, 5, '2025-10-31 12:08:03'),
-(125, 5, 1, 2, 8, '2025-10-31 12:08:03'),
-(126, 5, 48, 3, 6, '2025-10-31 12:08:03'),
-(127, 5, 44, 99, 0, '2025-10-31 12:08:03'),
-(128, 6, 54, 0, 0, '2025-10-31 12:08:03'),
-(129, 6, 55, 1, 4, '2025-10-31 12:08:03'),
-(130, 6, 56, 2, 7, '2025-10-31 12:08:03'),
-(131, 6, 57, 3, 5, '2025-10-31 12:08:03'),
-(132, 6, 43, 99, 0, '2025-10-31 12:08:03');
+(133, 1, 44, 0, 0, '2025-11-17 15:13:40'),
+(134, 1, 1, 1, 2, '2025-11-17 15:13:40'),
+(135, 1, 48, 2, 3, '2025-11-17 15:13:40'),
+(136, 1, 45, 3, 2, '2025-11-17 15:13:40'),
+(137, 1, 43, 99, 0, '2025-11-17 15:13:40'),
+(138, 2, 49, 0, 0, '2025-11-17 15:13:40'),
+(139, 2, 50, 1, 3, '2025-11-17 15:13:40'),
+(140, 2, 51, 2, 4, '2025-11-17 15:13:40'),
+(141, 2, 43, 99, 0, '2025-11-17 15:13:40'),
+(142, 3, 43, 0, 0, '2025-11-17 15:13:40'),
+(143, 3, 57, 1, 2, '2025-11-17 15:13:40'),
+(144, 3, 56, 2, 4, '2025-11-17 15:13:40'),
+(145, 3, 55, 3, 3, '2025-11-17 15:13:40'),
+(146, 3, 54, 99, 0, '2025-11-17 15:13:40'),
+(147, 4, 43, 0, 0, '2025-11-17 15:13:40'),
+(148, 4, 51, 1, 3, '2025-11-17 15:13:40'),
+(149, 4, 50, 2, 4, '2025-11-17 15:13:40'),
+(150, 4, 49, 99, 0, '2025-11-17 15:13:40'),
+(151, 5, 43, 0, 0, '2025-11-17 15:13:40'),
+(152, 5, 2, 1, 3, '2025-11-17 15:13:40'),
+(153, 5, 48, 2, 2, '2025-11-17 15:13:40'),
+(154, 5, 1, 3, 2, '2025-11-17 15:13:40'),
+(155, 5, 44, 99, 0, '2025-11-17 15:13:40'),
+(156, 6, 54, 0, 0, '2025-11-17 15:13:40'),
+(157, 6, 55, 1, 3, '2025-11-17 15:13:40'),
+(158, 6, 52, 2, 4, '2025-11-17 15:13:40'),
+(159, 6, 57, 3, 2, '2025-11-17 15:13:40'),
+(160, 6, 43, 99, 0, '2025-11-17 15:13:40');
 
 -- --------------------------------------------------------
 
@@ -309,7 +308,9 @@ INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift
 (28, 1, 2, 6, '2025-11-09', 'morning', '06:20:00', '07:10:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-08 16:02:52', '2025-11-09 05:47:39'),
 (31, 1, 2, 3, '2025-11-09', 'afternoon', '17:30:00', '18:55:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 05:23:17', '2025-11-12 05:10:14'),
 (34, 1, 1, 1, '2025-11-10', 'morning', '06:30:00', '07:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 16:04:16', '2025-11-11 04:45:07'),
-(35, 1, 2, 5, '2025-11-10', 'afternoon', '17:00:00', '17:40:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-10 14:47:18', '2025-11-10 14:47:18');
+(35, 1, 2, 5, '2025-11-10', 'afternoon', '17:00:00', '17:40:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-10 14:47:18', '2025-11-10 14:47:18'),
+(37, 1, 3, 2, '2025-11-11', 'morning', '06:00:00', '06:50:00', 30, 'scheduled', NULL, NULL, 'lịch mới', '2025-11-18 03:52:45', '2025-11-18 03:52:45'),
+(38, 1, 7, 4, '2025-11-11', 'afternoon', '06:00:00', '06:50:00', 30, 'scheduled', NULL, NULL, 'lên lịch', '2025-11-18 04:05:40', '2025-11-18 04:07:29');
 
 -- --------------------------------------------------------
 
@@ -335,15 +336,15 @@ INSERT INTO `stops` (`id`, `name`, `address`, `latitude`, `longitude`, `status`)
 (2, 'Ngã tư Hàng Xanh', 'Giao lộ Xô Viết Nghệ Tĩnh & Điện Biên Phủ, P.21, Q. Bình Thạnh', 10.79610000, 106.70370000, 'active'),
 (3, 'Gigamall Thủ Đức', '240 Phạm Văn Đồng, P. Hiệp Bình Chánh, Thủ Đức', 10.83290000, 106.72030000, 'active'),
 (43, 'Truong THCS Nguyen Du', '123 Duong Giao Duc, Q.1, TP.HCM', 10.77690000, 106.70090000, 'active'),
-(44, 'Cong vien 23/9', '2 Pham Ngoc Thach, Q.1, TP.HCM', 10.78300000, 106.69970000, 'active'),
-(45, 'Nha Van Hoa Thanh Nien', '4 Pham Ngoc Thach, P. Ben Nghe, Q.1', 10.78310000, 106.69970000, 'active'),
+(44, 'Cong vien 23/9', 'Đường Lê Lai, Phường Phạm Ngũ Lão, Quận 1, TP.HCM', 10.76925000, 106.69242000, 'active'),
+(45, 'Dinh Độc Lập', '135 Nam Kỳ Khởi Nghĩa, P. Bến Thành, Q.1, TP.HCM', 10.77700000, 106.69540000, 'active'),
 (46, 'Nga Sau Phu Dong', '240 Pham Van Dong, P. Hiep Binh Chanh, Thu Duc', 10.83290000, 106.72030000, 'active'),
 (47, 'Nga Tu Hang Xanh', 'Giao lo Xo Viet Nghe Tinh & Dien Bien Phu, P.21, Q.Binh Thanh', 10.79610000, 106.70370000, 'active'),
 (48, 'Ben Thanh', '1 Le Loi, P. Ben Nghe, Q.1, TP.HCM', 10.77260000, 106.69800000, 'active'),
 (49, 'Cong vien Lang Hoa', '1040 Quang Trung, P.8, Go Vap, TP.HCM', 10.83710000, 106.67950000, 'active'),
 (50, 'Nga Tu Phan Van Tri - Le Duc Tho', '197 Le Duc Tho, P.6, Go Vap, TP.HCM', 10.84200000, 106.68500000, 'active'),
 (51, 'Nga Nam Chuong Cho', '789 Quang Trung, Go Vap, TP.HCM', 10.83950000, 106.68260000, 'active'),
-(52, 'Cau vuot Nguyen Thai Son', '268 Ly Thuong Kiet, P. Hiep Phu, Thu Duc, TP.HCM', 10.84500000, 106.75800000, 'active'),
+(52, 'Cau vuot Nguyen Thai Son', 'Vòng xoay Nguyễn Thái Sơn, Phường 3, Gò Vấp, TP.HCM', 10.81665000, 106.67725000, 'active'),
 (53, 'Lotte Mart Nguyen Van Luong', '30 Vo Van Ngan, P. Linh Chieu, Thu Duc, TP.HCM', 10.85000000, 106.76000000, 'active'),
 (54, 'Chung cu Sunview Town', '321 Vo Van Ngan, Thu Duc, TP.HCM', 10.85160000, 106.77180000, 'active'),
 (55, 'Vincom Thu Duc', '216 Vo Van Ngan, Thu Duc, TP.HCM', 10.85000000, 106.77000000, 'active'),
@@ -559,7 +560,7 @@ ALTER TABLE `attendance`
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `bus_locations`
@@ -601,13 +602,13 @@ ALTER TABLE `routes`
 -- AUTO_INCREMENT cho bảng `route_stops`
 --
 ALTER TABLE `route_stops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=161;
 
 --
 -- AUTO_INCREMENT cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT cho bảng `stops`
@@ -619,7 +620,7 @@ ALTER TABLE `stops`
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
