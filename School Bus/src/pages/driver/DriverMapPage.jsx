@@ -36,10 +36,10 @@ export default function DriverMapPage() {
     currentLocation: "Nhà Văn hóa Thanh Niên"
   };
 
-  // Tạo stops data theo scheduleId thực từ thông tin tuyến
+
   const getRouteStopsData = (scheduleId) => {
     const routes = {
-      // Route 31: Tuyến Thủ Đức - Chiều (theo thứ tự trong ảnh)
+      // Route 31: Tuyến Thủ Đức - Chiều 
       '31': {
         routeName: 'Tuyến Thủ Đức - Chiều',
         stops: [
