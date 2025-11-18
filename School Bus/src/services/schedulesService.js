@@ -120,7 +120,7 @@ export const schedulesService = {
             }
             return { stops: [] };
         } catch (error) {
-            console.error('Error fetching schedule stops:', error);
+      
             throw error;
         }
     },

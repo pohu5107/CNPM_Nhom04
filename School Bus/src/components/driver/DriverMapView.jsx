@@ -42,7 +42,6 @@ function Recenter({ latlng }) {
   return null;
 }
 
-// PRESENTATIONAL component: hoàn toàn dựa vào props của parent
 export default function DriverMapView({ stops = [], routeLine = [], mapCenter = [10.776, 106.700], focusedStopIndex = null }) {
   const hasGeometry = Array.isArray(routeLine) && routeLine.length > 0;
   const hasStops = Array.isArray(stops) && stops.length > 0;
@@ -54,24 +53,31 @@ export default function DriverMapView({ stops = [], routeLine = [], mapCenter = 
 
   return (
     <MapContainer center={centerProp} zoom={14} style={{ height: '100%', width: '100%' }}>
-      {/* Nếu parent truyền focusedStopIndex, Recenter sẽ fly map */}
-      {focusedStopIndex != null && hasStops && stops[focusedStopIndex] && (
-        <Recenter latlng={[stops[focusedStopIndex].latitude, stops[focusedStopIndex].longitude]} />
-      )}
+
+      {/* Auto-recenter disabled để user có thể tự do kéo map */}
+      {/* focusedStopIndex không còn trigger auto flyTo */}
 
       <TileLayer
         attribution='&copy; OpenStreetMap'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Vẽ đường đi của tuyến (nếu có) */}
+      {/* Vẽ đường đi của tuyến với style cải thiện */}
       {hasGeometry && (
-        <Polyline positions={routeLine} color="blue" weight={5} />
+        <Polyline 
+          positions={routeLine} 
+          color="#2563eb" 
+          weight={4}
+          opacity={0.8}
+          dashArray="10, 5"
+          lineCap="round"
+          lineJoin="round"
+        />
       )}
 
       {/* Đánh dấu các điểm dừng do parent cung cấp */}
       {hasStops && stops.map((stop, index) => {
-        // Validate coordinates before creating Marker to avoid Leaflet errors
+      
         const lat = stop.latitude != null ? parseFloat(stop.latitude) : NaN;
         const lng = stop.longitude != null ? parseFloat(stop.longitude) : NaN;
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
@@ -96,15 +102,21 @@ export default function DriverMapView({ stops = [], routeLine = [], mapCenter = 
       })}
       
 
-      {/* Thông báo nếu không có dữ liệu */}
-      {(!hasGeometry && !hasStops) && (
-        <div
-          style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000 }}
-          className="bg-white/90 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-700 shadow"
-        >
-          Không có dữ liệu lộ trình.
-        </div>
-      )}
+      {/* Thông báo về polyline và controls */}
+      <div
+        style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000 }}
+        className="bg-white/95 border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-600 shadow max-w-xs"
+      >
+        {hasGeometry ? (
+          <div>
+            📍 {stops.length} điểm dừng<br/>
+            🔗 Đường kết nối (thẳng)<br/>
+            💡 Kéo map tự do để xem toàn tuyến
+          </div>
+        ) : (
+          "Không có dữ liệu lộ trình."
+        )}
+      </div>
     </MapContainer>
   );
 }

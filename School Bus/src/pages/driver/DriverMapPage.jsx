@@ -23,10 +23,7 @@ export default function DriverMapPage() {
   const [incidentText, setIncidentText] = useState('');
   const [isTracking, setIsTracking] = useState(true);
 
-  // Dữ liệu mock dùng để demo khi chưa có phản hồi từ backend.
-  // Khi API hoạt động, useEffect phía dưới sẽ gọi endpoint `GET /api/schedules/:id`
-  // và gọi `setSchedule`, `setStops`, `setRouteLine`, `setMapCenter` để ghi đè
-  // các giá trị mock này. Giữ mock ở đây để UI không bị crash khi chờ dữ liệu.
+
   const mockSchedule = {
     id: scheduleId || 1,
     routeName: "Tuyến Quận 1 - Sáng",
@@ -39,38 +36,78 @@ export default function DriverMapPage() {
     currentLocation: "Nhà Văn hóa Thanh Niên"
   };
 
-  // Danh sách điểm dừng (mockStops) — dùng làm fallback khi API chưa trả dữ liệu.
-  // Mỗi phần tử stop nên có cấu trúc tối thiểu: { id, name, time, students: [...], latitude?, longitude? }
-  // Lưu ý: nếu backend trả thêm `latitude`/`longitude` thì `DriverMapView` sẽ dùng để vẽ Marker.
-  // Khi fetch thành công, parent sẽ gọi `setStops(data.stops)` để ghi đè giá trị này.
-  const mockStops = [
-    {
-      id: 1,
-      name: "Nhà Văn hóa Thanh Niên",
-      time: "06:30",
-      students: [
-        { id: 1, name: "Trần Dũng Minh", class: "6A1", phone: "0987654321", status: "picked_up" },
-        { id: 2, name: "Nguyễn Thị Mai", class: "6A2", phone: "0987654322", status: "picked_up" }
-      ]
-    },
-    {
-      id: 2,
-      name: "Ngã tư Hàng Xanh",
-      time: "06:40",
-      students: [
-        { id: 3, name: "Lê Văn Hoàng", class: "7B1", phone: "0987654323", status: "waiting" },
-        { id: 4, name: "Phạm Thị Lan", class: "6A3", phone: "0987654324", status: "waiting" }
-      ]
-    },
-    {
-      id: 3,
-      name: "Trường THCS Nguyễn Du",
-      time: "07:00",
-      students: [
-        { id: 5, name: "Hoàng Văn Nam", class: "7A1", phone: "0987654325", status: "waiting" }
-      ]
-    }
-  ];
+  // Tạo stops data theo scheduleId thực từ thông tin tuyến
+  const getRouteStopsData = (scheduleId) => {
+    const routes = {
+      // Route 31: Tuyến Thủ Đức - Chiều (theo thứ tự trong ảnh)
+      '31': {
+        routeName: 'Tuyến Thủ Đức - Chiều',
+        stops: [
+          {
+            id: 43, name: "Trường THCS Nguyễn Du", time: "17:30",
+            latitude: 10.77690000, longitude: 106.70090000, order: 0,
+            students: [{ id: 1, name: "Học sinh 1", class: "6A1", phone: "0987654321", status: "waiting" }]
+          },
+          {
+            id: 57, name: "Cầu Sài Gòn", time: "17:51", 
+            latitude: 10.82000000, longitude: 106.74000000, order: 1,
+            students: [{ id: 2, name: "Học sinh 2", class: "7B1", phone: "0987654322", status: "waiting" }]
+          },
+          {
+            id: 52, name: "Cầu vượt Nguyễn Thái Sơn", time: "18:13",
+            latitude: 10.84500000, longitude: 106.75800000, order: 2,
+            students: [{ id: 3, name: "Học sinh 3", class: "6A2", phone: "0987654323", status: "waiting" }]
+          },
+          {
+            id: 55, name: "Vincom Thủ Đức", time: "18:34",
+            latitude: 10.85000000, longitude: 106.77000000, order: 3,
+            students: [{ id: 4, name: "Học sinh 4", class: "7A1", phone: "0987654324", status: "waiting" }]
+          },
+          {
+            id: 54, name: "Chung cư Sunview Town", time: "18:55",
+            latitude: 10.85160000, longitude: 106.77180000, order: 99,
+            students: []
+          }
+        ]
+      },
+      // Route 28: Tuyến Thủ Đức - Sáng (ngược lại route 31)
+      '28': {
+        routeName: 'Tuyến Thủ Đức - Sáng',
+        stops: [
+          {
+            id: 54, name: "Chung cư Sunview Town", time: "06:20",
+            latitude: 10.85160000, longitude: 106.77180000, order: 0,
+            students: [{ id: 1, name: "Học sinh 1", class: "6A1", phone: "0987654321", status: "waiting" }]
+          },
+          {
+            id: 55, name: "Vincom Thủ Đức", time: "06:33",
+            latitude: 10.85000000, longitude: 106.77000000, order: 1,
+            students: [{ id: 2, name: "Học sinh 2", class: "7B1", phone: "0987654322", status: "waiting" }]
+          },
+          {
+            id: 52, name: "Cầu vượt Nguyễn Thái Sơn", time: "06:45",
+            latitude: 10.84500000, longitude: 106.75800000, order: 2,
+            students: [{ id: 3, name: "Học sinh 3", class: "6A2", phone: "0987654323", status: "waiting" }]
+          },
+          {
+            id: 57, name: "Cầu Sài Gòn", time: "06:58",
+            latitude: 10.82000000, longitude: 106.74000000, order: 3,
+            students: [{ id: 4, name: "Học sinh 4", class: "7A1", phone: "0987654324", status: "waiting" }]
+          },
+          {
+            id: 43, name: "Trường THCS Nguyễn Du", time: "07:10",
+            latitude: 10.77690000, longitude: 106.70090000, order: 99,
+            students: []
+          }
+        ]
+      }
+    };
+    
+    return routes[scheduleId] || routes['28']; // fallback to route 28
+  };
+  
+  const routeData = getRouteStopsData(scheduleId);
+  const mockStops = routeData.stops;
 
   // `stops` sẽ được load từ backend; khởi tạo bằng mock để UI không lỗi khi server chưa trả
   const [stops, setStops] = useState(mockStops);
@@ -99,20 +136,49 @@ export default function DriverMapPage() {
     setLoadingSchedule(true);
     (async () => {
       try {
-        // Endpoint giả định: GET /api/schedules/:id -> { schedule, stops, route_geometry }
-        const res = await fetch(`/api/schedules/${scheduleId}`);
-        if (!res.ok) throw new Error(`${res.status}`);
-        const data = await res.json();
+        // Sử dụng data hardcode từ routeData thay vì API call (tạm thời)
+        console.log('🗺️ Using hardcoded route data for schedule:', scheduleId);
+        const data = {
+          schedule: {
+            id: scheduleId,
+            routeName: routeData.routeName,
+            startTime: routeData.stops[0]?.time || '06:30',
+            endTime: routeData.stops[routeData.stops.length - 1]?.time || '07:30'
+          },
+          stops: routeData.stops,
+          route_geometry: routeData.stops
+            .filter(stop => stop.latitude && stop.longitude)
+            .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]),
+          map_center: routeData.stops[0] ? [parseFloat(routeData.stops[0].latitude), parseFloat(routeData.stops[0].longitude)] : [10.776, 106.700]
+        };
+        
         if (cancelled) return;
         setSchedule(data.schedule || null);
-        setStops(Array.isArray(data.stops) && data.stops.length ? data.stops : mockStops);
-        setRouteLine(Array.isArray(data.route_geometry) ? data.route_geometry : []);
-        // mapCenter ưu tiên route_geometry đầu tiên, nếu không có thì lấy tọa độ điểm dừng đầu
-        if (data.route_geometry && data.route_geometry.length) {
-          setMapCenter(data.route_geometry[0]);
-        } else if (data.stops && data.stops[0] && data.stops[0].latitude && data.stops[0].longitude) {
-          setMapCenter([data.stops[0].latitude, data.stops[0].longitude]);
+        const finalStops = Array.isArray(data.stops) && data.stops.length ? data.stops : mockStops;
+        setStops(finalStops);
+        
+        // Tạo route geometry từ stops nếu API không trả về
+        let finalRouteLine = Array.isArray(data.route_geometry) ? data.route_geometry : [];
+        if (finalRouteLine.length === 0 && finalStops.length > 0) {
+          finalRouteLine = finalStops
+            .filter(stop => stop.latitude && stop.longitude)
+            .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]);
         }
+        setRouteLine(finalRouteLine);
+        
+        const finalMapCenter = data.map_center || (finalStops[0]?.latitude && finalStops[0]?.longitude 
+          ? [parseFloat(finalStops[0].latitude), parseFloat(finalStops[0].longitude)] 
+          : [10.776, 106.700]);
+        setMapCenter(finalMapCenter);
+        
+        console.log('🗺️ Map data loaded:', {
+          schedule: data.schedule?.routeName,
+          stops: data.stops?.length,
+          routeGeometry: data.route_geometry?.length,
+          mapCenter: data.map_center,
+          stopsDetails: data.stops?.map(s => ({ name: s.name, lat: s.latitude, lng: s.longitude }))
+        });
+        
       } catch (err) {
         if (cancelled) return;
         setScheduleError(err.message);
@@ -122,6 +188,7 @@ export default function DriverMapPage() {
         ]);
         // fallback giữ mockStops
         setStops(mockStops);
+        console.error('❌ Failed to load map data:', err);
       } finally {
         if (!cancelled) setLoadingSchedule(false);
       }
@@ -272,18 +339,18 @@ export default function DriverMapPage() {
                 }`}></div>
                 <div>
                   <div className="font-bold text-lg text-gray-900">
-                    {mockSchedule.routeName} • {mockSchedule.busNumber}
+                    {loadingSchedule ? 'Đang tải...' : (schedule?.routeName || `Tuyến ${scheduleId}`)} • {mockSchedule.busNumber}
                   </div>
                   <div className="text-sm text-gray-600 flex items-center gap-4">
-                    <span>Mã chuyến: #{mockSchedule.id}</span>
+                    <span>Mã chuyến: #{scheduleId}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {mockSchedule.startTime} - {mockSchedule.endTime}
+                      {schedule?.startTime?.substring(0, 5) || mockSchedule.startTime} - {schedule?.endTime?.substring(0, 5) || mockSchedule.endTime}
                     </span>
                     <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                       isTracking ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
-                      📶 {isTracking ? 'Socket OK' : 'Mất kết nối'}
+                      📶 {isTracking ? 'Đã kết nối' : 'Mất kết nối'}
                     </span>
                   </div>
                 </div>
