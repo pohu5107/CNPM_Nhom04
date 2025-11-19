@@ -50,11 +50,11 @@ router.get('/driver/:driverId', async (req, res) => {
                 time: `${row.start_time?.substring(0, 5)} - ${row.end_time?.substring(0, 5)}`,
                 route: row.route_name,
                 busNumber: row.license_plate,
-                status: row.status || 'pending',
-                statusText: row.status === 'pending' ? 'Chưa bắt đầu' : 
+                status: row.status || 'scheduled',
+                statusText: row.status === 'scheduled' ? 'Chưa bắt đầu' : 
                            row.status === 'in_progress' ? 'Đang chạy' : 
                            row.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
-                statusColor: row.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+                statusColor: row.status === 'scheduled' ? 'bg-gray-100 text-gray-700' : 
                             row.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
                             row.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
             };
@@ -142,10 +142,10 @@ router.get('/:driverId/:id', async (req, res) => {
 
         const detailData = {
             ...schedule,
-            statusText: schedule.status === 'pending' ? 'Chưa bắt đầu' : 
+            statusText: schedule.status === 'scheduled' ? 'Chưa bắt đầu' : 
                        schedule.status === 'in_progress' ? 'Đang chạy' : 
                        schedule.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
-            statusColor: schedule.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+            statusColor: schedule.status === 'scheduled' ? 'bg-gray-100 text-gray-700' : 
                         schedule.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
                         schedule.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700',
             students: students,
@@ -270,7 +270,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 estimatedTime: estimatedTime,
                 latitude: stop.latitude,
                 longitude: stop.longitude,
-                status: 'pending',
+                status: 'scheduled',
                 note: ''
             };
         });
