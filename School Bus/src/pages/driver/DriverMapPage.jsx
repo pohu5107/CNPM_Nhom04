@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   MapPin, Clock, Users, Bus, ArrowLeft, Settings, 
@@ -115,10 +115,73 @@ export default function DriverMapPage() {
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [scheduleError, setScheduleError] = useState(null);
 
+  // vehicle position used for remaining distance / ETA calculation
+  const [vehiclePos, setVehiclePos] = useState(null); // { lat, lng }
+
+  // Helpers: haversine distance (km) and formatters
+  const haversineKm = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+    const toRad = v => v * Math.PI / 180;
+    const R = 6371; // km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const formatKm = km => {
+    if (!km || km <= 0) return '0 m';
+    if (km < 1) return `${Math.round(km * 1000)} m`;
+    return `${(Math.round(km * 10) / 10).toString()} km`;
+  };
+
+  const formatETASeconds = secs => {
+    if (!secs || secs <= 0) return '0 phút';
+    const mins = Math.round(secs / 60);
+    if (mins < 60) return `${mins} phút`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h ${m}p`;
+  };
+
   const currentStop = stops[currentStopIndex];
   const nextStop = stops[currentStopIndex + 1];
-  const remainingDistance = "1.2 km";
-  const estimatedTime = nextStop ? nextStop.time : mockSchedule.endTime;
+  // keep vehiclePos in sync with map center as a fallback
+  useEffect(() => {
+    if (mapCenter && (!vehiclePos || vehiclePos.lat !== mapCenter[0] || vehiclePos.lng !== mapCenter[1])) {
+      setVehiclePos({ lat: mapCenter[0], lng: mapCenter[1] });
+    }
+  }, [mapCenter]);
+
+  // Compute remaining distance and ETA (simple Haversine + avg speed)
+  const { remainingDistance, estimatedTime } = useMemo(() => {
+    const AVG_SPEED_KMH = 25; // configurable average speed
+    const DWELL_SEC = 30; // dwell time per stop
+
+    if (!stops || stops.length === 0) return { remainingDistance: '0 m', estimatedTime: '0 phút' };
+
+    // compute remaining km from vehicle to current stop + between remaining stops
+    let remainingKm = 0;
+    // from vehicle to current stop
+    if (vehiclePos && currentStop && currentStop.latitude && currentStop.longitude) {
+      remainingKm += haversineKm(vehiclePos.lat, vehiclePos.lng, parseFloat(currentStop.latitude), parseFloat(currentStop.longitude));
+    }
+    // between subsequent stops starting from currentStop
+    for (let i = currentStopIndex; i < stops.length - 1; i++) {
+      const a = stops[i];
+      const b = stops[i+1];
+      if (a && b && a.latitude && a.longitude && b.latitude && b.longitude) {
+        remainingKm += haversineKm(parseFloat(a.latitude), parseFloat(a.longitude), parseFloat(b.latitude), parseFloat(b.longitude));
+      }
+    }
+
+    const travelSec = (remainingKm / AVG_SPEED_KMH) * 3600;
+    const dwellSec = Math.max(0, stops.length - currentStopIndex) * DWELL_SEC;
+    const etaSec = travelSec + dwellSec;
+
+    return { remainingDistance: formatKm(remainingKm), estimatedTime: formatETASeconds(etaSec) };
+  }, [vehiclePos, stops, currentStopIndex]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -205,14 +268,18 @@ export default function DriverMapPage() {
   };
 
   const confirmArrival = () => {
+    // mark current stop as arrived first
+    setStops(prev => prev.map((s, i) => i === currentStopIndex ? { ...s, status: 'arrived', actualArrival: new Date().toISOString() } : s));
+    addAlert('success', `Đã đến ${currentStop?.name}`);
+
     if (currentStopIndex < stops.length - 1) {
-      setCurrentStopIndex(prev => prev + 1);
-      addAlert('success', ` Đã đến ${currentStop.name}`);
+      // increment index after confirming arrival
+      setTimeout(() => setCurrentStopIndex(prev => Math.min(prev + 1, stops.length - 1)), 200);
     } else {
-      
       addAlert('success', '🏁 Đã hoàn thành tuyến đường');
       setTripStatus('completed');
     }
+
     setShowArrivalModal(false);
   };
 
@@ -668,7 +735,7 @@ export default function DriverMapPage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Kết thúc chuyến đi</h3>
                 <p className="text-gray-600 mb-6">
-                  Bạn có chắc chắn muốn kết thúc chuyến <strong className="text-gray-900">{mockSchedule.routeName}</strong>?
+                  Bạn có chắc chắn muốn kết thúc chuyến <strong className="text-gray-900"></strong>?
                   <br />
                   <span className="text-sm">Hành động này sẽ dừng việc theo dõi GPS.</span>
                 </p>
@@ -830,7 +897,7 @@ export default function DriverMapPage() {
               
               <div className="bg-gray-50 p-4 border-t">
                 <div className="mb-4">
-                  <h4 className="font-semibold text-gray-800 mb-2">📊 Tổng kết chuyến đi</h4>
+                  <h4 className="font-semibold text-gray-800 mb-2"> Tổng kết chuyến đi</h4>
                   <div className="grid grid-cols-3 gap-2 text-center text-sm">
                     <div className="bg-green-100 p-3 rounded-lg">
                       <div className="font-bold text-green-700 text-lg">{getTotalPickedUp()}</div>

@@ -272,7 +272,7 @@ router.get('/:driverId/:id', async (req, res) => {
         `, [id, driverId]);
 
         if (rows.length === 0) {
-            console.log(' No schedule found for driverId:', driverId, 'and id:', id);
+  
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -315,7 +315,7 @@ router.get('/:driverId/:id', async (req, res) => {
         res.json({
             success: true,
             data: detailData
-        });
+        });   
     } catch (error) {
       
         res.status(500).json({
@@ -330,8 +330,7 @@ router.get('/:driverId/:id', async (req, res) => {
 router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
     try {
         const { driverId, scheduleId } = req.params;
-        console.log(' Fetching stops with driverId:', driverId, 'and scheduleId:', scheduleId);
-
+       
         // Lấy thông tin schedule
         const [scheduleRows] = await pool.execute(`
             SELECT 
@@ -355,7 +354,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         }
 
         const schedule = scheduleRows[0];
-        console.log(' Schedule found for stops:', schedule.schedule_id);
+     
 
         // Lấy danh sách điểm dừng
         const [stops] = await pool.execute(`
@@ -372,7 +371,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
 
-        console.log(' Stops found:', stops.length);
+   
 
         const startTime = schedule.scheduled_start_time;
         const endTime = schedule.scheduled_end_time;

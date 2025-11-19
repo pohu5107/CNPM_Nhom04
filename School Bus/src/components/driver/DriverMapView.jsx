@@ -102,21 +102,6 @@ export default function DriverMapView({ stops = [], routeLine = [], mapCenter = 
       })}
       
 
-      {/* Thông báo về polyline và controls */}
-      <div
-        style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000 }}
-        className="bg-white/95 border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-600 shadow max-w-xs"
-      >
-        {hasGeometry ? (
-          <div>
-            📍 {stops.length} điểm dừng<br/>
-            🔗 Đường kết nối (thẳng)<br/>
-            💡 Kéo map tự do để xem toàn tuyến
-          </div>
-        ) : (
-          "Không có dữ liệu lộ trình."
-        )}
-      </div>
     </MapContainer>
   );
 }
