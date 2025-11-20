@@ -23,7 +23,7 @@ export default function DriverMapPage() {
   const [incidentText, setIncidentText] = useState('');
   const [isTracking, setIsTracking] = useState(true);
 
-  // Mock data cho demo - sẽ được thay thế bằng API call thực tế
+ 
   const mockSchedule = {
     id: scheduleId || 1,
     routeName: "Tuyến Quận 1 - Sáng",
