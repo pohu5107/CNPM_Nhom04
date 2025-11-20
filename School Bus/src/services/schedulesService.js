@@ -19,19 +19,11 @@ export const schedulesService = {
     getDriverSchedules: async (driverId, params = {}) => {
         try {
             const queryString = new URLSearchParams(params).toString();
-            const url = `${ENDPOINT}/driver/${driverId}${queryString ? `?${queryString}` : ''}`;
+            const url = `${ENDPOINT}/driver/${driverId}` + (queryString ? `?${queryString}` : '');
             const response = await apiClient.get(url);
             
-            // Handle response format from backend
-            if (response && response.data && Array.isArray(response.data.data)) {
-                return response.data.data;
-            } else if (response && response.data && Array.isArray(response.data)) {
-                return response.data;
-            } else if (Array.isArray(response)) {
-                return response;
-            }
-            
-            return [];
+            // Response đã được interceptor chuẩn hóa
+            return Array.isArray(response) ? response : [];
         } catch (error) {
             console.error('Error fetching driver schedules:', error);
             throw error;
@@ -113,9 +105,8 @@ export const schedulesService = {
     getScheduleStops: async (driverId, scheduleId) => {
         try {
             const response = await apiClient.get(`${ENDPOINT}/driver/${driverId}/stops/${scheduleId}`);
-            if (response && response.data && response.data.stops && Array.isArray(response.data.stops)) {
-                return response.data;
-            } else if (response && response.stops && Array.isArray(response.stops)) {
+            // Response đã được interceptor chuẩn hóa
+            if (response && Array.isArray(response.stops)) {
                 return response;
             }
             return { stops: [] };

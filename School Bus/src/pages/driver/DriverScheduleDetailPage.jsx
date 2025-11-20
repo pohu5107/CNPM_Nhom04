@@ -24,30 +24,16 @@ export default function DriverScheduleDetailPage() {
     try {
       setLoading(true);
       const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
-   
       
-      // Xử lý response - có thể là object hoặc array
-      let scheduleData = null;
-      if (Array.isArray(response) && response.length > 0) {
-        // Nếu là array, lấy phần tử đầu tiên
-        scheduleData = response[0];
-
-      } else if (response && (response.id || response.schedule_id)) {
-        // Nếu là object với id
-        scheduleData = response;
-       
-      }
+      // Interceptor đã chuẩn hóa response - chỉ cần xử lý đơn giản
+      const scheduleData = Array.isArray(response) ? response[0] : response;
       
-      if (scheduleData) {
-        setSchedule(scheduleData);
-      } else {
- 
-        setSchedule(null);
-      }
+      setSchedule(scheduleData || null);
       setError(null);
     } catch (err) {
       setError('Lỗi khi tải chi tiết lịch làm việc: ' + err.message);
       console.error('Error fetching schedule detail:', err);
+      setSchedule(null);
     } finally {
       setLoading(false);
     }
@@ -56,41 +42,27 @@ export default function DriverScheduleDetailPage() {
   const fetchScheduleStops = async () => {
     try {
       const stopsData = await schedulesService.getScheduleStops(CURRENT_DRIVER_ID, id);
-      console.log(' Stops data received:', stopsData);
-      console.log(' Stops data structure:', {
-        type: typeof stopsData,
-        isArray: Array.isArray(stopsData),
-        hasStops: stopsData?.stops ? 'yes' : 'no',
-        stopsLength: stopsData?.stops?.length || 0,
-        keys: Object.keys(stopsData || {})
-      });
       
-      // Service đã xử lý để trả về object {scheduleId, routeId, routeName, stops}
-      if (stopsData && stopsData.stops && Array.isArray(stopsData.stops)) {
-        console.log(' Valid stops data found:', stopsData.stops.length, 'stops');
-        setStops(stopsData.stops);
-      } else {
-        console.log(' No valid stops data found in response');
-        setStops([]);
-      }
+      // Interceptor đã chuẩn hóa - service trả về {scheduleId, routeId, routeName, stops}
+      setStops(stopsData?.stops || []);
     } catch (err) {
       console.error('Error fetching stops:', err);
       setStops([]);
     }
   };
 
-  const handleStatusUpdate = async (newStatus) => {
-    try {
-      setUpdating(true);
-      await schedulesService.updateScheduleStatus(id, newStatus);
-      await fetchScheduleDetail(); // Reload để cập nhật trạng thái mới
-    } catch (err) {
-      setError('Lỗi khi cập nhật trạng thái: ' + err.message);
-      console.error('Error updating status:', err);
-    } finally {
-      setUpdating(false);
-    }
-  };
+  // const handleStatusUpdate = async (newStatus) => {
+  //   try {
+  //     setUpdating(true);
+  //     await schedulesService.updateScheduleStatus(id, newStatus);
+  //     await fetchScheduleDetail(); // Reload để cập nhật trạng thái mới
+  //   } catch (err) {
+  //     setError('Lỗi khi cập nhật trạng thái: ' + err.message);
+  //     console.error('Error updating status:', err);
+  //   } finally {
+  //     setUpdating(false);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -211,7 +183,7 @@ export default function DriverScheduleDetailPage() {
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Thời gian:</span>
                 <span className="font-bold text-lg text-slate-900">
-                  🕐 {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
+                   {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
                   {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
                 </span>
               </div>

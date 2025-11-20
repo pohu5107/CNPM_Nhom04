@@ -32,7 +32,7 @@ apiClient.interceptors.request.use(
 // Response interceptor để handle errors
 apiClient.interceptors.response.use(
     (response) => {
-        // Chuẩn hóa response - luôn trả về data array/object
+        // Chuẩn hóa response - luôn trả về payload trực tiếp
         const responseBody = response.data;
         
         // Nếu backend trả về format { success: true, data: [...] }
@@ -40,15 +40,20 @@ apiClient.interceptors.response.use(
             return responseBody.data || responseBody;
         }
         
-        // Nếu backend trả về trực tiếp array/object
+        // Nếu backend có nested data, unwrap nó
+        if (responseBody?.data) {
+            return responseBody.data;
+        }
+        
+        // Trả về payload trực tiếp
         return responseBody;
     },
     (error) => {
         console.error('API Error:', error.response?.data || error.message);
         
-        // Handle different error types
+      
         if (error.response?.status === 401) {
-            // Unauthorized - redirect to login
+         
             console.error('Unauthorized access');
         } else if (error.response?.status === 404) {
             console.error('Resource not found');

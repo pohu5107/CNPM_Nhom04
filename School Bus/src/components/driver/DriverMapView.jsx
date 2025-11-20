@@ -34,51 +34,42 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
       try {
         setLoading(true);
         setError(null);
-        
-        // Đây là nơi gọi API backend để lấy dữ liệu lộ trình
-        console.log('🗺️ Fetching route details for routeId:', rid);
+
         const response = await routesService.getRouteById(rid);
         const data = response;
-        console.log('🗺️ Route details response:', data);
 
         setRouteData(data);
         setStops(data.stops || []);
 
-        // Giả sử API trả về một mảng các tọa độ cho Polyline
-        // Ví dụ: data.route_geometry = [[10.77, 106.70], [10.78, 106.71], ...]
         if (data.route_geometry && data.route_geometry.length > 0) {
           setRouteLine(data.route_geometry);
-          // Cập nhật tâm bản đồ dựa trên điểm đầu tiên của lộ trình
           setMapCenter(data.route_geometry[0]);
         } else if (data.stops && data.stops.length > 0) {
-          // Nếu không có lộ trình, lấy tâm là điểm dừng đầu tiên
           const firstStopCoords = [data.stops[0].latitude, data.stops[0].longitude];
           setMapCenter(firstStopCoords);
         }
 
       } catch (err) {
-        console.error(`Error fetching route details for routeId: ${routeId}`, err);
         setError('Không thể tải dữ liệu lộ trình.');
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchFromScheduleIfNeeded = async () => {
+    // Inline the decision logic: prefer explicit routeId; otherwise resolve from schedule
+    (async () => {
       try {
-        // Nếu có sẵn routeId thì dùng luôn
+        setError(null);
+
         if (routeId) {
           setResolvedRouteId(routeId);
           await fetchRouteData(routeId);
           return;
         }
 
-        // Nếu không có routeId, nhưng có scheduleId + driverId
         if (scheduleId && driverId) {
-          console.log('🧭 No routeId. Fetching stops from schedule:', { scheduleId, driverId });
           setLoading(true);
           const resp = await schedulesService.getScheduleStops(driverId, scheduleId);
-          console.log('🧭 Schedule stops response:', resp);
 
           const stopsArr = Array.isArray(resp?.stops) ? resp.stops : [];
           setStops(stopsArr);
@@ -90,26 +81,25 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
             }
           }
 
-          // Nếu API trả về routeId, thử lấy lộ trình để vẽ polyline
           if (resp?.routeId) {
             setResolvedRouteId(resp.routeId);
             await fetchRouteData(resp.routeId);
           } else {
             setResolvedRouteId(null);
+            setLoading(false);
           }
-        } else {
-          // Không đủ dữ liệu để fetch
-          setLoading(false);
+
+          return;
         }
+
+        // Nothing to load
+        setLoading(false);
       } catch (e) {
-        console.error('Error deriving route from schedule:', e);
         setError('Không thể lấy dữ liệu lộ trình từ lịch trình.');
         setLoading(false);
       }
-    };
+    })();
 
-    fetchFromScheduleIfNeeded();
-    // dependencies include incoming identifiers
   }, [routeId, scheduleId, driverId]);
 
   if (loading) {
@@ -120,9 +110,7 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
     return <div className="flex items-center justify-center h-full bg-red-50 text-red-600"><p>{error}</p></div>;
   }
 
-  // Không trả về sớm nữa; chúng ta có thể hiển thị các điểm dừng từ schedule nếu có
 
-  // Hiển thị một lớp debug mỏng khi không có dữ liệu hình học cũng không có điểm dừng
   const hasGeometry = Array.isArray(routeLine) && routeLine.length > 0;
   const hasStops = Array.isArray(stops) && stops.length > 0;
 
@@ -155,14 +143,7 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
         </Marker>
       ))}
 
-      {(!hasGeometry && !hasStops) && (
-        <div
-          style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000 }}
-          className="bg-white/90 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-700 shadow"
-        >
-          Không có dữ liệu lộ trình. routeId: <b>{String(resolvedRouteId)}</b>
-        </div>
-      )}
+ 
     </MapContainer>
   );
 }

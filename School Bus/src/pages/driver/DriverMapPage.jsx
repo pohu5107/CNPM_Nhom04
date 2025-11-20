@@ -79,17 +79,7 @@ export default function DriverMapPage() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    console.log('🚗 DriverMapPage Debug:', {
-      scheduleId,
-      mockSchedule,
-      stops: stops.length,
-      currentStopIndex,
-      nextStop: nextStop?.name || 'none',
-      tripStatus,
-      isTracking
-    });
-  }, [scheduleId, currentStopIndex, tripStatus]);
+ 
 
   // Bắt đầu chuyến
   const startTrip = () => {
@@ -113,7 +103,7 @@ export default function DriverMapPage() {
   // Báo cáo sự cố
   const submitIncident = () => {
     if (incidentText.trim()) {
-      addAlert('error', `🚨 Đã gửi báo cáo sự cố: ${incidentText}`);
+      addAlert('error', ` Đã gửi báo cáo sự cố: ${incidentText}`);
       setIncidentText('');
       setShowIncidentModal(false);
       // TODO: Gửi API báo cáo sự cố
@@ -124,7 +114,7 @@ export default function DriverMapPage() {
   const confirmEndTrip = () => {
     setTripStatus('completed');
     setIsTracking(false);
-    addAlert('success', '🏁 Đã kết thúc chuyến đi');
+    addAlert('success', ' Đã kết thúc chuyến đi');
     setShowEndTripModal(false);
     // TODO: API cập nhật trạng thái chuyến
     setTimeout(() => {
@@ -229,11 +219,7 @@ export default function DriverMapPage() {
                       <Clock className="w-3 h-3" />
                       {mockSchedule.startTime} - {mockSchedule.endTime}
                     </span>
-                    <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      isTracking ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      📶 {isTracking ? 'Socket OK' : 'Mất kết nối'}
-                    </span>
+                  
                   </div>
                 </div>
               </div>
@@ -245,7 +231,7 @@ export default function DriverMapPage() {
                 <div className="text-sm font-mono font-semibold text-gray-900">
                   {currentTime.toLocaleTimeString('vi-VN')}
                 </div>
-                <div className="text-xs text-gray-500">Real-time tracking</div>
+               
               </div>
 
               {/* Pause/Resume button */}

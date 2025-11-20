@@ -65,7 +65,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
   // Hàm tải các điểm dừng cho một tuyến (dùng lại cho sáng/chiều)
   // Gọi `routesService.getRouteStops(routeId)` trả về mảng stops. Nếu lỗi, set empty.
-  // Lưu ý: điểm dừng có thuộc tính `stop_order` (0 = bắt đầu, 99 = kết thúc theo quy ước DB).
+ 
   const loadStops = async (routeId, setStops) => {
       if (!routeId) return;
       try {
@@ -111,7 +111,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   };
 
   // Hàm trợ giúp: tải điểm dừng cho tuyến (sử dụng khi người dùng thay đổi select tuyến)
-  // Khi route thay đổi ở form, chúng ta reset điểm đón/trả tương ứng và load lại stops.
+ 
   const loadRouteStops = async (routeId, setStops) => {
     if (!routeId) {
       setStops([]);
@@ -186,9 +186,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
 
   
-  // ---------- View-only layout ----------
-  // Khi mode === 'view' và có student, trả về layout read-only đẹp mắt thay vì form inputs.
-  // Phần này không có input/submit; chỉ hiển thị dữ liệu đã có (student, stops, routes).
+
   if (mode === 'view' && student) {
     const morningRouteName = student.morning_route_name || (allRoutes.find(r => String(r.id) === String(student.morning_route_id))?.route_name) || '';
     const afternoonRouteName = student.afternoon_route_name || (allRoutes.find(r => String(r.id) === String(student.afternoon_route_id))?.route_name) || '';
@@ -196,7 +194,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name) || student.afternoon_dropoff_stop_name || '';
   
   
-  // Tên điểm mặc định (thường là trường): tìm stop_order 99 (kết thúc) cho buổi sáng, stop_order 0 (bắt đầu) cho buổi chiều
+  
   const morningSchoolStop = morningRouteStops.find(s => Number(s.stop_order) === 99) || morningRouteStops.find(s => Number(s.stop_order) === 0);
   const afternoonSchoolStop = afternoonRouteStops.find(s => Number(s.stop_order) === 0) || afternoonRouteStops.find(s => Number(s.stop_order) === 99);
   const morningSchoolName = morningSchoolStop?.name ;

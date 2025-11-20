@@ -11,7 +11,6 @@ const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, o
   // Get unique classes for filter
   const uniqueClasses = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-  // Loading state
   if (loading) {
     return (
       <div className="mx-8">
