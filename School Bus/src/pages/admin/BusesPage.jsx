@@ -96,23 +96,31 @@ export default function BusesPage() {
     {
       key: "status",
       header: "Trạng thái",
-      render: (item) => (
-        <span
-          className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-            item.status === "active"
-              ? "bg-green-100 text-green-700"
-              : item.status === "maintenance"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-slate-200 text-slate-600"
-          }`}
-        >
-          {item.status === "active"
-            ? "Đang hoạt động"
-            : item.status === "maintenance"
-            ? "Đang bảo trì"
-            : "Không xác định"}
-        </span>
-      ),
+      render: (value, item) => {
+        const normalizedStatus = value?.toString().toLowerCase().trim();
+
+        return (
+          <span
+            className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
+              normalizedStatus === "active"
+                ? "bg-green-100 text-green-700"
+                : normalizedStatus === "maintenance"
+                ? "bg-yellow-100 text-yellow-700"
+                : normalizedStatus === "inactive"
+                ? "bg-red-100 text-red-700"
+                : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            {normalizedStatus === "active"
+              ? "Đang hoạt động"
+              : normalizedStatus === "maintenance"
+              ? "Đang bảo trì"
+              : normalizedStatus === "inactive"
+              ? "Không hoạt động"
+              : `Không xác định (${value})`}
+          </span>
+        );
+      },
     },
   ];
 
@@ -174,14 +182,14 @@ export default function BusesPage() {
             );
             if (response.data.success) {
               setBuses((prev) => [...prev, response.data.data]);
-              boxDialog("success")
+              boxDialog("success");
               setIsCreateOpen(false);
             } else {
-              boxDialog("error")
+              boxDialog("error");
             }
           } catch (error) {
             console.error("Lỗi khi thêm xe:", error);
-            boxDialog("error")
+            boxDialog("error");
             throw error; // Re-throw để form biết có lỗi
           }
         }}
@@ -209,7 +217,7 @@ export default function BusesPage() {
                   b.id === selectedBus.id ? response.data.data : b
                 )
               );
-              boxDialog("success")
+              boxDialog("success");
               setIsEditOpen(false);
               setSelectedBus(null);
             } else {
