@@ -166,20 +166,25 @@ router.get('/:id/map-data', async (req, res) => {
 
         // 3. Xử lý stops với thông tin bổ sung
         const processedStops = stops.map((stop, index) => {
-      
+
             const totalStops = stops.length;
             const startTime = new Date(`1970-01-01T${schedule.scheduled_start_time}Z`);
             const endTime = new Date(`1970-01-01T${schedule.scheduled_end_time}Z`);
             const totalDuration = endTime - startTime;
             
+            // Use index (0..n-1) to compute intermediate times. stop_order may use
+            // sentinel values (0, 99) and is not guaranteed to be contiguous, so
+            // multiplying by stop_order can produce incorrect times (e.g. 99).
             let estimatedTime;
-            if (stop.stop_order === 0) {
+            if (index === 0) {
                 estimatedTime = schedule.scheduled_start_time;
-            } else if (stop.stop_order === 99) {
+            } else if (index === totalStops - 1) {
                 estimatedTime = schedule.scheduled_end_time;
             } else {
-                const timePerStop = totalDuration / Math.max(totalStops - 2, 1);
-                const stopTime = new Date(startTime.getTime() + (stop.stop_order * timePerStop));
+                // Distribute evenly across intervals between first and last stop
+                const intervals = Math.max(totalStops - 1, 1);
+                const timePerInterval = totalDuration / intervals;
+                const stopTime = new Date(startTime.getTime() + (index * timePerInterval));
                 estimatedTime = stopTime.toTimeString().substring(0, 5);
             }
 

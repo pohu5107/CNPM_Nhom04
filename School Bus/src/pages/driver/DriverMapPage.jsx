@@ -503,12 +503,12 @@ export default function DriverMapPage() {
             ) : (
               <>
                 
-                {nextStop && tripStatus !== 'completed' ? (
+                {currentStop && tripStatus !== 'completed' ? (
               <>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <div className="font-semibold text-gray-800">
-                    Điểm tiếp theo: {nextStop.name}
+                    Điểm tiếp theo: {currentStop.name}
                   </div>
                 </div>
                 
@@ -594,9 +594,9 @@ export default function DriverMapPage() {
           {tripStatus !== 'not_started' && (
             <button
               onClick={() => setShowArrivalModal(true)}
-              disabled={!nextStop && tripStatus !== 'completed'}
+              disabled={!currentStop && tripStatus !== 'completed'}
               className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 ${
-                nextStop || tripStatus !== 'completed'
+                currentStop || tripStatus !== 'completed'
                   ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
@@ -804,7 +804,6 @@ export default function DriverMapPage() {
                         </div>
                         <div className="flex-1">
                           <div className="font-medium text-gray-900">{stop.name}</div>
-                          <div className="text-sm text-gray-500">{stop.time}</div>
                         </div>
                         <div className={`text-xs px-2 py-1 rounded-full font-medium ${
                           stopIndex === currentStopIndex ? 'bg-blue-100 text-blue-700' :
