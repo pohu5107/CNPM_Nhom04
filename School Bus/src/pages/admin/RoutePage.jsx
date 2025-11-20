@@ -158,23 +158,31 @@ export default function RoutePage() {
     {
       key: "status",
       header: "Trạng thái",
-      render: (item) => (
-        <span
-          className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-            item.status === "active"
-              ? "bg-green-100 text-green-700"
-              : item.status === "maintenance"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-slate-200 text-slate-600"
-          }`}
-        >
-          {item.status === "active"
-            ? "Đang hoạt động"
-            : item.status === "maintenance"
-            ? "Đang bảo trì"
-            : "Không hoạt động "}
-        </span>
-      ),
+      render: (value, item) => {
+        const normalizedStatus = value?.toString().toLowerCase().trim();
+
+        return (
+          <span
+            className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
+              normalizedStatus === "active"
+                ? "bg-green-100 text-green-700"
+                : normalizedStatus === "maintenance"
+                ? "bg-yellow-100 text-yellow-700"
+                : normalizedStatus === "inactive"
+                ? "bg-red-100 text-red-700"
+                : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            {normalizedStatus === "active"
+              ? "Đang hoạt động"
+              : normalizedStatus === "maintenance"
+              ? "Đang bảo trì"
+              : normalizedStatus === "inactive"
+              ? "Không hoạt động"
+              : `Không xác định (${value})`}
+          </span>
+        );
+      },
     },
   ];
 
