@@ -229,11 +229,7 @@ export default function RoutePage() {
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           onAdd={() => setIsOpenFormAdd(true)}
-          onView={(route) => {
-            // Có thể mở một modal chỉ để xem chi tiết
-            console.log("View route:", route);
-          }}
-          onEdit={(route) => { // Xử lý khi nhấn nút sửa
+          onEdit={(route) => { 
             setSelectedRouteForEdit(route);
             setIsEditOpen(true);
           }}

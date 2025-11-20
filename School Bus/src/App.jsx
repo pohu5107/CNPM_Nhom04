@@ -27,7 +27,7 @@ function App() {
     <BrowserRouter>
       <div className="flex min-h-screen w-full">
         <NavbarSelector />
-        <main className="flex-1 w-full overflow-hidden">
+        <main className="px-4 flex-1 w-full overflow-hidden">
           <AppRouter />
         </main>
       </div>
