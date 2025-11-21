@@ -65,7 +65,7 @@ router.get('/driver/:driverId', async (req, res) => {
             data: data
         });
     } catch (error) {
-        console.error('Error fetching driver schedules:', error);
+    
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy lịch làm việc',
@@ -80,7 +80,7 @@ router.get('/driver/:driverId', async (req, res) => {
 router.get('/:driverId/:id', async (req, res) => {
     try {
         const { driverId, id } = req.params;
-        console.log(' Fetching schedule detail with driverId:', driverId, 'and id:', id);
+        
         
         const [rows] = await pool.execute(`
             SELECT 
@@ -112,7 +112,7 @@ router.get('/:driverId/:id', async (req, res) => {
         `, [id, driverId]);
 
         if (rows.length === 0) {
-            console.log(' No schedule found for driverId:', driverId, 'and id:', id);
+           
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'

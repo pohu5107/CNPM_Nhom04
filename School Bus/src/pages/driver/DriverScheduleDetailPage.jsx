@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
+import { FiCalendar, FiUsers, FiPhone, FiX, FiMapPin } from 'react-icons/fi';
 
 const CURRENT_DRIVER_ID = 1;
 
@@ -104,7 +105,7 @@ export default function DriverScheduleDetailPage() {
         <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-6xl mb-4">📅</div>
+            <div className="mb-4 flex justify-center"><FiCalendar className="w-12 h-12" aria-hidden="true" /></div>
             <p className="text-slate-500 text-lg">Không tìm thấy thông tin lịch làm việc</p>
             <button 
               onClick={() => navigate(-1)} 
@@ -226,7 +227,7 @@ export default function DriverScheduleDetailPage() {
                     onClick={() => setShowStudentsModal(true)}
                     className="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
                   >
-                    👥 Xem danh sách
+                    Xem danh sách
                   </button>
                 </div>
               </div>
@@ -244,7 +245,7 @@ export default function DriverScheduleDetailPage() {
         {showStudentsModal && (
           <div 
             className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={(e) => e.target === e.currentTarget && setShowStudentsModal(false)}
+            // onClick={(e) => e.target === e.currentTarget && setShowStudentsModal(false)}
           >
             <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
               {/* Modal Header */}
@@ -252,7 +253,7 @@ export default function DriverScheduleDetailPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      👥 Danh sách học sinh
+                      <FiUsers className="w-6 h-6" aria-hidden="true" /> Danh sách học sinh
                     </h2>
                     <p className="text-green-100 mt-1">
                       Chuyến {id} - {schedule.students?.length || 0} học sinh
@@ -261,8 +262,9 @@ export default function DriverScheduleDetailPage() {
                   <button
                     onClick={() => setShowStudentsModal(false)}
                     className="p-2 hover:bg-white/20 rounded-lg transition-colors group"
+                    aria-label="Đóng"
                   >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">✕</span>
+                    <FiX className="w-5 h-5 group-hover:scale-110 transition-transform" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -321,10 +323,12 @@ export default function DriverScheduleDetailPage() {
                           </div>
                           {(student.parent_phone || student.phone) && (
                             <button 
-                              className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-lg transition-colors"
+                              className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-lg transition-colors flex items-center gap-2"
                               onClick={() => window.open(`tel:${student.parent_phone || student.phone}`)}
+                              aria-label={`Gọi ${student.parent_name || student.name}`}
                             >
-                              📞 Gọi ngay
+                              <FiPhone className="w-4 h-4" aria-hidden="true" />
+                              <span>Gọi ngay</span>
                             </button>
                           )}
                         </td>
@@ -342,8 +346,8 @@ export default function DriverScheduleDetailPage() {
         {/* Bảng điểm dừng */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-[#174D2C] flex items-center gap-2">
-              📍 Danh sách điểm dừng
+              <h2 className="text-xl font-bold text-[#174D2C] flex items-center gap-2">
+              <FiMapPin className="w-5 h-5" aria-hidden="true" /> Danh sách điểm dừng
             </h2>
             <p className="text-slate-600 mt-1">
               Tuyến {schedule.route_name} - {stops.length} điểm dừng
