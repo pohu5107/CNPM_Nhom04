@@ -7,9 +7,7 @@ import { classesService } from '../../../services/classesService';
 import { routesService } from '../../../services/routesService';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
-  // Trạng thái form
-  // NOTE: Sử dụng `useState` để React tự động re-render khi giá trị thay đổi.
-  // `formData` lưu giá trị các input (controlled inputs). Khi submit, formData là payload gửi về parent.
+  
   const [formData, setFormData] = useState({
     name: '', grade: '', class: '', parent_id: '', phone: '', address: '',
     morning_route_id: '', morning_pickup_stop_id: '', afternoon_route_id: '', afternoon_dropoff_stop_id: ''
@@ -17,17 +15,13 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   
-  // Dữ liệu cho các dropdown (phụ huynh, lớp, tuyến)
-  // Những mảng này được load 1 lần khi component mount và dùng để build options cho <select>.
+
   const [parents, setParents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [allRoutes, setAllRoutes] = useState([]);
   const [morningRouteStops, setMorningRouteStops] = useState([]);
   const [afternoonRouteStops, setAfternoonRouteStops] = useState([]); 
 
-  // Tải dữ liệu cho dropdown (parents, classes, routes)
-  // Chạy 1 lần khi component mount (dependency array []).
-  // Bắt lỗi ở đây để tránh crash nếu API không phản hồi.
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,10 +43,6 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     fetchData();
   }, []);
 
-  // Tải dữ liệu học sinh và điểm dừng của tuyến
-  // Khi parent truyền `student` (ở chế độ edit/view), effect này sẽ copy dữ liệu
-  // từ `student` vào `formData` để prefill form, đồng thời load danh sách điểm dừng
-  // cho các tuyến sáng/chiều tương ứng để hiển thị / kích hoạt dropdown điểm dừng.
   useEffect(() => {
     if (!student) return;
     
@@ -63,8 +53,6 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       afternoon_route_id: student.afternoon_route_id || '', afternoon_dropoff_stop_id: student.afternoon_dropoff_stop_id || ''
     });
 
-  // Hàm tải các điểm dừng cho một tuyến (dùng lại cho sáng/chiều)
-  // Gọi `routesService.getRouteStops(routeId)` trả về mảng stops. Nếu lỗi, set empty.
  
   const loadStops = async (routeId, setStops) => {
       if (!routeId) return;
@@ -129,8 +117,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-  // Tự động điền khối khi chọn lớp
-  // Nếu người dùng chọn `class`, ta tự động set `grade` tương ứng từ dữ liệu `classes`.
+
     if (name === 'class' && value) {
       const selectedClass = classes.find(cls => cls.class_name === value);
       if (selectedClass) {
@@ -140,8 +127,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       }
     }
 
-  // Tải điểm dừng khi thay đổi tuyến (sáng / chiều)
-  // Khi đổi tuyến, reset điểm đón/trả để tránh lựa chọn không hợp lệ của tuyến trước.
+
     if (name === 'morning_route_id') {
       setFormData(prev => ({ ...prev, morning_route_id: value, morning_pickup_stop_id: '' }));
       loadRouteStops(value, setMorningRouteStops);
@@ -188,15 +174,15 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   
 
   if (mode === 'view' && student) {
-    const morningRouteName = student.morning_route_name || (allRoutes.find(r => String(r.id) === String(student.morning_route_id))?.route_name) || '';
-    const afternoonRouteName = student.afternoon_route_name || (allRoutes.find(r => String(r.id) === String(student.afternoon_route_id))?.route_name) || '';
-  const morningPickupName = (morningRouteStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || student.morning_pickup_stop_name || '';
-  const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name) || student.afternoon_dropoff_stop_name || '';
+    const morningRouteName = student.morning_route_name || '';
+    const afternoonRouteName = student.afternoon_route_name || '';
+  const morningPickupName = (morningRouteStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || '';
+  const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name)|| '';
   
   
   
-  const morningSchoolStop = morningRouteStops.find(s => Number(s.stop_order) === 99) || morningRouteStops.find(s => Number(s.stop_order) === 0);
-  const afternoonSchoolStop = afternoonRouteStops.find(s => Number(s.stop_order) === 0) || afternoonRouteStops.find(s => Number(s.stop_order) === 99);
+  const morningSchoolStop = morningRouteStops.find(s => Number(s.stop_order) === 99) ;
+  const afternoonSchoolStop = afternoonRouteStops.find(s => Number(s.stop_order) === 0) ;
   const morningSchoolName = morningSchoolStop?.name ;
   const afternoonSchoolName = afternoonSchoolStop?.name ;
 
@@ -266,7 +252,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         </div>
 
         <div className="flex justify-end pt-4 border-t border-gray-200">
-          {/* Nút Đóng sẽ gọi onCancel (parent truyền vào) để đóng modal */}
+
           <Button variant="secondary" onClick={onCancel}>Đóng</Button>
         </div>
       </div>

@@ -312,7 +312,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit}>
       {mode === 'view' ? (
-          // Bố cục chế độ xem chi tiết
+        
         <div>
           {renderDetailedView()}
           <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
@@ -322,7 +322,7 @@ const DriverForm = ({ driver, mode, onSubmit, onCancel }) => {
           </div>
         </div>
       ) : (
-        // Bố cục form chuẩn cho thêm/sửa
+  
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <FormInput

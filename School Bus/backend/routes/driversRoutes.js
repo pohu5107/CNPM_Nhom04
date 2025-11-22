@@ -6,7 +6,7 @@ import pool from '../config/db.js';
 const router = express.Router();
 
 const sendError = (res, err, msg = 'Lỗi server') => {
-  console.error(msg, err);
+
   return res.status(500).json({ success: false, message: msg, error: err?.message });
 };
 

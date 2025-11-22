@@ -54,7 +54,7 @@ router.get('/:id/children', async (req, res) => {
   try {
     const { id } = req.params;
     const [children] = await pool.execute(`
-      SELECT s.id, s.name, s.grade, s.class, c.class_name, c.homeroom_teacher, s.address, s.phone AS student_phone, s.status,
+      SELECT s.id, s.name, s.grade, s.class, c.class_name, s.address, s.phone AS student_phone, s.status,
              s.morning_route_id, mr.route_name AS morning_route_name, s.morning_pickup_stop_id, mps.name AS morning_pickup_stop_name,
              s.afternoon_route_id, ar.route_name AS afternoon_route_name, s.afternoon_dropoff_stop_id, ads.name AS afternoon_dropoff_stop_name,
              ms.bus_id AS morning_bus_id, mb.bus_number AS morning_bus_number, mb.license_plate AS morning_license_plate, ms.scheduled_start_time AS morning_start_time, ms.scheduled_end_time AS morning_end_time,
@@ -92,17 +92,16 @@ router.post('/', async (req, res) => {
 
     let user_id = null;
     if (email && email !== '') {
-      // Require username when creating a user for parent
+     
       if (!username) return res.status(400).json({ success: false, message: 'Username là bắt buộc khi tạo tài khoản phụ huynh' });
 
-      // Check username uniqueness
+   
       const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
       if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
 
       const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
       if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
 
-      // Generate default password (temporary) and hash it
       const defaultPassword = '123456';
       const hashed = await bcrypt.hash(defaultPassword, 10);
 
@@ -132,10 +131,10 @@ router.put('/:id', async (req, res) => {
     let user_id = existing[0].user_id;
     if (email && email !== '' && email !== 'Chưa có') {
       if (user_id) {
-        // Update existing user email and optionally username
+
         const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ? AND id != ?', [email, user_id]);
         if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
-        // If username provided, ensure uniqueness and update
+
         if (username) {
           const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ? AND id != ?', [username, user_id]);
           if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
@@ -144,7 +143,7 @@ router.put('/:id', async (req, res) => {
           await pool.execute('UPDATE users SET email = ? WHERE id = ?', [email, user_id]);
         }
       } else {
-        // Create new users record if parent didn't have one
+   
         if (!username) return res.status(400).json({ success: false, message: 'Username là bắt buộc khi tạo tài khoản phụ huynh' });
         const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
         if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });

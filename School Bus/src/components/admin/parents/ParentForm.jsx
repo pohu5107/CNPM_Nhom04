@@ -4,7 +4,7 @@ import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
 import { parentsService } from '../../../services/parentsService';
 
-// Thành phần con nhỏ (ChildCard) — hiển thị thông tin con/em gọn nhẹ
+
 const ChildCard = ({ child }) => (
   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
     <div className="flex items-center gap-3 mb-4">
@@ -49,7 +49,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   const [childrenDetails, setChildrenDetails] = useState([]);
   const [childrenLoading, setChildrenLoading] = useState(false);
 
-  // Tải dữ liệu phụ huynh vào form
+
   useEffect(() => {
     if (parent) {
       setFormData({
@@ -60,7 +60,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   }, [parent]);
 
 
-  // Tải danh sách con ở chế độ xem và loại bỏ bản ghi trùng lặp
+
   useEffect(() => {
     if (mode === 'view' && parent?.id) {
       const fetchChildren = async () => {
@@ -68,7 +68,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
           setChildrenLoading(true);
           const data = await parentsService.getParentChildren(parent.id);
           
-          // Deduplicate children by id or composite key
+  
           const childMap = new Map();
           (data || []).forEach(child => {
             const key = child.id || `${child.name}-${child.class_name || child.class}-${child.grade}`;
@@ -127,7 +127,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       [name]: value
     }));
     
-    // Xóa lỗi khi người dùng bắt đầu nhập
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,

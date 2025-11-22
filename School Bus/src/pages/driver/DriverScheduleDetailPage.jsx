@@ -16,6 +16,7 @@ export default function DriverScheduleDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
 
+
   useEffect(() => {
     fetchScheduleDetail();
     fetchScheduleStops();
@@ -26,7 +27,7 @@ export default function DriverScheduleDetailPage() {
       setLoading(true);
       const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
       
-      // Interceptor đã chuẩn hóa response - chỉ cần xử lý đơn giản
+
       const scheduleData = Array.isArray(response) ? response[0] : response;
       
       setSchedule(scheduleData || null);
@@ -133,8 +134,8 @@ export default function DriverScheduleDetailPage() {
               </h1>
               <p className="text-slate-600">
                 {schedule.route_name} • 
-                {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
-                {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
+                {schedule.scheduled_start_time?.substring(0, 5) } – 
+                {schedule.scheduled_end_time?.substring(0, 5) }
               </p>
             </div>
             <button
@@ -166,8 +167,9 @@ export default function DriverScheduleDetailPage() {
                                            schedule.shift_type === 'evening' ? 'Tối' : 'Khác';
                       return `Ca ${shiftTypeText}`;
                     } else {
-                      // Fallback: dựa vào thời gian
+                   
                       const startHour = schedule.start_time ? parseInt(schedule.start_time.split(':')[0]) : 0;
+               
                       let shiftTypeText = '';
                       if (startHour >= 6 && startHour < 12) {
                         shiftTypeText = 'Sáng';
@@ -184,8 +186,8 @@ export default function DriverScheduleDetailPage() {
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Thời gian:</span>
                 <span className="font-bold text-lg text-slate-900">
-                   {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
-                  {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
+                   {schedule.scheduled_start_time?.substring(0, 5) } – 
+                  {schedule.scheduled_end_time?.substring(0, 5)}
                 </span>
               </div>
               <div className="flex items-center gap-3">

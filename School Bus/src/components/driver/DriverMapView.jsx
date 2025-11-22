@@ -6,7 +6,7 @@ import { routesService } from '../../services/routesService';
 import { schedulesService } from '../../services/schedulesService';
 
 
-// FIX lỗi icon mặc định không hiện
+
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadow, iconAnchor: [12, 41] });
@@ -56,7 +56,7 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
       }
     };
 
-    // Inline the decision logic: prefer explicit routeId; otherwise resolve from schedule
+
     (async () => {
       try {
         setError(null);
@@ -92,7 +92,7 @@ export default function DriverMapView({ routeId, scheduleId, driverId }) {
           return;
         }
 
-        // Nothing to load
+
         setLoading(false);
       } catch (e) {
         setError('Không thể lấy dữ liệu lộ trình từ lịch trình.');
