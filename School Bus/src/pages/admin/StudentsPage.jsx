@@ -15,7 +15,6 @@ const StudentsPage = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [formMode, setFormMode] = useState('add'); // 'add', 'edit', 'view'
 
-  // Load students from API
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -29,7 +28,7 @@ const StudentsPage = () => {
       setError(null);
     } catch (err) {
       setError('Lỗi khi tải danh sách học sinh: ' + err.message);
-      console.error('Error fetching students:', err);
+  
     } finally {
       setLoading(false);
     }
@@ -61,12 +60,12 @@ const StudentsPage = () => {
   const confirmDelete = async () => {
     try {
       await studentsService.deleteStudent(selectedStudent.id);
-      await fetchStudents(); // Reload list
+      await fetchStudents(); 
       setSelectedStudent(null);
       setShowConfirm(false);
     } catch (err) {
       setError('Lỗi khi xóa học sinh: ' + err.message);
-      console.error('Error deleting student:', err);
+
     }
   };
 
@@ -77,13 +76,13 @@ const StudentsPage = () => {
       } else if (formMode === 'edit') {
         await studentsService.updateStudent(selectedStudent.id, studentData);
       }
-      await fetchStudents(); // Reload list
+      await fetchStudents(); 
       setShowForm(false);
       setSelectedStudent(null);
       setError(null);
     } catch (err) {
       setError('Lỗi khi lưu học sinh: ' + err.message);
-      console.error('Error saving student:', err);
+   
     }
   };
 

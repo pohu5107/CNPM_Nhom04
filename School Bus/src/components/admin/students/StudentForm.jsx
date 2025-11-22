@@ -34,7 +34,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         setClasses(classesData || []);
         setAllRoutes(routesData || []);
       } catch (error) {
-        console.error('Error loading data:', error);
+       
         setParents([]);
         setClasses([]);
         setAllRoutes([]);
@@ -60,7 +60,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         const stops = await routesService.getRouteStops(routeId);
         setStops(stops || []);
       } catch (err) {
-        console.warn('Could not load route stops:', err);
+      
         setStops([]);
       }
     };
@@ -76,7 +76,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     if (!formData.address.trim()) newErrors.address = 'Địa chỉ là bắt buộc';
     if (mode === 'add' && !formData.parent_id) newErrors.parent_id = 'Phụ huynh là bắt buộc';
 
-    // Grade validation
+
     const availableGrades = [...new Set(classes.map(cls => cls.grade))];
     if (!formData.grade.trim()) {
       newErrors.grade = 'Khối là bắt buộc';
@@ -84,7 +84,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.grade = `Khối không hợp lệ. Có: ${availableGrades.join(', ')}`;
     }
 
-    // Class validation
+
     const selectedClass = classes.find(cls => cls.class_name === formData.class);
     if (!formData.class.trim()) {
       newErrors.class = 'Lớp học là bắt buộc';
@@ -109,7 +109,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       const stops = await routesService.getRouteStops(routeId);
       setStops(stops || []);
     } catch (err) {
-      console.warn('Could not load route stops:', err);
+     
       setStops([]);
     }
   };
@@ -151,7 +151,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Nếu đang ở chế độ view (chỉ xem), hành động submit sẽ đóng form (không gửi dữ liệu).
+ 
     if (mode === 'view') {
       onCancel();
       return;
@@ -173,18 +173,21 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
 
   
 
-  if (mode === 'view' && student) {
-    const morningRouteName = student.morning_route_name || '';
-    const afternoonRouteName = student.afternoon_route_name || '';
+if (mode === 'view' && student) {
+  //  Lấy tên Tuyến đường
+  const morningRouteName = student.morning_route_name || '';
+  const afternoonRouteName = student.afternoon_route_name || '';
+
+  //  Tìm tên Điểm Đón/Trả dựa vào ID
+  // Duyệt mảng stops -> Tìm stop có ID trùng với ID trong hồ sơ HS -> Lấy tên -> Nếu không thấy thì trả về rỗng.
+
   const morningPickupName = (morningRouteStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || '';
   const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name)|| '';
   
-  
-  
-  const morningSchoolStop = morningRouteStops.find(s => Number(s.stop_order) === 99) ;
-  const afternoonSchoolStop = afternoonRouteStops.find(s => Number(s.stop_order) === 0) ;
-  const morningSchoolName = morningSchoolStop?.name ;
-  const afternoonSchoolName = afternoonSchoolStop?.name ;
+  // Tìm tên Trường học 
+  // stop_order 99 là trường buổi sáng, stop_order 0 là trường buổi chiều
+  const morningSchoolName = morningRouteStops.find(s => Number(s.stop_order) === 99)?.name || '';
+  const afternoonSchoolName = afternoonRouteStops.find(s => Number(s.stop_order) === 0)?.name || '';
 
   return (
       <div className="space-y-6 max-h-[85vh] overflow-y-auto">
@@ -232,16 +235,18 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
               <h4 className="text-lg font-semibold mb-3">Thông tin tuyến xe</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến đi (Sáng)</div>
+                  <div className="text-sm text-gray-600">Tuyến đi </div>
                   <div className="font-medium text-gray-800">{morningRouteName || 'Chưa phân tuyến'}</div>
                   <div className="text-sm text-gray-600 mt-2">Điểm đón</div>
                   <div className="text-sm text-gray-800">{morningPickupName || 'Chưa có'}</div>
-                  <div className="text-xs text-gray-500 mt-1 italic">{morningSchoolName}</div>
+                   <div className="text-sm text-gray-600 mt-2">Kết thúc:</div>
+                  <div className="text-xs text-gray-500 mt-1 ">{morningSchoolName}</div>
                 </div>
                 <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến về (Chiều)</div>
+                  <div className="text-sm text-gray-600">Tuyến về </div>
                   <div className="font-medium text-gray-800">{afternoonRouteName || 'Chưa phân tuyến'}</div>
-                  <div className="text-xs text-gray-500 mt-1 italic">{afternoonSchoolName}</div>
+                  <div className="text-sm text-gray-600 mt-2">Bắt đầu:</div>
+                  <div className="text-xs text-gray-500 mt-1 ">{afternoonSchoolName}</div>
                   <div className="text-sm text-gray-600 mt-2">Điểm trả</div>
                   <div className="text-sm text-gray-800">{afternoonDropoffName || 'Chưa có'}</div>
                 </div>
@@ -423,11 +428,5 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   );
 };
 
-StudentForm.propTypes = {
-  student: PropTypes.object,
-  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};
 
 export default StudentForm;
