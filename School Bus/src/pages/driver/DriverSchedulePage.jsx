@@ -8,14 +8,14 @@ const CURRENT_DRIVER_ID = 1; // Đổi sang driver khác để test nếu chưa 
 
 export default function DriverSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("2025-11-9");
-  const [timeFilter, setTimeFilter] = useState("today"); // today, week, all
+  const [timeFilter, setTimeFilter] = useState("today"); 
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentDriver, setCurrentDriver] = useState({ name: 'Đang tải...', driverCode: 'TX001' });
   const navigate = useNavigate();
 
-  // Load data when component mounts or filters change
+
   useEffect(() => {
     fetchSchedules();
   }, [selectedDate, timeFilter]);
@@ -23,11 +23,12 @@ export default function DriverSchedulePage() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      const params = {
-        date: selectedDate,
-        timeFilter: timeFilter
-      };
-      
+      // Only send `date` when filtering by today. For 'week' and 'all' we omit date
+      const params = {};
+      if (timeFilter === 'today' && selectedDate) {
+        params.date = selectedDate;
+      }
+
       const data = await schedulesService.getDriverSchedules(CURRENT_DRIVER_ID, params);
       setSchedules(data);
       setError(null);
@@ -59,6 +60,16 @@ export default function DriverSchedulePage() {
 
   const handleTimeFilterChange = (newFilter) => {
     setTimeFilter(newFilter);
+    
+    if (newFilter !== 'today') {
+      setSelectedDate('');
+    } else {
+    
+      if (!selectedDate) {
+        const today = new Date().toISOString().slice(0, 10);
+        setSelectedDate(today);
+      }
+    }
   };
 
   const handleViewDetail = (scheduleId) => {
@@ -84,7 +95,7 @@ export default function DriverSchedulePage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-[#174D2C]">Mã tài xế: {currentDriver?.driverCode}</h2>
-                <p className="text-slate-600">Lịch trình hôm nay</p>
+                <p className="text-slate-600">Tên tài xế: {currentDriver?.name}</p>
               </div>
             </div>
             
@@ -105,7 +116,7 @@ export default function DriverSchedulePage() {
           <div className="flex items-center justify-center gap-3">
             {[
               { value: "today", label: "Hôm nay", icon: "📅" },
-              { value: "week", label: "Tuần này", icon: "🗓️" },
+          
               { value: "all", label: "Tất cả", icon: "" }
             ].map(({ value, label, icon }) => (
               <button

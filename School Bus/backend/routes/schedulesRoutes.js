@@ -295,93 +295,93 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
     }
 });
 
-// POST /api/schedules/:driverId/:id/start - Bắt đầu chuyến
-router.post('/:driverId/:id/start', async (req, res) => {
-    try {
-        const { driverId, id } = req.params;
+// // POST /api/schedules/:driverId/:id/start - Bắt đầu chuyến
+// router.post('/:driverId/:id/start', async (req, res) => {
+//     try {
+//         const { driverId, id } = req.params;
         
-        const [existing] = await pool.execute(
-            'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
-            [id, driverId]
-        );
+//         const [existing] = await pool.execute(
+//             'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
+//             [id, driverId]
+//         );
         
-        if (existing.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy lịch làm việc'
-            });
-        }
+//         if (existing.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Không tìm thấy lịch làm việc'
+//             });
+//         }
         
-        if (existing[0].status !== 'scheduled') {
-            return res.status(400).json({
-                success: false,
-                message: 'Chỉ có thể bắt đầu lịch làm việc có trạng thái "scheduled"'
-            });
-        }
+//         if (existing[0].status !== 'scheduled') {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Chỉ có thể bắt đầu lịch làm việc có trạng thái "scheduled"'
+//             });
+//         }
         
-        await pool.execute(`
-            UPDATE schedules 
-            SET status = 'in_progress', actual_start_time = NOW()
-            WHERE id = ? AND driver_id = ?
-        `, [id, driverId]);
+//         await pool.execute(`
+//             UPDATE schedules 
+//             SET status = 'in_progress', actual_start_time = NOW()
+//             WHERE id = ? AND driver_id = ?
+//         `, [id, driverId]);
         
-        res.json({
-            success: true,
-            message: 'Đã bắt đầu chuyến thành công'
-        });
-    } catch (error) {
-        console.error('Error starting schedule:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi bắt đầu chuyến',
-            error: error.message
-        });
-    }
-});
+//         res.json({
+//             success: true,
+//             message: 'Đã bắt đầu chuyến thành công'
+//         });
+//     } catch (error) {
+//         console.error('Error starting schedule:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Lỗi khi bắt đầu chuyến',
+//             error: error.message
+//         });
+//     }
+// });
 
-// POST /api/schedules/:driverId/:id/complete - Hoàn thành chuyến
-router.post('/:driverId/:id/complete', async (req, res) => {
-    try {
-        const { driverId, id } = req.params;
-        const { notes } = req.body;
+// // POST /api/schedules/:driverId/:id/complete - Hoàn thành chuyến
+// router.post('/:driverId/:id/complete', async (req, res) => {
+//     try {
+//         const { driverId, id } = req.params;
+//         const { notes } = req.body;
         
-        const [existing] = await pool.execute(
-            'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
-            [id, driverId]
-        );
+//         const [existing] = await pool.execute(
+//             'SELECT id, status FROM schedules WHERE id = ? AND driver_id = ?',
+//             [id, driverId]
+//         );
         
-        if (existing.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy lịch làm việc'
-            });
-        }
+//         if (existing.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Không tìm thấy lịch làm việc'
+//             });
+//         }
         
-        if (existing[0].status !== 'in_progress') {
-            return res.status(400).json({
-                success: false,
-                message: 'Chỉ có thể hoàn thành lịch làm việc đang thực hiện'
-            });
-        }
+//         if (existing[0].status !== 'in_progress') {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Chỉ có thể hoàn thành lịch làm việc đang thực hiện'
+//             });
+//         }
         
-        await pool.execute(`
-            UPDATE schedules 
-            SET status = 'completed', actual_end_time = NOW(), notes = ?
-            WHERE id = ? AND driver_id = ?
-        `, [notes || null, id, driverId]);
+//         await pool.execute(`
+//             UPDATE schedules 
+//             SET status = 'completed', actual_end_time = NOW(), notes = ?
+//             WHERE id = ? AND driver_id = ?
+//         `, [notes || null, id, driverId]);
         
-        res.json({
-            success: true,
-            message: 'Đã hoàn thành chuyến thành công'
-        });
-    } catch (error) {
-        console.error('Error completing schedule:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi hoàn thành chuyến',
-            error: error.message
-        });
-    }
-});
+//         res.json({
+//             success: true,
+//             message: 'Đã hoàn thành chuyến thành công'
+//         });
+//     } catch (error) {
+//         console.error('Error completing schedule:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Lỗi khi hoàn thành chuyến',
+//             error: error.message
+//         });
+//     }
+// });
 
 export default router;
