@@ -1,0 +1,195 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #f9fafb;
+  font-family: "Segoe UI", sans-serif;
+}
+
+
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: absolute;
+  top: 0%;
+}
+
+.container .header {
+  width: 100%;
+  background-color: #174D2C;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  font-size: 40px;
+  font-weight: bold;
+  margin-top: 0;
+}
+tbody td:nth-child(6)
+{
+  text-align: center;
+}
+.content {
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 24px;
+}
+
+/* Bộ chọn ngày */
+.date {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.calendar-icon {
+  width: 20px;
+  height: 20px;
+}
+
+input[type="date"] {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #374151;
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+input[type="date"]:hover {
+  background-color: #f3f4f6;
+}
+
+/* Bảng dữ liệu */
+.table-container {
+  overflow-x: auto;
+  border: 1px solid black;
+  margin-top: 30px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background-color: white;
+}
+.table-container thead tr:nth-child(1)
+{
+    background-color: #cccccc;
+    font-size: 16px;
+
+}
+th { 
+  padding: 12px; 
+  text-align: center; 
+  border: 1px solid #e5e7eb; 
+} 
+td { 
+  padding: 
+  12px; text-align: 
+  left; border: 1px solid #e5e7eb; 
+}
+
+thead {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.view-link {
+  color: #2563eb;
+  cursor: pointer;
+}
+
+/* Icon xe buýt */
+.bus{
+  font-size: 50px; 
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  text-align: center;
+}
+
+/* ---------------- DANH SÁCH HỌC SINH ---------------- */
+
+.schedule-info {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  gap: 15px;
+  text-align: center;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-width: 130px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Text trong info-item */
+.info-item .label {
+  font-weight: bold;
+  color: #374151;
+  margin-bottom: 4px;
+  
+}
+
+.info-item .value {
+  color: #111827;
+  font-size: 15px;
+}
+.center { 
+  text-align: center; 
+}
+/* Trạng thái */
+.status.done {
+  color: green;
+  font-weight: bold;
+}
+
+.status.pending {
+  color: red;
+  font-weight: bold;
+}
+
+/* Nút quay lại */
+.back-button {
+  color: #2563eb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  font-weight: 500;
+}
+
+.back-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+  color: #1e40af;
+}
