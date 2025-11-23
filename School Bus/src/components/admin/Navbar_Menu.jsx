@@ -28,6 +28,7 @@ export default function Navbar_Menu() {
           { path: "/admin/students", label: "Học sinh" },
           { path: "/admin/parents", label: "Phụ huynh" },
           { path: "/admin/schedule", label: "Lịch trình" },
+          { path: "/admin/User", label: "Tài Khoản" },
           { path: "/admin/reports", label: "Báo cáo" },
         ].map(({ path, label, exact }) => (
           <NavLink

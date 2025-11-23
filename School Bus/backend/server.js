@@ -12,6 +12,7 @@ import driversRoutes from './routes/driversRoutes.js';
 import parentsRoutes from './routes/parentsRoutes.js';
 import classesRoutes from './routes/classesRoutes.js';
 import schedulesRoutes from './routes/schedulesRoutes.js';
+import userRoutes  from './routes/userRoutes.js';
 import adminschedulesRoutes from './routes/adminschedulesRoutes.js';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/parents', parentsRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/schedules', schedulesRoutes);
 app.use('/api/admin-schedules', adminschedulesRoutes);
+app.use("/api/users", userRoutes);
 // check
 app.get('/api/health', async (req, res) => {
     try {
