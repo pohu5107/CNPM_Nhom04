@@ -106,13 +106,6 @@ const ParentsPage = () => {
         onDelete={handleDelete}
       />
 
-      {/* Pagination - placeholder for future implementation */}
-      {/* <Pagination
-        currentPage={currentPage}
-        totalItems={parents.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-      /> */}
 
       {/* Form Modal */}
       <Modal

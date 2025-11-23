@@ -110,11 +110,6 @@ const DriverTable = ({ drivers = [], loading = false, onAdd, onEdit, onView, onD
   );
 };
 
-DriverTable.propTypes = {
-  onAdd: PropTypes.func.isRequired,
-  onEdit: PropTypes.func.isRequired,
-  onView: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-};
+
 
 export default DriverTable;

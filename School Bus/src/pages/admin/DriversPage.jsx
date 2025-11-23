@@ -123,7 +123,7 @@ const DriversPage = () => {
           formMode === 'edit' ? 'Chỉnh sửa thông tin tài xế' :
           'Thông tin chi tiết tài xế'
         }
-        size={formMode === 'view' ? '2xl' : 'lg'}
+        size="lg"
       >
         <DriverForm
           driver={selectedDriver}

@@ -81,24 +81,8 @@ router.put('/:id', async (req, res) => {
 
     const [licenseExists] = await pool.execute('SELECT id FROM drivers WHERE license_number = ? AND id != ?', [license_number, id]);
     if (licenseExists.length) return res.status(400).json({ success: false, message: 'Số bằng lái đã tồn tại' });
-
-    let user_id = current.user_id;
-    if (!user_id) {
-      const username = `driver_${license_number}`;
-      const email = `${username}@schoolbus.com`;
-      const defaultPassword = license_number;
-      try {
-        const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "driver")', [username, email, defaultPassword]);
-        user_id = userResult.insertId;
-      } catch (userErr) {
-        if (userErr.code === 'ER_DUP_ENTRY') return res.status(400).json({ success: false, message: 'Tài khoản với số bằng lái này đã tồn tại' });
-        throw userErr;
-      }
-    } else if (license_number !== current.license_number) {
-      const newUsername = `driver_${license_number}`;
-      const newEmail = `${newUsername}@schoolbus.com`;
-      await pool.execute('UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?', [newUsername, newEmail, license_number, user_id]);
-    }
+  
+    const user_id = current.user_id;
 
     await pool.execute('UPDATE drivers SET name = ?, phone = ?, license_number = ?, address = ?, status = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [name, phone, license_number, address || null, status, user_id, id]);
     const driver = await getDriverById(id);
@@ -132,7 +116,7 @@ router.get('/:id/details', async (req, res) => {
 
     const [scheduleRows] = await pool.execute(`
       SELECT s.id, s.date, s.shift_type, s.scheduled_start_time AS start_time, s.scheduled_end_time AS end_time,
-             'Điểm bắt đầu' AS start_point, 'Điểm kết thúc' AS end_point, r.route_name, r.distance, b.bus_number, b.license_plate, b.status AS bus_status
+             r.route_name, r.distance, b.bus_number, b.license_plate, b.status AS bus_status
       FROM schedules s
       JOIN routes r ON s.route_id = r.id
       JOIN buses b ON s.bus_id = b.id
