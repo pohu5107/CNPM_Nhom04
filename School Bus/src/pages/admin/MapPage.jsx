@@ -2,6 +2,8 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css"; // CSS cho đường đi thực tế
+import BusRouteAnimationV2 from "../../components/map/BusRouteAnimationV2.jsx";
 
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -13,7 +15,18 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function MapPage() {
-  const center = [10.776, 106.700]; // HCM
+  // Tọa độ Đại học Sài Gòn (273 An Dương Vương, Quận 5, TP.HCM) gần chính xác
+  const campus = [10.75875, 106.68095];
+  const center = campus;
+
+  // Demo tuyến đường quanh trường với 2 điểm dừng (không phải đường chim bay)
+  // Waypoints: Campus -> Stop 1 -> Stop 2
+  const routeWaypoints = [
+    campus,
+    [10.76055, 106.6834], // Điểm dừng 1 (gần vòng quanh An Dương Vương / Nguyễn Văn Cừ)
+    [10.7579, 106.6831], // Điểm dừng 2 (phía Đông Bắc trường, gần Trần Phú)
+    campus, // Quay lại điểm bắt đầu
+  ];
 
   return (
     <div
@@ -34,7 +47,7 @@ export default function MapPage() {
       >
         <MapContainer
           center={center}
-          zoom={13}
+          zoom={16}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom
         >
@@ -43,9 +56,34 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <Marker position={center}>
-            <Popup>Vị trí trung tâm — TP.HCM</Popup>
+          {/* Marker Campus */}
+          <Marker position={campus}>
+            <Popup>
+              <strong>Đại học Sài Gòn</strong>
+              <br /> 273 An Dương Vương, Quận 5
+            </Popup>
           </Marker>
+
+          {/* Hai điểm dừng demo */}
+          {routeWaypoints.slice(1).map((p, i) => (
+            <Marker key={i} position={p}>
+              <Popup>
+                <strong>Điểm dừng {i + 1}</strong>
+                <br />
+                Lat: {p[0].toFixed(5)}
+                <br />
+                Lng: {p[1].toFixed(5)}
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Xe buýt chạy theo đường thực giữa các waypoint */}
+          <BusRouteAnimationV2
+            waypoints={routeWaypoints}
+            stopDurationMs={2500}
+            speedMetersPerSec={18}
+            loop={true}
+          />
         </MapContainer>
       </div>
     </div>
