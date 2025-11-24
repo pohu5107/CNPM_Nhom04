@@ -13,18 +13,20 @@ export default function BusRouteAnimationV2({
   waypoints = [],
   speedMetersPerSec = 18,
   stopDurationMs = 2500,
-  loop = false, // nếu true: sau khi tới cuối sẽ quay về đầu và chạy lại
+  loop = false,
 }) {
   const map = useMap();
   const markerRef = useRef(null);
   const animRef = useRef(null);
   const routingControlRef = useRef(null);
   const stateRef = useRef({ segmentIndex: 0, pausedUntil: 0 });
+  const routeReadyRef = useRef(false); // ensure we process route only once
 
   useEffect(() => {
     if (!map || waypoints.length < 2) return;
 
     // Build Leaflet LatLng waypoints
+    // Snapshot values so effect not re-run by stable parent
     const latLngWaypoints = waypoints.map(([lat, lng]) => L.latLng(lat, lng));
 
     // Create routing control to compute actual road path
@@ -46,7 +48,9 @@ export default function BusRouteAnimationV2({
       className: "bus-anim-icon",
     });
 
-    routingControlRef.current.on("routesfound", (e) => {
+    const handleRoutesFound = (e) => {
+      if (routeReadyRef.current) return; // skip if already initialized
+      routeReadyRef.current = true;
       const route = e.routes[0];
       const coords = route.coordinates.map((c) => L.latLng(c.lat, c.lng));
       map.fitBounds(L.polyline(coords).getBounds(), { padding: [40, 40] });
@@ -130,15 +134,22 @@ export default function BusRouteAnimationV2({
       };
 
       animRef.current = requestAnimationFrame(step);
-    });
+    };
+
+    routingControlRef.current.on("routesfound", handleRoutesFound);
 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       if (markerRef.current) markerRef.current.remove();
-      if (routingControlRef.current)
+      if (routingControlRef.current) {
+        routingControlRef.current.off("routesfound", handleRoutesFound);
         map.removeControl(routingControlRef.current);
+      }
+      routeReadyRef.current = false;
     };
-  }, [map, waypoints, speedMetersPerSec, stopDurationMs, loop]);
+  // Depend ONLY on map; other values captured in closure to avoid re-init flicker
+  // If you need dynamic speed in future, add proper update logic.
+  }, [map]);
 
   return null;
 }
