@@ -18,7 +18,6 @@ const ParentsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
-  // Load parents from API
   useEffect(() => {
     fetchParents();
   }, []);

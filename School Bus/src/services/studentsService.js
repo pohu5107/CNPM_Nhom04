@@ -45,9 +45,9 @@ export const studentsService = {
     updateStudent: async (id, studentData) => {
         try {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, studentData);
-            return response; // Response đã được interceptor xử lý
+            return response; 
         } catch (error) {
-            console.error('Error updating student:', error);
+        
             throw error;
         }
     },

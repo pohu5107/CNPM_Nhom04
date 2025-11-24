@@ -48,7 +48,7 @@ export default function DriverScheduleDetailPage() {
 
       setStops(stopsData?.stops || []);
     } catch (err) {
-      console.error('Error fetching stops:', err);
+ 
       setStops([]);
     }
   };
