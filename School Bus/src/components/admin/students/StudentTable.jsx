@@ -1,150 +1,109 @@
-import React, { useState, useEffect } from "react";
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import Table from '../../common/Table';
 
-function UserForm({ initialData, onCancel, onSubmit }) {
-  const isEdit = Boolean(initialData);
+const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, onDelete }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [classFilter, setClassFilter] = useState('');
 
-  const [form, setForm] = useState({
-    id: initialData?.id || null,
-    username: initialData?.username || "",
-    email: initialData?.email || "",
-    password: "",
-    role: initialData?.role || "parent",
-  });
 
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    setForm({
-      id: initialData?.id || null,
-      username: initialData?.username || "",
-      email: initialData?.email || "",
-      password: "",
-      role: initialData?.role || "parent",
-    });
-    setErrors({});
-  }, [initialData]);
+  // Get unique classes for filter
+  const uniqueClasses = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-  const validate = () => {
-    const e = {};
-
-    if (!form.username.trim()) e.username = "Username không được rỗng";
-
-    if (!form.email.trim()) e.email = "Email không được rỗng";
-    else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) e.email = "Email không hợp lệ";
-
-    if (!isEdit && !form.password) e.password = "Password bắt buộc khi tạo mới";
-    if (form.password && form.password.length < 6) e.password = "Password ít nhất 6 ký tự";
-
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validate()) return;
-    setSaving(true);
-
-    try {
-      const payload = {
-        id: form.id,
-        username: form.username.trim(),
-        email: form.email.trim(),
-        role: form.role,
-      };
-
-      // only send password if creating or user typed something
-      if (!isEdit || (isEdit && form.password)) payload.password = form.password;
-
-      await onSubmit(payload, isEdit ? "edit" : "create");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <h2 className="text-xl font-semibold mb-3">{isEdit ? "Sửa user" : "Thêm user"}</h2>
-
-      <div className="grid grid-cols-1 gap-3">
-        <label className="block">
-          <div className="text-sm">Username</div>
-          <input
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            disabled={saving}
-          />
-          {errors.username && <div className="text-red-600 text-sm">{errors.username}</div>}
-        </label>
-
-        <label className="block">
-          <div className="text-sm">Email</div>
-          <input
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            disabled={saving}
-          />
-          {errors.email && <div className="text-red-600 text-sm">{errors.email}</div>}
-        </label>
-
-        <label className="block">
-          <div className="text-sm">Password {isEdit ? "(để trống nếu không đổi)" : ""}</div>
-          <input
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            disabled={saving}
-          />
-          {errors.password && <div className="text-red-600 text-sm">{errors.password}</div>}
-        </label>
-
-        <label className="block">
-          <div className="text-sm">Role</div>
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-          >
-            <option value="admin">admin</option>
-            <option value="driver">driver</option>
-            <option value="parent">parent</option>
-          </select>
-        </label>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3 py-1 border rounded"
-            disabled={saving}
-          >
-            Hủy
-          </button>
-
-          <button
-            type="submit"
-            className="px-3 py-1 bg-green-600 text-white rounded"
-            disabled={saving}
-          >
-            {saving ? "Đang lưu..." : isEdit ? "Lưu" : "Tạo"}
-          </button>
+  if (loading) {
+    return (
+      <div className="mx-8">
+        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+          <p className="text-gray-500 mt-4">Đang tải danh sách học sinh...</p>
         </div>
       </div>
-    </form>
-  );
-}
+    );
+  }
 
-export default UserForm;
+  // Filter students
+  const filteredStudents = students.filter(student => {
+    const matchesSearch =
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.id?.toString().includes(searchTerm.toLowerCase()) ||
+      student.parent_name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesClass = !classFilter || student.class_name === classFilter;
+
+    return matchesSearch && matchesClass;
+  });
+
+  const columns = [
+    {
+      key: 'id',
+      header: 'Mã HS'
+    },
+    {
+      key: 'name',
+      header: 'Họ tên'
+    },
+    {
+      key: 'grade',
+      header: 'Khối'
+    },
+    {
+      key: 'class_name',
+      header: 'Lớp'
+    },
+    {
+      key: 'parent_name',
+      header: 'Phụ huynh'
+    },
+    {
+      key: 'phone',
+      header: 'SĐT',
+      render: (value, row) => value || row?.parent_phone || '-'
+    }
+  ];
+
+  const filters = [
+    {
+      placeholder: 'Tất cả lớp',
+      value: classFilter,
+      onChange: setClassFilter,
+      options: uniqueClasses.map(cls => ({ value: cls, label: cls })),
+      minWidth: '120px'
+    }
+  ];
+
+  return (
+    <Table
+      title="Quản lý Học sinh"
+      data={filteredStudents}
+      columns={columns}
+      searchValue={searchTerm}
+      onSearchChange={setSearchTerm}
+      onAdd={onAdd}
+      onView={onView}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      addButtonText="Thêm học sinh"
+      filters={filters}
+      emptyMessage={searchTerm || classFilter ? 'Không tìm thấy học sinh nào phù hợp' : 'Chưa có học sinh nào'}
+    />
+  );
+};
+
+StudentTable.propTypes = {
+  students: PropTypes.array.isRequired,
+  loading: PropTypes.bool,
+  onAdd: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onView: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+export default StudentTable;
