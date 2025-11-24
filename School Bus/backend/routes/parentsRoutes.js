@@ -91,7 +91,7 @@ router.post('/', async (req, res) => {
       const [existingEmail] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
       if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
 
-      const defaultPassword = '123456';
+      const defaultPassword = 'parent123'; // Password thống nhất
 
       const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, defaultPassword]);
       user_id = userResult.insertId;

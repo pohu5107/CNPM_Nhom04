@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
 
     const username = `driver_${license_number}`;
     const email = `${username}@schoolbus.com`;
-    const defaultPassword = license_number;
+    const defaultPassword = "driver123";
 
     let user_id = null;
     try {

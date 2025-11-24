@@ -39,7 +39,13 @@ router.post("/", async (req, res) => {
             [username, email, password, role || "parent"]
         );
 
-        res.json({ id: result.insertId, username, email, role });
+        // Trả về created user data với timestamps
+        const [createdRows] = await pool.query(
+            "SELECT id, username, email, role, created_at, updated_at FROM users WHERE id = ?",
+            [result.insertId]
+        );
+
+        res.json(createdRows[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Lỗi server", error: err.message });
@@ -62,7 +68,13 @@ router.put("/:id", async (req, res) => {
             [username, email, role || "parent", password, req.params.id]
         );
 
-        res.json({ message: "Cập nhật thành công" });
+        // Trả về updated user data
+        const [updatedRows] = await pool.query(
+            "SELECT id, username, email, role, created_at, updated_at FROM users WHERE id = ?", 
+            [req.params.id]
+        );
+
+        res.json(updatedRows[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Lỗi server", error: err.message });

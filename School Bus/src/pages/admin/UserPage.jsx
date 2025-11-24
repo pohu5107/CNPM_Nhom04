@@ -38,47 +38,61 @@ function UserPage() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Xác nhận xóa user này?")) return;
+    const handleDelete = async (user) => {
+        if (!window.confirm(`Xác nhận xóa user "${user.username}"?`)) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/users/${id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
-            setUsers((prev) => prev.filter((u) => u.id !== id));
+            const res = await fetch(`http://localhost:5000/api/users/${user.id}`, { 
+                method: "DELETE" 
+            });
+            
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `Delete failed: ${res.status}`);
+            }
+            
+            setUsers((prev) => prev.filter((u) => u.id !== user.id));
         } catch (err) {
+            console.error('Delete error:', err);
             alert("Xóa thất bại: " + err.message);
         }
     };
 
-    const handleFormSubmit = async (formData, mode) => {
+    const handleFormSubmit = async (formData) => {
         try {
-            if (mode === "create") {
-                const res = await fetch("http://localhost:5000/api/users", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData),
-                });
-                if (!res.ok) {
-                    const errData = await res.json();
-                    throw new Error(errData.message || `Create failed: ${res.status}`);
-                }
-                const created = await res.json();
-                setUsers((prev) => [created, ...prev]);
-            } else {
+            const isEdit = Boolean(formData.id);
+            
+            if (isEdit) {
+                // Update existing user
                 const res = await fetch(`http://localhost:5000/api/users/${formData.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
                 });
                 if (!res.ok) {
-                    const errData = await res.json();
+                    const errData = await res.json().catch(() => ({}));
                     throw new Error(errData.message || `Update failed: ${res.status}`);
                 }
                 const updated = await res.json();
                 setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+            } else {
+                // Create new user
+                const res = await fetch("http://localhost:5000/api/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || `Create failed: ${res.status}`);
+                }
+                const created = await res.json();
+                setUsers((prev) => [created, ...prev]);
             }
+            
             setIsFormOpen(false);
             setEditingUser(null);
         } catch (err) {
+            console.error('Form submit error:', err);
             alert("Lưu thất bại: " + err.message);
         }
     };
@@ -115,10 +129,11 @@ function UserPage() {
                 </div>
 
                 {isFormOpen && (
-                    <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white shadow-2xl rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                             <UserForm
-                                initialData={editingUser}
+                                user={editingUser}
+                                mode={editingUser ? 'edit' : 'create'}
                                 onCancel={() => setIsFormOpen(false)}
                                 onSubmit={handleFormSubmit}
                             />

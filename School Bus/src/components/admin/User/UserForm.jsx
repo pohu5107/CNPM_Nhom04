@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from "react";
 
-function UserForm({ initialData, onCancel, onSubmit }) {
-    const isEdit = Boolean(initialData);
+function UserForm({ user, mode, onCancel, onSubmit }) {
+    const isEdit = mode === 'edit';
+    const isView = mode === 'view';
 
     const [form, setForm] = useState({
-        id: initialData?.id || null,
-        username: initialData?.username || "",
-        email: initialData?.email || "",
+        id: user?.id || null,
+        username: user?.username || "",
+        email: user?.email || "",
         password: "",
-        role: initialData?.role || "parent",
+        role: user?.role || "parent",
     });
 
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
-        setForm({
-            id: initialData?.id || null,
-            username: initialData?.username || "",
-            email: initialData?.email || "",
-            password: "",
-            role: initialData?.role || "parent",
-        });
+        if (user) {
+            setForm({
+                id: user.id || null,
+                username: user.username || "",
+                email: user.email || "",
+                password: "",
+                role: user.role || "parent",
+            });
+        }
         setErrors({});
-    }, [initialData]);
+    }, [user]);
 
     const validate = () => {
         const e = {};
@@ -78,7 +81,9 @@ function UserForm({ initialData, onCancel, onSubmit }) {
                         name="username"
                         value={form.username}
                         onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"                        disabled={saving}
+                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={saving || isView}
+                        readOnly={isView}
                     />
                     {errors.username && <div className="text-red-600 text-sm mt-1">{errors.username}</div>}
                 </div>
@@ -87,24 +92,30 @@ function UserForm({ initialData, onCancel, onSubmit }) {
                     <div className="text-lg font-medium mb-1 ml-[2%]">Email</div>
                     <input
                         name="email"
+                        type="email"
                         value={form.email}
                         onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"                        disabled={saving}
+                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={saving || isView}
+                        readOnly={isView}
                     />
                     {errors.email && <div className="text-red-600 text-sm mt-1">{errors.email}</div>}
                 </div>
 
-                <div className="block">
-                    <div className="text-lg font-medium mb-1 ml-[2%]">Password {isEdit ? "(để trống nếu không đổi)" : ""}</div>
-                    <input
-                        name="password"
-                        type="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"                        disabled={saving}
-                    />
-                    {errors.password && <div className="text-red-600 text-sm mt-1">{errors.password}</div>}
-                </div>
+                {!isView && (
+                    <div className="block">
+                        <div className="text-lg font-medium mb-1 ml-[2%]">Password {isEdit ? "(để trống nếu không đổi)" : ""}</div>
+                        <input
+                            name="password"
+                            type="password"
+                            value={form.password}
+                            onChange={handleChange}
+                            className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={saving}
+                        />
+                        {errors.password && <div className="text-red-600 text-sm mt-1">{errors.password}</div>}
+                    </div>
+                )}
 
                 <div className="block">
                     <div className="text-lg font-medium mb-1 ml-[2%]">Role</div>
@@ -112,10 +123,12 @@ function UserForm({ initialData, onCancel, onSubmit }) {
                         name="role"
                         value={form.role}
                         onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-500 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"                    >
-                        <option value="admin">admin</option>
-                        <option value="driver">driver</option>
-                        <option value="parent">parent</option>
+                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={saving || isView}
+                    >
+                        <option value="admin">Admin</option>
+                        <option value="driver">Driver</option>
+                        <option value="parent">Parent</option>
                     </select>
                 </div>
             </div>
@@ -127,16 +140,18 @@ function UserForm({ initialData, onCancel, onSubmit }) {
                     className="px-4 mb-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={saving}
                 >
-                    Hủy
+                    {isView ? 'Đóng' : 'Hủy'}
                 </button>
 
-                <button
-                    type="submit"
-                    className="px-4 mb-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    disabled={saving}
-                >
-                    {saving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo"}
-                </button>
+                {!isView && (
+                    <button
+                        type="submit"
+                        className="px-4 mb-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        disabled={saving}
+                    >
+                        {saving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo"}
+                    </button>
+                )}
             </div>
         </form>
     );
