@@ -1,20 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 import { FiCalendar, FiAlertTriangle } from 'react-icons/fi';
 import { FaBus, FaRocket } from 'react-icons/fa';
 
 // Giả sử driver hiện tại có ID = 1  
-const CURRENT_DRIVER_ID = 1; // Đổi sang driver khác để test nếu chưa có đăng nhập
+const CURRENT_DRIVER_ID = 1; 
 
 export default function DriverSchedulePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const today = new Date().toISOString().slice(0, 10);
-  const initialFilter = searchParams.get('filter') || 'today';
-  const initialDate = initialFilter === 'all' ? '' : (searchParams.get('date') || today);
-  const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [timeFilter, setTimeFilter] = useState(initialFilter);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [timeFilter, setTimeFilter] = useState('today');
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,45 +58,31 @@ export default function DriverSchedulePage() {
   }, []);
   
   const handleDateChange = (newDate) => {
+
     setSelectedDate(newDate);
-    const params = {};
-    params.filter = timeFilter;
-    if (newDate) params.date = newDate;
-    setSearchParams(params);
   };
 
   const handleTimeFilterChange = (newFilter) => {
     setTimeFilter(newFilter);
-    
     if (newFilter !== 'today') {
       setSelectedDate('');
-      setSearchParams({ filter: 'all' });
     } else {
-      const dateToSet = selectedDate || today;
-      setSelectedDate(dateToSet);
-      setSearchParams({ filter: 'today', date: dateToSet });
+      setSelectedDate(prev => prev || today);
     }
   };
 
   const handleViewDetail = (scheduleId) => {
-    const params = new URLSearchParams();
-    params.set('filter', timeFilter);
-    if (selectedDate) params.set('date', selectedDate);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    navigate(`/driver/schedule/${scheduleId}${query}`);
+  
+    navigate(`/driver/schedule/${scheduleId}`);
   };
 
   const handleStartRoute = (scheduleId) => {
-    const params = new URLSearchParams();
-    params.set('filter', timeFilter);
-    if (selectedDate) params.set('date', selectedDate);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    navigate(`/driver/map/${scheduleId}${query}`);
+    navigate(`/driver/map/${scheduleId}`);
   };
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header chuẩn Admin style */}
+      {/* Header Admin  */}
       <Header title="QUẢN LÝ LỊCH LÀM VIỆC" name={currentDriver?.name || 'Tài xế'} />
       
       <div className="flex-1 overflow-y-auto px-6 py-4">
