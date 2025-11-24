@@ -38,6 +38,15 @@ export default function BusRoutePause({
 
     const latLngWaypoints = waypoints.map(([lat, lng]) => L.latLng(lat, lng));
 
+    // Show bus marker immediately
+    markerRef.current = L.marker(latLngWaypoints[0], {
+      icon: L.divIcon({
+        html: "<div style='font-size:30px'>🚌</div>",
+        iconSize: [24, 24],
+        className: "bus-pause-icon",
+      }),
+    }).addTo(map);
+
     // Draw baseline polyline immediately so user sees route even before OSRM responds
     baselinePolylineRef.current = L.polyline(latLngWaypoints, {
       color: "#93c5fd",
@@ -47,6 +56,12 @@ export default function BusRoutePause({
     map.fitBounds(baselinePolylineRef.current.getBounds(), {
       padding: [40, 40],
     });
+
+    // Set timeout for OSRM routing (3 seconds)
+    const routingTimeout = setTimeout(() => {
+      console.warn("[BusRoutePause] OSRM timeout, using fallback");
+      drawFallback();
+    }, 3000);
 
     routingControlRef.current = L.Routing.control({
       waypoints: latLngWaypoints,
@@ -84,13 +99,10 @@ export default function BusRoutePause({
         const duration = (distance / speedMetersPerSec) * 1000;
         simpleSegments.push({ from, to, duration });
       }
-      markerRef.current = L.marker(latLngWaypoints[0], {
-        icon: L.divIcon({
-          html: "<div style='font-size:30px'>🚌</div>",
-          iconSize: [24, 24],
-          className: "bus-pause-icon",
-        }),
-      }).addTo(map);
+      // Bus marker already exists, just ensure it's at start position
+      if (markerRef.current) {
+        markerRef.current.setLatLng(latLngWaypoints[0]);
+      }
       // Pause at each intermediate waypoint (excluding start)
       const pauseIndices = []; // coordinate index approach reused: just use waypoint indices directly
       for (let i = 1; i < latLngWaypoints.length; i++) pauseIndices.push(i);
@@ -106,6 +118,9 @@ export default function BusRoutePause({
     };
 
     const handleRoutesFound = (e) => {
+      clearTimeout(routingTimeout);
+      if (fallbackUsed) return; // Don't override fallback if already started
+
       console.log("[BusRoutePause] routesfound waypoints:", waypoints);
       const route = e.routes[0];
       const coords = route.coordinates.map((c) => L.latLng(c.lat, c.lng));
@@ -126,13 +141,10 @@ export default function BusRoutePause({
         baselinePolylineRef.current = null;
       }
 
-      markerRef.current = L.marker(coords[0], {
-        icon: L.divIcon({
-          html: "<div style='font-size:30px'>🚌</div>",
-          iconSize: [24, 24],
-          className: "bus-pause-icon",
-        }),
-      }).addTo(map);
+      // Bus marker already created, just update position
+      if (markerRef.current) {
+        markerRef.current.setLatLng(coords[0]);
+      }
 
       // Build movement segments
       const segments = [];
@@ -175,6 +187,7 @@ export default function BusRoutePause({
 
     routingControlRef.current.on("routesfound", handleRoutesFound);
     routingControlRef.current.on("routingerror", (err) => {
+      clearTimeout(routingTimeout);
       console.error("[BusRoutePause] routingerror:", err);
       drawFallback();
     });
