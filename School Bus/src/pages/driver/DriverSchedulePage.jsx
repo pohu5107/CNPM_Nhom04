@@ -5,8 +5,37 @@ import Header from "../../components/admin/Header";
 import { FiCalendar, FiAlertTriangle } from 'react-icons/fi';
 import { FaBus, FaRocket } from 'react-icons/fa';
 
-// Giả sử driver hiện tại có ID = 1  
-const CURRENT_DRIVER_ID = 1; 
+
+const getCurrentDriverId = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.id) return null;
+    
+    // Gọi API để lấy driver_id từ user_id - hoạt động với BẤT KỲ driver nào trong DB
+    const response = await fetch(`http://localhost:5000/api/drivers/by-user/${user.id}`, {
+      cache: 'no-cache'
+    });
+    
+    // Kiểm tra nếu response không phải JSON (có thể là HTML error page)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API trả về HTML thay vì JSON. Backend có thể đang lỗi.');
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      return data.driver_id;
+    } else {
+      console.warn('User không phải là driver hoặc driver không active:', data.message);
+      return null;
+    }
+  } catch (error) {
+    console.error('Lỗi khi gọi API lấy driver ID:', error);
+    return null; // Không còn fallback - chỉ dùng API
+  }
+};
 
 export default function DriverSchedulePage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -27,12 +56,18 @@ export default function DriverSchedulePage() {
     try {
       setLoading(true);
       
+      const driverId = await getCurrentDriverId();
+      if (!driverId) {
+        setError('Không tìm thấy thông tin tài xế. Vui lòng đăng nhập lại.');
+        return;
+      }
+      
       const params = {};
       if (timeFilter === 'today' && selectedDate) {
         params.date = selectedDate;
       }
 
-      const data = await schedulesService.getDriverSchedules(CURRENT_DRIVER_ID, params);
+      const data = await schedulesService.getDriverSchedules(driverId, params);
       setSchedules(data);
       setError(null);
     } catch (err) {
@@ -47,14 +82,44 @@ export default function DriverSchedulePage() {
 
 
   useEffect(() => {
-
-    const driverInfo = {
-      1: { name: 'Nguyễn Văn A', driverCode: 'TX001' },
-      2: { name: 'Trần Thị B', driverCode: 'TX002' },
-      3: { name: 'Lê Văn C', driverCode: 'TX003' }
+    const loadDriverInfo = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        const driverId = await getCurrentDriverId();
+        
+        if (driverId) {
+          // Gọi API để lấy thông tin driver chi tiết từ database
+          try {
+            const driverResponse = await fetch(`http://localhost:5000/api/drivers/${driverId}`);
+            const driverData = await driverResponse.json();
+            
+            if (driverData.success) {
+              setCurrentDriver({
+                name: driverData.data.name || 'Tài xế',
+                driverCode: `TX${driverId.toString().padStart(3, '0')}`
+              });
+            } else {
+              setCurrentDriver({ 
+                name: user?.username || 'Tài xế', 
+                driverCode: `TX${driverId.toString().padStart(3, '0')}` 
+              });
+            }
+          } catch (error) {
+            console.error('Lỗi khi lấy thông tin driver:', error);
+            setCurrentDriver({ 
+              name: user?.username || 'Tài xế', 
+              driverCode: `TX${driverId.toString().padStart(3, '0')}` 
+            });
+          }
+        } else {
+          setCurrentDriver({ name: 'Không xác định', driverCode: 'TX???' });
+        }
+      } catch (error) {
+        setCurrentDriver({ name: 'Lỗi tải thông tin', driverCode: 'TX???' });
+      }
     };
     
-    setCurrentDriver(driverInfo[CURRENT_DRIVER_ID] || { name: 'Unknown Driver', driverCode: 'TX???' });
+    loadDriverInfo();
   }, []);
   
   const handleDateChange = (newDate) => {

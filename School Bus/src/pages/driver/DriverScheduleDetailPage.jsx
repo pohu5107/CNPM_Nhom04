@@ -4,7 +4,37 @@ import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
 import { FiCalendar, FiUsers, FiPhone, FiX, FiMapPin } from 'react-icons/fi';
 
-const CURRENT_DRIVER_ID = 1;
+// Lấy driver ID từ user_id qua API - hoạt động với BẤT KỲ driver nào trong database
+const getCurrentDriverId = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.id) return null;
+    
+    // Gọi API để lấy driver_id từ user_id - không giới hạn chỉ 3 drivers
+    const response = await fetch(`http://localhost:5000/api/drivers/by-user/${user.id}`, {
+      cache: 'no-cache'
+    });
+    
+    // Kiểm tra nếu response không phải JSON (có thể là HTML error page)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API trả về HTML thay vì JSON. Backend có thể đang lỗi.');
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      return data.driver_id;
+    } else {
+      console.warn('User không phải là driver hoặc driver không active:', data.message);
+      return null;
+    }
+  } catch (error) {
+    console.error('Lỗi khi gọi API lấy driver ID:', error);
+    return null; // Không còn fallback - chỉ dùng API
+  }
+};
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
@@ -25,16 +55,20 @@ export default function DriverScheduleDetailPage() {
   const fetchScheduleDetail = async () => {
     try {
       setLoading(true);
-      const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
       
-
+      const driverId = await getCurrentDriverId();
+      if (!driverId) {
+        setError('Không tìm thấy thông tin tài xế. Vui lòng đăng nhập lại.');
+        return;
+      }
+      
+      const response = await schedulesService.getScheduleById(id, driverId);
       const scheduleData = Array.isArray(response) ? response[0] : response;
       
       setSchedule(scheduleData || null);
       setError(null);
     } catch (err) {
       setError('Lỗi khi tải chi tiết lịch làm việc: ' + err.message);
-
       setSchedule(null);
     } finally {
       setLoading(false);
@@ -43,12 +77,15 @@ export default function DriverScheduleDetailPage() {
 
   const fetchScheduleStops = async () => {
     try {
-      const stopsData = await schedulesService.getScheduleStops(CURRENT_DRIVER_ID, id);
+      const driverId = await getCurrentDriverId();
+      if (!driverId) {
+        setStops([]);
+        return;
+      }
       
-
+      const stopsData = await schedulesService.getScheduleStops(driverId, id);
       setStops(stopsData?.stops || []);
     } catch (err) {
- 
       setStops([]);
     }
   };

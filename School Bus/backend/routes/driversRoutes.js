@@ -28,6 +28,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/drivers/by-user/:userId - lấy driver_id từ user_id (ĐẶT TRƯỚC /:id để tránh conflict)
+router.get('/by-user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [rows] = await pool.execute('SELECT id FROM drivers WHERE user_id = ? AND status = "active"', [userId]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Không tìm thấy tài xế với user_id này' });
+    res.json({ success: true, driver_id: rows[0].id });
+  } catch (err) {
+    sendError(res, err, 'Lỗi khi lấy driver_id từ user_id');
+  }
+});
+
 // GET /api/drivers/:id
 router.get('/:id', async (req, res) => {
   try {

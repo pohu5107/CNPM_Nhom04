@@ -2,7 +2,6 @@
 
 import express from 'express';
 import pool from '../config/db.js';
-import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -93,9 +92,8 @@ router.post('/', async (req, res) => {
       if (existingEmail.length) return res.status(400).json({ success: false, message: 'Email đã tồn tại' });
 
       const defaultPassword = '123456';
-      const hashed = await bcrypt.hash(defaultPassword, 10);
 
-      const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, hashed]);
+      const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, defaultPassword]);
       user_id = userResult.insertId;
     }
 
@@ -140,8 +138,7 @@ router.put('/:id', async (req, res) => {
         const [existingUsername] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
         if (existingUsername.length) return res.status(400).json({ success: false, message: 'Username đã tồn tại' });
         const defaultPassword = '123456';
-        const hashed = await bcrypt.hash(defaultPassword, 10);
-        const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, hashed]);
+        const [userResult] = await pool.execute('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, "parent")', [username, email, defaultPassword]);
         user_id = userResult.insertId;
       }
     } else if ((!email || email === '' || email === 'Chưa có') && user_id) {
