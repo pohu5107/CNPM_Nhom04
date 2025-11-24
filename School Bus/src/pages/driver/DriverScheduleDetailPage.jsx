@@ -34,7 +34,7 @@ export default function DriverScheduleDetailPage() {
       setError(null);
     } catch (err) {
       setError('Lỗi khi tải chi tiết lịch làm việc: ' + err.message);
-      console.error('Error fetching schedule detail:', err);
+
       setSchedule(null);
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function DriverScheduleDetailPage() {
     try {
       const stopsData = await schedulesService.getScheduleStops(CURRENT_DRIVER_ID, id);
       
-      // Interceptor đã chuẩn hóa - service trả về {scheduleId, routeId, routeName, stops}
+
       setStops(stopsData?.stops || []);
     } catch (err) {
       console.error('Error fetching stops:', err);
@@ -53,18 +53,6 @@ export default function DriverScheduleDetailPage() {
     }
   };
 
-  // const handleStatusUpdate = async (newStatus) => {
-  //   try {
-  //     setUpdating(true);
-  //     await schedulesService.updateScheduleStatus(id, newStatus);
-  //     await fetchScheduleDetail(); // Reload để cập nhật trạng thái mới
-  //   } catch (err) {
-  //     setError('Lỗi khi cập nhật trạng thái: ' + err.message);
-  //     console.error('Error updating status:', err);
-  //   } finally {
-  //     setUpdating(false);
-  //   }
-  // };
 
   if (loading) {
     return (

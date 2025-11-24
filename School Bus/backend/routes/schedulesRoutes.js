@@ -187,7 +187,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         `, [scheduleId, driverId]);
 
         if (scheduleRows.length === 0) {
-            console.log(' No schedule found for driverId:', driverId, 'and scheduleId:', scheduleId);
+            
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -219,13 +219,13 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             
             if (stops.length === 1) {
                 
-                estimatedTime = startTime?.substring(0, 5) || '00:00';
+                estimatedTime = startTime?.substring(0, 5) ;
             } else if (index === 0) {
           
-                estimatedTime = startTime?.substring(0, 5) || '00:00';
+                estimatedTime = startTime?.substring(0, 5) ;
             } else if (index === stops.length - 1) {
                 
-                estimatedTime = endTime?.substring(0, 5) || startTime?.substring(0, 5) || '00:00';
+                estimatedTime = endTime?.substring(0, 5) ;
             } else {
                
                 if (startTime && endTime) {

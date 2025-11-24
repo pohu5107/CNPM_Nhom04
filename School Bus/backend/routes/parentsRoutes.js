@@ -56,23 +56,13 @@ router.get('/:id/children', async (req, res) => {
     const [children] = await pool.execute(`
       SELECT s.id, s.name, s.grade, s.class, c.class_name, s.address, s.phone AS student_phone, s.status,
              s.morning_route_id, mr.route_name AS morning_route_name, s.morning_pickup_stop_id, mps.name AS morning_pickup_stop_name,
-             s.afternoon_route_id, ar.route_name AS afternoon_route_name, s.afternoon_dropoff_stop_id, ads.name AS afternoon_dropoff_stop_name,
-             ms.bus_id AS morning_bus_id, mb.bus_number AS morning_bus_number, mb.license_plate AS morning_license_plate, ms.scheduled_start_time AS morning_start_time, ms.scheduled_end_time AS morning_end_time,
-             as_table.bus_id AS afternoon_bus_id, ab.bus_number AS afternoon_bus_number, ab.license_plate AS afternoon_license_plate, as_table.scheduled_start_time AS afternoon_start_time, as_table.scheduled_end_time AS afternoon_end_time
+             s.afternoon_route_id, ar.route_name AS afternoon_route_name, s.afternoon_dropoff_stop_id, ads.name AS afternoon_dropoff_stop_name
       FROM students s
       LEFT JOIN classes c ON s.class_id = c.id
       LEFT JOIN routes mr ON s.morning_route_id = mr.id
       LEFT JOIN routes ar ON s.afternoon_route_id = ar.id
       LEFT JOIN stops mps ON s.morning_pickup_stop_id = mps.id
       LEFT JOIN stops ads ON s.afternoon_dropoff_stop_id = ads.id
-      LEFT JOIN schedules ms ON s.morning_route_id = ms.route_id AND ms.shift_type = 'morning' AND ms.date = (
-        SELECT MAX(date) FROM schedules WHERE route_id = s.morning_route_id AND shift_type = 'morning' AND status IN ('scheduled','in_progress','completed')
-      )
-      LEFT JOIN buses mb ON ms.bus_id = mb.id
-      LEFT JOIN schedules as_table ON s.afternoon_route_id = as_table.route_id AND as_table.shift_type = 'afternoon' AND as_table.date = (
-        SELECT MAX(date) FROM schedules WHERE route_id = s.afternoon_route_id AND shift_type = 'afternoon' AND status IN ('scheduled','in_progress','completed')
-      )
-      LEFT JOIN buses ab ON as_table.bus_id = ab.id
       WHERE s.parent_id = ? AND s.status = 'active' ORDER BY s.name ASC
     `, [id]);
     res.json({ success: true, data: children, count: children.length });
