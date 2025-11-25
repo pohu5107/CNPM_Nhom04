@@ -55,9 +55,6 @@ export default function DriverSchedulePage() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-<<<<<<< HEAD
-      // Only send `date` when filtering by today. For 'week' and 'all' we omit date
-=======
       
       const driverId = await getCurrentDriverId();
       if (!driverId) {
@@ -65,17 +62,12 @@ export default function DriverSchedulePage() {
         return;
       }
       
->>>>>>> origin
       const params = {};
       if (timeFilter === 'today' && selectedDate) {
         params.date = selectedDate;
       }
 
-<<<<<<< HEAD
-      const data = await schedulesService.getDriverSchedules(CURRENT_DRIVER_ID, params);
-=======
       const data = await schedulesService.getDriverSchedules(driverId, params);
->>>>>>> origin
       setSchedules(data);
       setError(null);
     } catch (err) {
@@ -137,22 +129,10 @@ export default function DriverSchedulePage() {
 
   const handleTimeFilterChange = (newFilter) => {
     setTimeFilter(newFilter);
-<<<<<<< HEAD
-    
-    if (newFilter !== 'today') {
-      setSelectedDate('');
-    } else {
-    
-      if (!selectedDate) {
-        const today = new Date().toISOString().slice(0, 10);
-        setSelectedDate(today);
-      }
-=======
     if (newFilter !== 'today') {
       setSelectedDate('');
     } else {
       setSelectedDate(prev => prev || today);
->>>>>>> origin
     }
   };
 
@@ -200,13 +180,7 @@ export default function DriverSchedulePage() {
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 p-4 mb-6">
           <div className="flex items-center justify-center gap-3">
             {[
-<<<<<<< HEAD
-              { value: "today", label: "Hôm nay", icon: "📅" },
-          
-=======
               { value: "today", label: "Hôm nay", icon: <FiCalendar className="w-5 h-5" aria-hidden="true" /> },
-
->>>>>>> origin
               { value: "all", label: "Tất cả", icon: "" }
             ].map(({ value, label, icon }) => (
               <button
