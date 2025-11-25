@@ -13,7 +13,7 @@ const pool = mysql.createPool({
     user: process.env.DB_USER || 'root',             // Lấy từ tệp .env
     password: process.env.DB_PASSWORD || '',         // Lấy từ tệp .env
     database: process.env.DB_NAME || 'school_bus_db',    // Lấy từ tệp .env
-    port: process.env.DB_PORT || 3306,               // Lấy từ tệp .env
+    port: process.env.DB_PORT || 3307,               // Lấy từ tệp .env
     waitForConnections: true,                        // Chờ nếu hết kết nối
     connectionLimit: 10,                             // Số kết nối tối đa
     queueLimit: 0                                    // Hàng đợi (0 = không giới hạn)

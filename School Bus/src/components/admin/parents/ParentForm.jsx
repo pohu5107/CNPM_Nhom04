@@ -2,43 +2,11 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FormInput from '../../common/FormInput';
 import Button from '../../common/Button';
+
 import { parentsService } from '../../../services/parentsService';
 
-// Thành phần con nhỏ (ChildCard) — hiển thị thông tin con/em gọn nhẹ
-const ChildCard = ({ child }) => (
-  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-        <span className="text-lg font-bold text-blue-600">
-          {child.name?.charAt(0).toUpperCase() || '?'}
-        </span>
-      </div>
-      <div className="flex-1">
-        <h5 className="font-semibold text-gray-900">{child.name}</h5>
-        <div className="text-sm text-gray-600">Lớp {child.class_name || child.class} • Khối {child.grade}</div>
-        <div className="text-sm text-gray-500">📍 {child.address} • 📞 {child.phone || 'Chưa có SĐT'}</div>
-      </div>
-    </div>
-    
-    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
-      <div className="bg-white rounded-lg p-3 border">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="w-6 h-6 bg-yellow-100 rounded flex items-center justify-center text-sm">🌅</span>
-          <span className="font-medium text-gray-800">Tuyến sáng</span>
-        </div>
-        <span className="text-sm font-medium text-gray-800">{child.morning_route_name || 'Chưa có'}</span>
-      </div>
-      
-      <div className="bg-white rounded-lg p-3 border">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="w-6 h-6 bg-orange-100 rounded flex items-center justify-center text-sm">🌆</span>
-          <span className="font-medium text-gray-800">Tuyến chiều</span>
-        </div>
-        <span className="text-sm font-medium text-gray-800">{child.afternoon_route_name || 'Chưa có'}</span>
-      </div>
-    </div>
-  </div>
-);
+
+
 
 const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -49,7 +17,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   const [childrenDetails, setChildrenDetails] = useState([]);
   const [childrenLoading, setChildrenLoading] = useState(false);
 
-  // Tải dữ liệu phụ huynh vào form
+
   useEffect(() => {
     if (parent) {
       setFormData({
@@ -60,7 +28,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   }, [parent]);
 
 
-  // Tải danh sách con ở chế độ xem và loại bỏ bản ghi trùng lặp
+
   useEffect(() => {
     if (mode === 'view' && parent?.id) {
       const fetchChildren = async () => {
@@ -68,7 +36,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
           setChildrenLoading(true);
           const data = await parentsService.getParentChildren(parent.id);
           
-          // Deduplicate children by id or composite key
+  
           const childMap = new Map();
           (data || []).forEach(child => {
             const key = child.id || `${child.name}-${child.class_name || child.class}-${child.grade}`;
@@ -76,7 +44,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
               childMap.set(key, { ...child });
             } else {
               const existing = childMap.get(key);
-              // Gộp các trường còn thiếu từ các dòng trùng lặp
+
               Object.keys(child).forEach(field => {
                 if (!existing[field] && child[field]) existing[field] = child[field];
               });
@@ -85,7 +53,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
           
           setChildrenDetails(Array.from(childMap.values()));
         } catch (error) {
-          console.error('Error fetching children:', error);
+
           setChildrenDetails([]);
         } finally {
           setChildrenLoading(false);
@@ -127,7 +95,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
       [name]: value
     }));
     
-    // Xóa lỗi khi người dùng bắt đầu nhập
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -156,93 +124,7 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
 
   const isReadOnly = mode === 'view';
 
-  // View mode - parent details
-  if (mode === 'view' && parent) {
-    const initials = parent.name.split(' ').slice(-1)[0].charAt(0);
-    
-    return (
-      <div className="space-y-6">
-        {/* Parent header */}
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-xl font-bold text-purple-600">{initials}</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800">{parent.name}</h3>
-                <p className="text-sm text-gray-600">Mã: #{parent.id}</p>
-                <p className="text-sm text-gray-700">{parent.relationship} • {parent.phone}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Số con em</div>
-              <div className="text-2xl font-bold text-purple-600">{childrenDetails.length}</div>
-            </div>
-          </div>
-        </div>
 
-        {/* Contact info */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">📞</span>
-            Thông tin liên hệ
-          </h4>
-          <div className="space-y-3">
-            {[
-              ['Email', parent.email || 'Chưa có'],
-              ['Số điện thoại', parent.phone],
-              ['Mối quan hệ', parent.relationship],
-              ['Địa chỉ', parent.address]
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                <span className="text-sm font-medium text-gray-500">{label}</span>
-                <span className="text-sm text-gray-800 font-medium">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Children list */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <span className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">👨‍👩‍👧‍👦</span>
-            Danh sách con em ({childrenDetails.length})
-          </h4>
-          
-          {childrenLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-              </div>
-              <p className="text-gray-500 mt-4">Đang tải...</p>
-            </div>
-          ) : childrenDetails.length > 0 ? (
-            <div className="space-y-4">
-              {childrenDetails.map((child) => (
-                <ChildCard key={child.id || `${child.name}-${child.class_name}`} child={child} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">👨‍👩‍👧‍👦</div>
-              <p className="text-gray-600">Chưa có con em nào</p>
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-          <Button variant="secondary" onClick={onCancel}>
-            Đóng
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Form fields configuration
   const formFields = [
     { name: 'name', label: 'Họ và tên', placeholder: 'Nhập họ và tên', required: true },
     { name: 'username', label: 'Username', placeholder: 'Tên đăng nhập (3-30 ký tự)' },
@@ -272,6 +154,46 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
         />
       ))}
 
+      {/* Thông tin con em - chỉ hiển thị khi view */}
+      {mode === 'view' && parent?.id && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">
+            Danh sách con em ({childrenDetails.length})
+          </h4>
+          {childrenLoading ? (
+            <p className="text-sm text-gray-500">Đang tải...</p>
+          ) : childrenDetails.length > 0 ? (
+            <div className="space-y-3">
+              {childrenDetails.map((child, index) => (
+                <div key={child.id || index} className="bg-white rounded p-3 border text-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-medium text-gray-900">{child.name}</span>
+                      <span className="ml-2 text-gray-600">
+                        Lớp {child.class_name || child.class} • Khối {child.grade}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500">#{child.id}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <div>
+                     
+                      Sáng: {child.morning_route_name || 'Chưa có'}
+                    </div>
+                    <div>
+             
+                      Chiều: {child.afternoon_route_name || 'Chưa có'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Chưa có con em nào</p>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
         <Button variant="secondary" onClick={onCancel}>
           {isReadOnly ? 'Đóng' : 'Hủy'}
@@ -286,19 +208,5 @@ const ParentForm = ({ parent, mode, onSubmit, onCancel }) => {
   );
 };
 
-ParentForm.propTypes = {
-  parent: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    name: PropTypes.string,
-    username: PropTypes.string,
-    email: PropTypes.string,
-    phone: PropTypes.string,
-    relationship: PropTypes.string,
-    address: PropTypes.string,
-  }),
-  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};
 
 export default ParentForm;

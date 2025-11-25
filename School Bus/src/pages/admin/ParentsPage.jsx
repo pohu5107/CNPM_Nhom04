@@ -18,7 +18,6 @@ const ParentsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
-  // Load parents from API
   useEffect(() => {
     fetchParents();
   }, []);
@@ -106,13 +105,6 @@ const ParentsPage = () => {
         onDelete={handleDelete}
       />
 
-      {/* Pagination - placeholder for future implementation */}
-      {/* <Pagination
-        currentPage={currentPage}
-        totalItems={parents.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-      /> */}
 
       {/* Form Modal */}
       <Modal

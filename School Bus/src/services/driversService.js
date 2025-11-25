@@ -9,7 +9,7 @@ export const driversService = {
     getAllDrivers: async () => {
         try {
             const response = await apiClient.get(ENDPOINT);
-            console.log(' Drivers response from API:', response);
+           
             return Array.isArray(response) ? response : [];  // response đã được interceptor chuẩn hóa
         } catch (error) {
             console.error('Error fetching drivers:', error);
@@ -34,7 +34,7 @@ export const driversService = {
             const response = await apiClient.get(`${ENDPOINT}/${id}/details`);
             return response || null;
         } catch (error) {
-            console.error('Error fetching driver details:', error);
+          
             throw error;
         }
     },
@@ -45,7 +45,7 @@ export const driversService = {
             const response = await apiClient.post(ENDPOINT, driverData);
             return response || null;
         } catch (error) {
-            console.error('Error creating driver:', error);
+     
             throw error;
         }
     },
@@ -56,7 +56,7 @@ export const driversService = {
             const response = await apiClient.put(`${ENDPOINT}/${id}`, driverData);
             return response || null;
         } catch (error) {
-            console.error('Error updating driver:', error);
+           
             throw error;
         }
     },

@@ -7,9 +7,7 @@ import { classesService } from '../../../services/classesService';
 import { routesService } from '../../../services/routesService';
 
 const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
-  // Trạng thái form
-  // NOTE: Sử dụng `useState` để React tự động re-render khi giá trị thay đổi.
-  // `formData` lưu giá trị các input (controlled inputs). Khi submit, formData là payload gửi về parent.
+  
   const [formData, setFormData] = useState({
     name: '', grade: '', class: '', parent_id: '', phone: '', address: '',
     morning_route_id: '', morning_pickup_stop_id: '', afternoon_route_id: '', afternoon_dropoff_stop_id: ''
@@ -17,17 +15,13 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   
-  // Dữ liệu cho các dropdown (phụ huynh, lớp, tuyến)
-  // Những mảng này được load 1 lần khi component mount và dùng để build options cho <select>.
+
   const [parents, setParents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [allRoutes, setAllRoutes] = useState([]);
   const [morningRouteStops, setMorningRouteStops] = useState([]);
   const [afternoonRouteStops, setAfternoonRouteStops] = useState([]); 
 
-  // Tải dữ liệu cho dropdown (parents, classes, routes)
-  // Chạy 1 lần khi component mount (dependency array []).
-  // Bắt lỗi ở đây để tránh crash nếu API không phản hồi.
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -40,7 +34,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
         setClasses(classesData || []);
         setAllRoutes(routesData || []);
       } catch (error) {
-        console.error('Error loading data:', error);
+       
         setParents([]);
         setClasses([]);
         setAllRoutes([]);
@@ -49,10 +43,6 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     fetchData();
   }, []);
 
-  // Tải dữ liệu học sinh và điểm dừng của tuyến
-  // Khi parent truyền `student` (ở chế độ edit/view), effect này sẽ copy dữ liệu
-  // từ `student` vào `formData` để prefill form, đồng thời load danh sách điểm dừng
-  // cho các tuyến sáng/chiều tương ứng để hiển thị / kích hoạt dropdown điểm dừng.
   useEffect(() => {
     if (!student) return;
     
@@ -63,16 +53,14 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       afternoon_route_id: student.afternoon_route_id || '', afternoon_dropoff_stop_id: student.afternoon_dropoff_stop_id || ''
     });
 
-  // Hàm tải các điểm dừng cho một tuyến (dùng lại cho sáng/chiều)
-  // Gọi `routesService.getRouteStops(routeId)` trả về mảng stops. Nếu lỗi, set empty.
-  // Lưu ý: điểm dừng có thuộc tính `stop_order` (0 = bắt đầu, 99 = kết thúc theo quy ước DB).
+ 
   const loadStops = async (routeId, setStops) => {
       if (!routeId) return;
       try {
         const stops = await routesService.getRouteStops(routeId);
         setStops(stops || []);
       } catch (err) {
-        console.warn('Could not load route stops:', err);
+      
         setStops([]);
       }
     };
@@ -88,7 +76,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
     if (!formData.address.trim()) newErrors.address = 'Địa chỉ là bắt buộc';
     if (mode === 'add' && !formData.parent_id) newErrors.parent_id = 'Phụ huynh là bắt buộc';
 
-    // Grade validation
+
     const availableGrades = [...new Set(classes.map(cls => cls.grade))];
     if (!formData.grade.trim()) {
       newErrors.grade = 'Khối là bắt buộc';
@@ -96,7 +84,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       newErrors.grade = `Khối không hợp lệ. Có: ${availableGrades.join(', ')}`;
     }
 
-    // Class validation
+
     const selectedClass = classes.find(cls => cls.class_name === formData.class);
     if (!formData.class.trim()) {
       newErrors.class = 'Lớp học là bắt buộc';
@@ -111,7 +99,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   };
 
   // Hàm trợ giúp: tải điểm dừng cho tuyến (sử dụng khi người dùng thay đổi select tuyến)
-  // Khi route thay đổi ở form, chúng ta reset điểm đón/trả tương ứng và load lại stops.
+ 
   const loadRouteStops = async (routeId, setStops) => {
     if (!routeId) {
       setStops([]);
@@ -121,7 +109,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       const stops = await routesService.getRouteStops(routeId);
       setStops(stops || []);
     } catch (err) {
-      console.warn('Could not load route stops:', err);
+     
       setStops([]);
     }
   };
@@ -129,8 +117,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-  // Tự động điền khối khi chọn lớp
-  // Nếu người dùng chọn `class`, ta tự động set `grade` tương ứng từ dữ liệu `classes`.
+
     if (name === 'class' && value) {
       const selectedClass = classes.find(cls => cls.class_name === value);
       if (selectedClass) {
@@ -140,8 +127,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
       }
     }
 
-  // Tải điểm dừng khi thay đổi tuyến (sáng / chiều)
-  // Khi đổi tuyến, reset điểm đón/trả để tránh lựa chọn không hợp lệ của tuyến trước.
+
     if (name === 'morning_route_id') {
       setFormData(prev => ({ ...prev, morning_route_id: value, morning_pickup_stop_id: '' }));
       loadRouteStops(value, setMorningRouteStops);
@@ -165,7 +151,7 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Nếu đang ở chế độ view (chỉ xem), hành động submit sẽ đóng form (không gửi dữ liệu).
+ 
     if (mode === 'view') {
       onCancel();
       return;
@@ -184,97 +170,6 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   // isReadOnly dùng để disable/readonly các input khi component được dùng chỉ để xem
   const isReadOnly = mode === 'view';
 
-
-  
-  // ---------- View-only layout ----------
-  // Khi mode === 'view' và có student, trả về layout read-only đẹp mắt thay vì form inputs.
-  // Phần này không có input/submit; chỉ hiển thị dữ liệu đã có (student, stops, routes).
-  if (mode === 'view' && student) {
-    const morningRouteName = student.morning_route_name || (allRoutes.find(r => String(r.id) === String(student.morning_route_id))?.route_name) || '';
-    const afternoonRouteName = student.afternoon_route_name || (allRoutes.find(r => String(r.id) === String(student.afternoon_route_id))?.route_name) || '';
-  const morningPickupName = (morningRouteStops.find(s => String(s.stop_id) === String(student.morning_pickup_stop_id))?.name) || student.morning_pickup_stop_name || '';
-  const afternoonDropoffName = (afternoonRouteStops.find(s => String(s.stop_id) === String(student.afternoon_dropoff_stop_id))?.name) || student.afternoon_dropoff_stop_name || '';
-  
-  
-  // Tên điểm mặc định (thường là trường): tìm stop_order 99 (kết thúc) cho buổi sáng, stop_order 0 (bắt đầu) cho buổi chiều
-  const morningSchoolStop = morningRouteStops.find(s => Number(s.stop_order) === 99) || morningRouteStops.find(s => Number(s.stop_order) === 0);
-  const afternoonSchoolStop = afternoonRouteStops.find(s => Number(s.stop_order) === 0) || afternoonRouteStops.find(s => Number(s.stop_order) === 99);
-  const morningSchoolName = morningSchoolStop?.name ;
-  const afternoonSchoolName = afternoonSchoolStop?.name ;
-
-  return (
-      <div className="space-y-6 max-h-[85vh] overflow-y-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-xl font-bold text-blue-600">{(student.name||'').slice(-1).charAt(0) || ''}</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800">{student.name}</h3>
-                <p className="text-sm text-gray-600">Mã học sinh: #{student.id}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm font-medium text-gray-700">Lớp {student.class_name || student.class}</span>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-sm text-gray-600">Khối {student.grade}</span>
-                </div>
-              </div>
-            </div>
-            <div className={`px-3 py-2 rounded-full text-sm font-medium ${student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-              {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold mb-3">Thông tin liên hệ</h4>
-              <div className="text-sm text-gray-800">SĐT: {student.phone || student.student_phone || 'Chưa có'}</div>
-              <div className="text-sm text-gray-800 mt-2">Địa chỉ: {student.address || 'Chưa có'}</div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold mb-3">Thông tin phụ huynh</h4>
-              <div className="text-sm text-gray-800">Họ tên: {student.parent_name || 'Chưa có'}</div>
-              <div className="text-sm text-gray-800">Quan hệ: {student.relationship || 'Chưa có'}</div>
-              <div className="text-sm text-gray-800">SĐT: {student.parent_phone || 'Chưa có'}</div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h4 className="text-lg font-semibold mb-3">Thông tin tuyến xe</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến đi (Sáng)</div>
-                  <div className="font-medium text-gray-800">{morningRouteName || 'Chưa phân tuyến'}</div>
-                  <div className="text-sm text-gray-600 mt-2">Điểm đón</div>
-                  <div className="text-sm text-gray-800">{morningPickupName || 'Chưa có'}</div>
-                  <div className="text-xs text-gray-500 mt-1 italic">{morningSchoolName}</div>
-                </div>
-                <div className="p-3 border rounded">
-                  <div className="text-sm text-gray-600">Tuyến về (Chiều)</div>
-                  <div className="font-medium text-gray-800">{afternoonRouteName || 'Chưa phân tuyến'}</div>
-                  <div className="text-xs text-gray-500 mt-1 italic">{afternoonSchoolName}</div>
-                  <div className="text-sm text-gray-600 mt-2">Điểm trả</div>
-                  <div className="text-sm text-gray-800">{afternoonDropoffName || 'Chưa có'}</div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-gray-200">
-          {/* Nút Đóng sẽ gọi onCancel (parent truyền vào) để đóng modal */}
-          <Button variant="secondary" onClick={onCancel}>Đóng</Button>
-        </div>
-      </div>
-    );
-  }
-  
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -439,11 +334,5 @@ const StudentForm = ({ student, mode, onSubmit, onCancel }) => {
   );
 };
 
-StudentForm.propTypes = {
-  student: PropTypes.object,
-  mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};
 
 export default StudentForm;

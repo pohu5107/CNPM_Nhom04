@@ -11,7 +11,6 @@ const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, o
   // Get unique classes for filter
   const uniqueClasses = [...new Set(students.map(s => s.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-  // Loading state
   if (loading) {
     return (
       <div className="mx-8">
@@ -32,39 +31,39 @@ const StudentTable = ({ students = [], loading = false, onAdd, onEdit, onView, o
 
   // Filter students
   const filteredStudents = students.filter(student => {
-    const matchesSearch = 
+    const matchesSearch =
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.id?.toString().includes(searchTerm.toLowerCase()) ||
       student.parent_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesClass = !classFilter || student.class_name === classFilter;
 
     return matchesSearch && matchesClass;
   });
 
   const columns = [
-    { 
-      key: 'id', 
-      header: 'Mã HS' 
+    {
+      key: 'id',
+      header: 'Mã HS'
     },
-    { 
-      key: 'name', 
-      header: 'Họ tên' 
+    {
+      key: 'name',
+      header: 'Họ tên'
     },
-    { 
-      key: 'grade', 
-      header: 'Khối' 
+    {
+      key: 'grade',
+      header: 'Khối'
     },
-    { 
-      key: 'class_name', 
-      header: 'Lớp' 
+    {
+      key: 'class_name',
+      header: 'Lớp'
     },
-    { 
-      key: 'parent_name', 
-      header: 'Phụ huynh' 
+    {
+      key: 'parent_name',
+      header: 'Phụ huynh'
     },
-    { 
-      key: 'phone', 
+    {
+      key: 'phone',
       header: 'SĐT',
       render: (value, row) => value || row?.parent_phone || '-'
     }

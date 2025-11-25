@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
       message: "Lấy danh sách tuyến đường thành công",
     });
   } catch (error) {
-    console.error("Lỗi khi lấy tuyến đường:", error.message);
+ 
     res.status(500).json({ success: false, message: "Lỗi máy chủ" });
   }
 });

@@ -1,8 +1,6 @@
 // /backend/routes/schedulesRoutes.js
 import express from 'express';
 import pool from '../config/db.js';
-// Cần cài thêm axios: npm install axios
-import axios from 'axios';
 
 const router = express.Router();
 
@@ -52,11 +50,11 @@ router.get('/driver/:driverId', async (req, res) => {
                 time: `${row.start_time?.substring(0, 5)} - ${row.end_time?.substring(0, 5)}`,
                 route: row.route_name,
                 busNumber: row.license_plate,
-                status: row.status || 'pending',
-                statusText: row.status === 'pending' ? 'Chưa bắt đầu' : 
+                status: row.status || 'scheduled',
+                statusText: row.status === 'scheduled' ? 'Chưa bắt đầu' : 
                            row.status === 'in_progress' ? 'Đang chạy' : 
                            row.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
-                statusColor: row.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+                statusColor: row.status === 'scheduled' ? 'bg-gray-100 text-gray-700' : 
                             row.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
                             row.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
             };
@@ -67,7 +65,7 @@ router.get('/driver/:driverId', async (req, res) => {
             data: data
         });
     } catch (error) {
-        console.error('Error fetching driver schedules:', error);
+    
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy lịch làm việc',
@@ -78,174 +76,11 @@ router.get('/driver/:driverId', async (req, res) => {
 
 
 
-// GET /api/schedules/:id/map-data - Lấy dữ liệu cho bản đồ 
-router.get('/:id/map-data', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        
-        // Lấy thông tin schedule và route
-        const [scheduleRows] = await pool.execute(`
-            SELECT 
-                s.id,
-                s.route_id,
-                s.shift_type,
-                s.scheduled_start_time,
-                s.scheduled_end_time,
-                s.status,
-                s.driver_id,
-                r.route_name,
-                r.distance
-            FROM schedules s
-            LEFT JOIN routes r ON s.route_id = r.id
-            WHERE s.id = ?
-        `, [id]);
-
-        if (scheduleRows.length === 0) {
-     
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy lịch trình'
-            });
-        }
-
-        const schedule = scheduleRows[0];
-        
-        // Lấy danh sách điểm dừng với tọa độ theo thứ tự
-        const [stops] = await pool.execute(`
-            SELECT 
-                rs.id,
-                rs.stop_order,
-                s.id as stop_id,
-                s.name,
-                s.address,
-                s.latitude,
-                s.longitude,
-                rs.student_pickup_count
-            FROM route_stops rs
-            INNER JOIN stops s ON rs.stop_id = s.id
-            WHERE rs.route_id = ?
-            ORDER BY rs.stop_order ASC
-        `, [schedule.route_id]);
-
-        // 1. Lấy danh sách coordinates thô cho OSRM
-        const rawCoordinates = stops
-            .filter(stop => stop.latitude && stop.longitude)
-            .map(stop => `${stop.longitude},${stop.latitude}`) // OSRM dùng format: "long,lat"
-            .join(';');
-
-       
-        let routeGeometry = [];
-        try {
-            if (rawCoordinates) {
-                const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${rawCoordinates}?overview=full&geometries=geojson`;
-                console.log('\ud83d\ude97 Calling OSRM for route geometry:', osrmUrl);
-                const routingResponse = await axios.get(osrmUrl, { timeout: 5000 });
-                
-                if (routingResponse.data.code === 'Ok' && routingResponse.data.routes.length > 0) {
-                    // OSRM trả về format [long, lat], cần đảo lại thành [lat, long] cho Leaflet/Frontend
-                    const coordinates = routingResponse.data.routes[0].geometry.coordinates;
-                    routeGeometry = coordinates.map(coord => [coord[1], coord[0]]);
-                    
-                    // Cập nhật luôn distance thực tế (mét) từ routing engine
-                    const actualDistance = Math.round(routingResponse.data.routes[0].distance / 1000 * 10) / 10; // km, 1 chữ số thập phân
-                  
-                } else {
-                    console.warn('\u26a0\ufe0f OSRM returned no valid routes, using fallback');
-                    throw new Error('No valid routes from OSRM');
-                }
-            } else {
-                throw new Error('No valid coordinates for routing');
-            }
-        } catch (err) {
- 
-            routeGeometry = stops
-                .filter(stop => stop.latitude && stop.longitude)
-                .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]);
-        }
-
-        // 3. Xử lý stops với thông tin bổ sung
-        const processedStops = stops.map((stop, index) => {
-
-            const totalStops = stops.length;
-            const startTime = new Date(`1970-01-01T${schedule.scheduled_start_time}Z`);
-            const endTime = new Date(`1970-01-01T${schedule.scheduled_end_time}Z`);
-            const totalDuration = endTime - startTime;
-            
-            // Use index (0..n-1) to compute intermediate times. stop_order may use
-            // sentinel values (0, 99) and is not guaranteed to be contiguous, so
-            // multiplying by stop_order can produce incorrect times (e.g. 99).
-            let estimatedTime;
-            if (index === 0) {
-                estimatedTime = schedule.scheduled_start_time;
-            } else if (index === totalStops - 1) {
-                estimatedTime = schedule.scheduled_end_time;
-            } else {
-                // Distribute evenly across intervals between first and last stop
-                const intervals = Math.max(totalStops - 1, 1);
-                const timePerInterval = totalDuration / intervals;
-                const stopTime = new Date(startTime.getTime() + (index * timePerInterval));
-                estimatedTime = stopTime.toTimeString().substring(0, 5);
-            }
-
-            return {
-                id: stop.stop_id,
-                name: stop.name,
-                address: stop.address,
-                latitude: stop.latitude ? parseFloat(stop.latitude) : null,
-                longitude: stop.longitude ? parseFloat(stop.longitude) : null,
-                order: stop.stop_order,
-                student_count: stop.student_pickup_count || 0,
-                time: estimatedTime,
-                students: [] // Sẽ được populate từ database nếu cần
-            };
-        });
-
-        // Tính map center (trung điểm của tuyến)
-        let mapCenter = [10.776, 106.700]; // Default HCM center
-        if (routeGeometry.length > 0) {
-            const firstStop = routeGeometry[0];
-            mapCenter = firstStop;
-        }
-
-        const responseData = {
-            schedule: {
-                id: schedule.id,
-                routeId: schedule.route_id,
-                routeName: schedule.route_name,
-                shiftType: schedule.shift_type,
-                startTime: schedule.scheduled_start_time,
-                endTime: schedule.scheduled_end_time,
-                status: schedule.status,
-                distance: schedule.distance
-            },
-            stops: processedStops,
-            route_geometry: routeGeometry,
-            map_center: mapCenter
-        };
-
-        console.log(`\u2705 Map data ready: ${stops.length} stops, ${routeGeometry.length} geometry points`);
-        
-        res.json({
-            success: true,
-            data: responseData
-        });
-        
-    } catch (error) {
-        console.error('\u274c Error fetching map data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy dữ liệu bản đồ',
-            error: error.message
-        });
-    }
-});
-
 // GET /api/schedules/:driverId/:id - Lấy chi tiết một lịch làm việc
 router.get('/:driverId/:id', async (req, res) => {
     try {
         const { driverId, id } = req.params;
-
+        
         
         const [rows] = await pool.execute(`
             SELECT 
@@ -277,7 +112,7 @@ router.get('/:driverId/:id', async (req, res) => {
         `, [id, driverId]);
 
         if (rows.length === 0) {
-  
+           
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -285,7 +120,7 @@ router.get('/:driverId/:id', async (req, res) => {
         }
 
         const schedule = rows[0];
-
+      
         
         // Lấy danh sách học sinh
         const [students] = await pool.execute(`
@@ -307,10 +142,10 @@ router.get('/:driverId/:id', async (req, res) => {
 
         const detailData = {
             ...schedule,
-            statusText: schedule.status === 'pending' ? 'Chưa bắt đầu' : 
+            statusText: schedule.status === 'scheduled' ? 'Chưa bắt đầu' : 
                        schedule.status === 'in_progress' ? 'Đang chạy' : 
                        schedule.status === 'completed' ? 'Hoàn thành' : 'Chưa bắt đầu',
-            statusColor: schedule.status === 'pending' ? 'bg-gray-100 text-gray-700' : 
+            statusColor: schedule.status === 'scheduled' ? 'bg-gray-100 text-gray-700' : 
                         schedule.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 
                         schedule.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700',
             students: students,
@@ -320,9 +155,9 @@ router.get('/:driverId/:id', async (req, res) => {
         res.json({
             success: true,
             data: detailData
-        });   
+        });
     } catch (error) {
-      
+   
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy chi tiết lịch làm việc',
@@ -336,6 +171,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
     try {
         const { driverId, scheduleId } = req.params;
        
+
         // Lấy thông tin schedule
         const [scheduleRows] = await pool.execute(`
             SELECT 
@@ -351,7 +187,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         `, [scheduleId, driverId]);
 
         if (scheduleRows.length === 0) {
-            console.log(' No schedule found for driverId:', driverId, 'and scheduleId:', scheduleId);
+            
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy lịch làm việc'
@@ -359,8 +195,6 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         }
 
         const schedule = scheduleRows[0];
-     
-
         // Lấy danh sách điểm dừng
         const [stops] = await pool.execute(`
             SELECT 
@@ -376,26 +210,24 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             ORDER BY rs.stop_order ASC
         `, [schedule.route_id]);
 
-   
+  
 
         const startTime = schedule.scheduled_start_time;
         const endTime = schedule.scheduled_end_time;
-
-        // Tính thời gian đơn giản: điểm đầu = start, điểm cuối = end, các điểm giữa chia đều
         const processedStops = stops.map((stop, index) => {
             let estimatedTime;
             
             if (stops.length === 1) {
-                // Chỉ có 1 điểm thì = startTime
-                estimatedTime = startTime?.substring(0, 5) || '00:00';
+                
+                estimatedTime = startTime?.substring(0, 5) ;
             } else if (index === 0) {
-                // Điểm đầu = startTime
-                estimatedTime = startTime?.substring(0, 5) || '00:00';
+          
+                estimatedTime = startTime?.substring(0, 5) ;
             } else if (index === stops.length - 1) {
-                // Điểm cuối = endTime
-                estimatedTime = endTime?.substring(0, 5) || startTime?.substring(0, 5) || '00:00';
+                
+                estimatedTime = endTime?.substring(0, 5) ;
             } else {
-                // Các điểm giữa: phân bố đều giữa start và end
+               
                 if (startTime && endTime) {
                     const [sH, sM] = startTime.split(':').map(Number);
                     const [eH, eM] = endTime.split(':').map(Number);
@@ -434,7 +266,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
                 estimatedTime: estimatedTime,
                 latitude: stop.latitude,
                 longitude: stop.longitude,
-                status: 'pending',
+                status: 'scheduled',
                 note: ''
             };
         });
@@ -450,7 +282,7 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error(' Error fetching stops:', error);
+    
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách điểm dừng',
@@ -458,5 +290,6 @@ router.get('/driver/:driverId/stops/:scheduleId', async (req, res) => {
         });
     }
 });
+
 
 export default router;

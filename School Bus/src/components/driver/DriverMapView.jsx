@@ -1,107 +1,149 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { routesService } from '../../services/routesService';
+import { schedulesService } from '../../services/schedulesService';
 
-// FIX lỗi icon mặc định không hiện
+
+
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadow, iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Icon cho các điểm dừng (nhỏ gọn)
+// Icon cho các điểm dừng
 const stopIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Bus stop icon
   iconSize: [35, 35],
   iconAnchor: [17, 35],
   popupAnchor: [0, -35],
 });
 
-// Recenter helper: khi parent truyền latlng, component sẽ flyTo
-function Recenter({ latlng }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!map || !latlng) return;
-    // normalize latlng array or object
-    let lat, lng;
-    if (Array.isArray(latlng)) {
-      lat = parseFloat(latlng[0]);
-      lng = parseFloat(latlng[1]);
-    } else if (latlng && typeof latlng === 'object') {
-      lat = parseFloat(latlng.lat ?? latlng.latitude ?? NaN);
-      lng = parseFloat(latlng.lng ?? latlng.longitude ?? NaN);
-    }
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    const doFly = () => { try { map.flyTo([lat, lng], 15); } catch (e) { console.warn('flyTo failed', e); } };
-    if (map && map._loaded) {
-      doFly();
-    } else if (map && typeof map.whenReady === 'function') {
-      map.whenReady(doFly);
-    }
-  }, [map, latlng]);
-  return null;
-}
+export default function DriverMapView({ routeId, scheduleId, driverId }) {
+  const [routeData, setRouteData] = useState(null);
+  const [stops, setStops] = useState([]);
+  const [routeLine, setRouteLine] = useState([]);
+  const [mapCenter, setMapCenter] = useState([10.776, 106.700]); // Default HCM
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [resolvedRouteId, setResolvedRouteId] = useState(routeId || null);
 
-export default function DriverMapView({ stops = [], routeLine = [], mapCenter = [10.776, 106.700], focusedStopIndex = null }) {
+  useEffect(() => {
+    const fetchRouteData = async (rid) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await routesService.getRouteById(rid);
+        const data = response;
+
+        setRouteData(data);
+        setStops(data.stops || []);
+
+        if (data.route_geometry && data.route_geometry.length > 0) {
+          setRouteLine(data.route_geometry);
+          setMapCenter(data.route_geometry[0]);
+        } else if (data.stops && data.stops.length > 0) {
+          const firstStopCoords = [data.stops[0].latitude, data.stops[0].longitude];
+          setMapCenter(firstStopCoords);
+        }
+
+      } catch (err) {
+        setError('Không thể tải dữ liệu lộ trình.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+
+    (async () => {
+      try {
+        setError(null);
+
+        if (routeId) {
+          setResolvedRouteId(routeId);
+          await fetchRouteData(routeId);
+          return;
+        }
+
+        if (scheduleId && driverId) {
+          setLoading(true);
+          const resp = await schedulesService.getScheduleStops(driverId, scheduleId);
+
+          const stopsArr = Array.isArray(resp?.stops) ? resp.stops : [];
+          setStops(stopsArr);
+
+          if (stopsArr.length > 0) {
+            const first = stopsArr[0];
+            if (first?.latitude && first?.longitude) {
+              setMapCenter([first.latitude, first.longitude]);
+            }
+          }
+
+          if (resp?.routeId) {
+            setResolvedRouteId(resp.routeId);
+            await fetchRouteData(resp.routeId);
+          } else {
+            setResolvedRouteId(null);
+            setLoading(false);
+          }
+
+          return;
+        }
+
+
+        setLoading(false);
+      } catch (e) {
+        setError('Không thể lấy dữ liệu lộ trình từ lịch trình.');
+        setLoading(false);
+      }
+    })();
+
+  }, [routeId, scheduleId, driverId]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full bg-gray-100"><p>Đang tải bản đồ...</p></div>;
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center h-full bg-red-50 text-red-600"><p>{error}</p></div>;
+  }
+
+
   const hasGeometry = Array.isArray(routeLine) && routeLine.length > 0;
   const hasStops = Array.isArray(stops) && stops.length > 0;
 
-  const defaultCenter = [10.776, 106.700];
-  const centerProp = (Array.isArray(mapCenter) && mapCenter.length === 2 && Number.isFinite(parseFloat(mapCenter[0])) && Number.isFinite(parseFloat(mapCenter[1])))
-    ? mapCenter
-    : defaultCenter;
-
   return (
-    <MapContainer center={centerProp} zoom={14} style={{ height: '100%', width: '100%' }}>
-
-      {/* Auto-recenter disabled để user có thể tự do kéo map */}
-      {/* focusedStopIndex không còn trigger auto flyTo */}
-
+    <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
       <TileLayer
         attribution='&copy; OpenStreetMap'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Vẽ đường đi của tuyến với style cải thiện */}
-      {hasGeometry && (
-        <Polyline 
-          positions={routeLine} 
-          color="#2563eb" 
-          weight={4}
-          opacity={0.8}
-          dashArray="10, 5"
-          lineCap="round"
-          lineJoin="round"
-        />
+      {/* Vẽ đường đi của tuyến */}
+      {routeLine.length > 0 && (
+        <Polyline positions={routeLine} color="blue" weight={5} />
       )}
 
-      {/* Đánh dấu các điểm dừng do parent cung cấp */}
-      {hasStops && stops.map((stop, index) => {
-      
-        const lat = stop.latitude != null ? parseFloat(stop.latitude) : NaN;
-        const lng = stop.longitude != null ? parseFloat(stop.longitude) : NaN;
-        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          return (
-            <Marker
-              key={stop.id || index}
-              position={[lat, lng]}
-              icon={stopIcon}
-            >
-              <Popup>
-                <b>Điểm dừng {index + 1}: {stop.name}</b>
-                <br />
-                {stop.address && <>Địa chỉ: {stop.address}<br /></>}
-                {stop.arrival_time && <>Thời gian dự kiến: {stop.arrival_time}</>}
-              </Popup>
-            </Marker>
-          );
-        }
-        // skip invalid coords
-        console.warn('Skipping stop without valid coords', stop);
-        return null;
-      })}
-      
+      {/* Đánh dấu các điểm dừng */}
+      {stops.map((stop, index) => (
+        <Marker
+          key={stop.id || index}
+          position={[stop.latitude, stop.longitude]}
+          icon={stopIcon}
+        >
+          <Popup>
+            <b>Điểm dừng {index + 1}: {stop.name}</b>
+            <br />
+            Địa chỉ: {stop.address}
+            <br />
+            Thời gian dự kiến: {stop.arrival_time}
+          </Popup>
+        </Marker>
+      ))}
 
+ 
     </MapContainer>
   );
 }

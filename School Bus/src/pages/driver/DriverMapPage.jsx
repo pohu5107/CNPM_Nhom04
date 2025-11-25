@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   MapPin, Clock, Users, Bus, ArrowLeft, Settings, 
@@ -6,13 +6,13 @@ import {
   Navigation, Send, X, LogOut, Play
 } from 'lucide-react';
 import DriverMapView from '../../components/driver/DriverMapView';
-import { schedulesService } from '../../services/schedulesService';
 
 export default function DriverMapPage() {
   const navigate = useNavigate();
-  const { scheduleId } = useParams();
-
-  const [tripStatus, setTripStatus] = useState('not_started');
+  const { scheduleId } = useParams(); // Lấy scheduleId từ URL params
+  
+  // States chính
+  const [tripStatus, setTripStatus] = useState('not_started'); // Bắt đầu từ not_started
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [alerts, setAlerts] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -23,7 +23,7 @@ export default function DriverMapPage() {
   const [incidentText, setIncidentText] = useState('');
   const [isTracking, setIsTracking] = useState(true);
 
-
+ 
   const mockSchedule = {
     id: scheduleId || 1,
     routeName: "Tuyến Quận 1 - Sáng",
@@ -36,272 +36,93 @@ export default function DriverMapPage() {
     currentLocation: "Nhà Văn hóa Thanh Niên"
   };
 
-  const getRouteStopsData = (scheduleId) => {
-    const routes = {
-      
-      '31': {
-        routeName: 'Tuyến Thủ Đức - Chiều',
-        stops: [
-          {
-            id: 43, name: "Trường THCS Nguyễn Du", time: "17:30",
-            latitude: 10.77690000, longitude: 106.70090000, order: 0,
-            students: [{ id: 1, name: "Học sinh 1", class: "6A1", phone: "0987654321", status: "waiting" }]
-          },
-          {
-            id: 57, name: "Cầu Sài Gòn", time: "17:51", 
-            latitude: 10.82000000, longitude: 106.74000000, order: 1,
-            students: [{ id: 2, name: "Học sinh 2", class: "7B1", phone: "0987654322", status: "waiting" }]
-          },
-          {
-            id: 52, name: "Cầu vượt Nguyễn Thái Sơn", time: "18:13",
-            latitude: 10.84500000, longitude: 106.75800000, order: 2,
-            students: [{ id: 3, name: "Học sinh 3", class: "6A2", phone: "0987654323", status: "waiting" }]
-          },
-          {
-            id: 55, name: "Vincom Thủ Đức", time: "18:34",
-            latitude: 10.85000000, longitude: 106.77000000, order: 3,
-            students: [{ id: 4, name: "Học sinh 4", class: "7A1", phone: "0987654324", status: "waiting" }]
-          },
-          {
-            id: 54, name: "Chung cư Sunview Town", time: "18:55",
-            latitude: 10.85160000, longitude: 106.77180000, order: 99,
-            students: []
-          }
-        ]
-      },
-      
-      '28': {
-        routeName: 'Tuyến Thủ Đức - Sáng',
-        stops: [
-          {
-            id: 54, name: "Chung cư Sunview Town", time: "06:20",
-            latitude: 10.85160000, longitude: 106.77180000, order: 0,
-            students: [{ id: 1, name: "Học sinh 1", class: "6A1", phone: "0987654321", status: "waiting" }]
-          },
-          {
-            id: 55, name: "Vincom Thủ Đức", time: "06:33",
-            latitude: 10.85000000, longitude: 106.77000000, order: 1,
-            students: [{ id: 2, name: "Học sinh 2", class: "7B1", phone: "0987654322", status: "waiting" }]
-          },
-          {
-            id: 52, name: "Cầu vượt Nguyễn Thái Sơn", time: "06:45",
-            latitude: 10.84500000, longitude: 106.75800000, order: 2,
-            students: [{ id: 3, name: "Học sinh 3", class: "6A2", phone: "0987654323", status: "waiting" }]
-          },
-          {
-            id: 57, name: "Cầu Sài Gòn", time: "06:58",
-            latitude: 10.82000000, longitude: 106.74000000, order: 3,
-            students: [{ id: 4, name: "Học sinh 4", class: "7A1", phone: "0987654324", status: "waiting" }]
-          },
-          {
-            id: 43, name: "Trường THCS Nguyễn Du", time: "07:10",
-            latitude: 10.77690000, longitude: 106.70090000, order: 99,
-            students: []
-          }
-        ]
-      }
-    };
-
-    return routes[scheduleId] || routes['28'];
-  };
-  
-  const routeData = getRouteStopsData(scheduleId);
-  const mockStops = routeData.stops;
+  const mockStops = [
+    {
+      id: 1,
+      name: "Nhà Văn hóa Thanh Niên",
+      time: "06:30",
+      students: [
+        { id: 1, name: "Trần Dũng Minh", class: "6A1", phone: "0987654321", status: "picked_up" },
+        { id: 2, name: "Nguyễn Thị Mai", class: "6A2", phone: "0987654322", status: "picked_up" }
+      ]
+    },
+    {
+      id: 2,
+      name: "Ngã tư Hàng Xanh",
+      time: "06:40",
+      students: [
+        { id: 3, name: "Lê Văn Hoàng", class: "7B1", phone: "0987654323", status: "waiting" },
+        { id: 4, name: "Phạm Thị Lan", class: "6A3", phone: "0987654324", status: "waiting" }
+      ]
+    },
+    {
+      id: 3,
+      name: "Trường THCS Nguyễn Du",
+      time: "07:00",
+      students: [
+        { id: 5, name: "Hoàng Văn Nam", class: "7A1", phone: "0987654325", status: "waiting" }
+      ]
+    }
+  ];
 
   const [stops, setStops] = useState(mockStops);
-  const [schedule, setSchedule] = useState(null);
-  const [routeLine, setRouteLine] = useState([]);
-  const [mapCenter, setMapCenter] = useState(null);
-  const [loadingSchedule, setLoadingSchedule] = useState(false);
-  const [scheduleError, setScheduleError] = useState(null);
 
-  // vehicle position used for remaining distance / ETA calculation
-  const [vehiclePos, setVehiclePos] = useState(null); // { lat, lng }
-
-  // Helpers: haversine distance (km) and formatters
-  const haversineKm = (lat1, lon1, lat2, lon2) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-    const toRad = v => v * Math.PI / 180;
-    const R = 6371; // km
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  const formatKm = km => {
-    if (!km || km <= 0) return '0 m';
-    if (km < 1) return `${Math.round(km * 1000)} m`;
-    return `${(Math.round(km * 10) / 10).toString()} km`;
-  };
-
-  const formatETASeconds = secs => {
-    if (!secs || secs <= 0) return '0 phút';
-    const mins = Math.round(secs / 60);
-    if (mins < 60) return `${mins} phút`;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h}h ${m}p`;
-  };
-
+  // Mock thông tin tracking hiện tại
   const currentStop = stops[currentStopIndex];
   const nextStop = stops[currentStopIndex + 1];
-  // keep vehiclePos in sync with map center as a fallback
-  useEffect(() => {
-    if (mapCenter && (!vehiclePos || vehiclePos.lat !== mapCenter[0] || vehiclePos.lng !== mapCenter[1])) {
-      setVehiclePos({ lat: mapCenter[0], lng: mapCenter[1] });
-    }
-  }, [mapCenter]);
+  const remainingDistance = "1.2 km";
+  const estimatedTime = nextStop ? nextStop.time : mockSchedule.endTime;
 
-  // Compute remaining distance and ETA (simple Haversine + avg speed)
-  const { remainingDistance, estimatedTime } = useMemo(() => {
-    const AVG_SPEED_KMH = 25; // configurable average speed
-    const DWELL_SEC = 30; // dwell time per stop
-
-    if (!stops || stops.length === 0) return { remainingDistance: '0 m', estimatedTime: '0 phút' };
-
-    // compute remaining km from vehicle to current stop + between remaining stops
-    let remainingKm = 0;
-    // from vehicle to current stop
-    if (vehiclePos && currentStop && currentStop.latitude && currentStop.longitude) {
-      remainingKm += haversineKm(vehiclePos.lat, vehiclePos.lng, parseFloat(currentStop.latitude), parseFloat(currentStop.longitude));
-    }
-    // between subsequent stops starting from currentStop
-    for (let i = currentStopIndex; i < stops.length - 1; i++) {
-      const a = stops[i];
-      const b = stops[i+1];
-      if (a && b && a.latitude && a.longitude && b.latitude && b.longitude) {
-        remainingKm += haversineKm(parseFloat(a.latitude), parseFloat(a.longitude), parseFloat(b.latitude), parseFloat(b.longitude));
-      }
-    }
-
-    const travelSec = (remainingKm / AVG_SPEED_KMH) * 3600;
-    const dwellSec = Math.max(0, stops.length - currentStopIndex) * DWELL_SEC;
-    const etaSec = travelSec + dwellSec;
-
-    return { remainingDistance: formatKm(remainingKm), estimatedTime: formatETASeconds(etaSec) };
-  }, [vehiclePos, stops, currentStopIndex]);
-
+  // Cập nhật thời gian real-time
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+ 
 
-  useEffect(() => {
-    if (!scheduleId) return; 
-    let cancelled = false;
-    setLoadingSchedule(true);
-    (async () => {
-      try {
-   
-        
-        let apiData = null;
-        let apiError = null;
-        
-        try {
-          apiData = await schedulesService.getMapData(scheduleId);
-        } catch (error) {
-          apiError = error;
-        }
-        
-        
-        const data = (apiData && apiData.schedule) ? apiData : {
-          schedule: {
-            id: scheduleId,
-            routeName: routeData.routeName,
-            startTime: routeData.stops[0]?.time || '06:30',
-            endTime: routeData.stops[routeData.stops.length - 1]?.time || '07:30'
-          },
-          stops: routeData.stops,
-          route_geometry: routeData.stops
-            .filter(stop => stop.latitude && stop.longitude)
-            .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]),
-          map_center: routeData.stops[0] ? [parseFloat(routeData.stops[0].latitude), parseFloat(routeData.stops[0].longitude)] : [10.776, 106.700]
-        };
-        
-        const usingAPI = apiData && apiData.schedule;
-        
-        if (cancelled) return;
-        setSchedule(data.schedule || null);
-        const finalStops = Array.isArray(data.stops) && data.stops.length ? data.stops : mockStops;
-        setStops(finalStops);
-        
-        
-        let finalRouteLine = Array.isArray(data.route_geometry) ? data.route_geometry : [];
-        if (finalRouteLine.length === 0 && finalStops.length > 0) {
-          finalRouteLine = finalStops
-            .filter(stop => stop.latitude && stop.longitude)
-            .map(stop => [parseFloat(stop.latitude), parseFloat(stop.longitude)]);
-        }
-        setRouteLine(finalRouteLine);
-        
-        const finalMapCenter = data.map_center || (finalStops[0]?.latitude && finalStops[0]?.longitude 
-          ? [parseFloat(finalStops[0].latitude), parseFloat(finalStops[0].longitude)] 
-          : [10.776, 106.700]);
-        setMapCenter(finalMapCenter);
-        
-        
-      } catch (err) {
-        if (cancelled) return;
-        setScheduleError(err.message);
-        setAlerts(prev => [
-          { id: Date.now(), type: 'error', message: `Không tải lịch: ${err.message}`, time: new Date() },
-          ...prev.slice(0, 4)
-        ]);
-        setStops(mockStops);
-      } finally {
-        if (!cancelled) setLoadingSchedule(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [scheduleId]);
-
-  useEffect(() => {
-  }, [scheduleId, currentStopIndex, tripStatus]);
-
+  // Bắt đầu chuyến
   const startTrip = () => {
     setTripStatus('in_progress');
     addAlert('success', 'Đã bắt đầu chuyến đi!');
   };
 
+  // Xác nhận đến điểm dừng
   const confirmArrival = () => {
-    // mark current stop as arrived first
-    setStops(prev => prev.map((s, i) => i === currentStopIndex ? { ...s, status: 'arrived', actualArrival: new Date().toISOString() } : s));
-    addAlert('success', `Đã đến ${currentStop?.name}`);
-
     if (currentStopIndex < stops.length - 1) {
-      // increment index after confirming arrival
-      setTimeout(() => setCurrentStopIndex(prev => Math.min(prev + 1, stops.length - 1)), 200);
+      setCurrentStopIndex(prev => prev + 1);
+      addAlert('success', ` Đã đến ${currentStop.name}`);
     } else {
+      // Đã đến điểm cuối
       addAlert('success', '🏁 Đã hoàn thành tuyến đường');
       setTripStatus('completed');
     }
-
     setShowArrivalModal(false);
   };
 
+  // Báo cáo sự cố
   const submitIncident = () => {
     if (incidentText.trim()) {
-      addAlert('error', `🚨 Đã gửi báo cáo sự cố: ${incidentText}`);
+      addAlert('error', ` Đã gửi báo cáo sự cố: ${incidentText}`);
       setIncidentText('');
       setShowIncidentModal(false);
-      
+      // TODO: Gửi API báo cáo sự cố
     }
   };
 
+  // Kết thúc chuyến
   const confirmEndTrip = () => {
     setTripStatus('completed');
     setIsTracking(false);
-    addAlert('success', '🏁 Đã kết thúc chuyến đi');
+    addAlert('success', ' Đã kết thúc chuyến đi');
     setShowEndTripModal(false);
+    // TODO: API cập nhật trạng thái chuyến
     setTimeout(() => {
-      navigate('/driver/schedule');
+      navigate('/driver/schedule'); // Quay về danh sách lịch
     }, 2000);
   };
 
+  // Chức năng quản lý học sinh
   const toggleStudentStatus = (stopId, studentId) => {
     setStops(prevStops => 
       prevStops.map(stop => {
@@ -344,6 +165,7 @@ export default function DriverMapPage() {
     );
   };
 
+  // Utility functions
   const addAlert = (type, message) => {
     const newAlert = { id: Date.now(), type, message, time: new Date() };
     setAlerts(prev => [newAlert, ...prev.slice(0, 4)]);
@@ -369,11 +191,11 @@ export default function DriverMapPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      
+      {/*  HEADER TOPBAR - Sticky  */}
       <div className="bg-white shadow-lg border-b z-40 relative flex-shrink-0 sticky top-0">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            
+            {/* Left section - Navigation & Trip Info */}
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => navigate('/driver/schedule')}
@@ -389,29 +211,30 @@ export default function DriverMapPage() {
                 }`}></div>
                 <div>
                   <div className="font-bold text-lg text-gray-900">
-                    {loadingSchedule ? 'Đang tải...' : (schedule?.routeName || `Tuyến ${scheduleId}`)} • {mockSchedule.busNumber}
+                    {mockSchedule.routeName} • {mockSchedule.busNumber}
                   </div>
                   <div className="text-sm text-gray-600 flex items-center gap-4">
-                    <span>Mã chuyến: #{scheduleId}</span>
+                    <span>Mã chuyến: #{mockSchedule.id}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {schedule?.startTime?.substring(0, 5) || mockSchedule.startTime} - {schedule?.endTime?.substring(0, 5) || mockSchedule.endTime}
+                      {mockSchedule.startTime} - {mockSchedule.endTime}
                     </span>
-                
-                    
+                  
                   </div>
                 </div>
               </div>
             </div>
             
-            
+            {/* Right section - Time & Controls */}
             <div className="flex items-center gap-4">
               <div className="text-right">
-              
-       
+                <div className="text-sm font-mono font-semibold text-gray-900">
+                  {currentTime.toLocaleTimeString('vi-VN')}
+                </div>
+               
               </div>
 
-              
+              {/* Pause/Resume button */}
               <button 
                 onClick={() => setIsTracking(!isTracking)}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -419,9 +242,9 @@ export default function DriverMapPage() {
                     ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
-                title={isTracking ? "Tạm dừng " : "Tiếp tục "}
+                title={isTracking ? "Tạm dừng tracking" : "Tiếp tục tracking"}
               >
-                {isTracking ? '⏸️ Tạm dừng chuyến' : '▶️ Tiếp tục chuyến'}
+                {isTracking ? '⏸️ Tạm dừng' : '▶️ Tiếp tục'}
               </button>
               
               <button 
@@ -453,26 +276,21 @@ export default function DriverMapPage() {
         </div>
       )}
 
-      
+      {/*  MAIN MAP CONTAINER */}
       <div className="flex-1 relative overflow-hidden">
-  
+        {/* Map wrapper with low z so overlays can sit above it */}
         <div className="absolute inset-0 z-0"> 
-          
           <DriverMapView 
-            routeId={schedule?.routeId || 1}
-            scheduleId={scheduleId}
+            routeId={1} 
+            scheduleId={mockSchedule.id} 
             driverId={1}
-            stops={stops}
-            routeLine={routeLine}
-            mapCenter={mapCenter}
-            focusedStopIndex={currentStopIndex}
           />
         </div>
 
-        
+        {/* STOP OVERLAY - Bottom Panel  */}
         <div className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-4 z-50 min-w-80 border border-gray-200">
           <div className="space-y-3">
-              
+            {/* Status & Progress */}
             <div className="flex items-center justify-between pb-2 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
@@ -490,11 +308,11 @@ export default function DriverMapPage() {
               </div>
             </div>
 
-            
+            {/* Pre-trip Status - hiển thị khi chưa bắt đầu */}
             {tripStatus === 'not_started' ? (
               <div className="text-center py-4">
                 <div className="text-gray-600 mb-2">
-                   Sẵn sàng bắt đầu chuyến đi
+                  🚀 Sẵn sàng bắt đầu chuyến đi
                 </div>
                 <div className="text-sm text-gray-500">
                   Nhấn nút "Bắt đầu chuyến" để khởi động
@@ -502,13 +320,13 @@ export default function DriverMapPage() {
               </div>
             ) : (
               <>
-                
-                {currentStop && tripStatus !== 'completed' ? (
+                {/* Next Stop Info - chỉ hiển thị khi đã bắt đầu */}
+                {nextStop && tripStatus !== 'completed' ? (
               <>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <div className="font-semibold text-gray-800">
-                    Điểm tiếp theo: {currentStop.name}
+                    Điểm tiếp theo: {nextStop.name}
                   </div>
                 </div>
                 
@@ -540,7 +358,7 @@ export default function DriverMapPage() {
           </>
         )}
             
-        
+        {/* Progress bar - chỉ hiển thị khi đã bắt đầu */}
             {tripStatus !== 'not_started' && (
               <div className="pt-2">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -561,9 +379,9 @@ export default function DriverMapPage() {
         
     
 
-        
+        {/* FLOATING ACTION BUTTONS - Góc phải dưới  */}
         <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
-          
+          {/* Nút Bắt đầu chuyến - chỉ hiện khi chưa bắt đầu */}
           {tripStatus === 'not_started' && (
             <button
               onClick={startTrip}
@@ -574,7 +392,7 @@ export default function DriverMapPage() {
             </button>
           )}
 
-          
+          {/* 1️ Nút Danh sách học sinh - chỉ hiện khi đã bắt đầu */}
           {tripStatus !== 'not_started' && (
             <button
               onClick={() => setShowStudentsPanel(true)}
@@ -590,13 +408,13 @@ export default function DriverMapPage() {
             </button>
           )}
 
-          
+          {/* 2️ Nút Xác nhận đến điểm đón - chỉ hiện khi đã bắt đầu */}
           {tripStatus !== 'not_started' && (
             <button
               onClick={() => setShowArrivalModal(true)}
-              disabled={!currentStop && tripStatus !== 'completed'}
+              disabled={!nextStop && tripStatus !== 'completed'}
               className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 ${
-                currentStop || tripStatus !== 'completed'
+                nextStop || tripStatus !== 'completed'
                   ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-200' 
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
@@ -606,7 +424,7 @@ export default function DriverMapPage() {
             </button>
           )}
 
-          
+          {/* 3️Nút Báo sự cố */}
           <button
             onClick={() => setShowIncidentModal(true)}
             className="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-red-200"
@@ -615,7 +433,7 @@ export default function DriverMapPage() {
             <AlertTriangle className="w-7 h-7" />
           </button>
 
-          
+          {/* 4️ Nút Liên hệ khẩn cấp */}
           <button
             onClick={() => window.open('tel:1900-1234')}
             className="w-16 h-16 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-yellow-200"
@@ -627,7 +445,7 @@ export default function DriverMapPage() {
        
         </div>
 
-        
+        {/*  POPUP: XÁC NHẬN ĐẾN ĐIỂM */}
         {showArrivalModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
@@ -658,7 +476,7 @@ export default function DriverMapPage() {
           </div>
         )}
 
-        
+        {/* POPUP: BÁO SỰ CỐ */}
         {showIncidentModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 w-full border shadow-2xl">
@@ -677,7 +495,7 @@ export default function DriverMapPage() {
                 </button>
               </div>
 
-              
+              {/* Quick incident options */}
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-3">Chọn nhanh loại sự cố:</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -725,7 +543,7 @@ export default function DriverMapPage() {
           </div>
         )}
 
-        
+        {/*  POPUP: KẾT THÚC CHUYẾN */}
         {showEndTripModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-70">
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
@@ -735,7 +553,7 @@ export default function DriverMapPage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Kết thúc chuyến đi</h3>
                 <p className="text-gray-600 mb-6">
-                  Bạn có chắc chắn muốn kết thúc chuyến <strong className="text-gray-900"></strong>?
+                  Bạn có chắc chắn muốn kết thúc chuyến <strong className="text-gray-900">{mockSchedule.routeName}</strong>?
                   <br />
                   <span className="text-sm">Hành động này sẽ dừng việc theo dõi GPS.</span>
                 </p>
@@ -759,7 +577,7 @@ export default function DriverMapPage() {
         )}
       </div>
       
-      
+      {/* PANEL HỌC SINH - Trượt từ bên phải  */}
       {showStudentsPanel && (
         <>
           <div 
@@ -768,7 +586,7 @@ export default function DriverMapPage() {
           />
           <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-transform">
             <div className="flex flex-col h-full">
-              
+              {/* Header panel */}
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
                 <div className="flex justify-between items-center">
                   <div>
@@ -789,11 +607,11 @@ export default function DriverMapPage() {
                 </div>
               </div>
               
-              
+              {/* Content panel */}
               <div className="flex-1 overflow-y-auto">
                 {stops.map((stop, stopIndex) => (
                   <div key={stop.id} className="border-b border-gray-200">
-                    
+                    {/* Stop header */}
                     <div className="bg-gray-50 px-4 py-3 sticky top-0 z-10">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md ${
@@ -804,6 +622,7 @@ export default function DriverMapPage() {
                         </div>
                         <div className="flex-1">
                           <div className="font-medium text-gray-900">{stop.name}</div>
+                          <div className="text-sm text-gray-500">{stop.time}</div>
                         </div>
                         <div className={`text-xs px-2 py-1 rounded-full font-medium ${
                           stopIndex === currentStopIndex ? 'bg-blue-100 text-blue-700' :
@@ -816,7 +635,7 @@ export default function DriverMapPage() {
                       </div>
                     </div>
                     
-                    
+                    {/* Students list */}
                     <div className="p-4 space-y-3">
                       {stop.students.map(student => (
                         <div key={student.id} className={`p-4 rounded-lg border-2 transition-all ${
@@ -832,7 +651,7 @@ export default function DriverMapPage() {
                             </div>
                             
                             <div className="flex flex-col gap-2 ml-3">
-                              
+                              {/* Status indicator */}
                               {student.status === 'picked_up' ? (
                                 <div className="text-green-600 text-sm font-medium flex items-center gap-1">
                                   <CheckCircle className="w-4 h-4" />
@@ -850,7 +669,7 @@ export default function DriverMapPage() {
                                 </div>
                               )}
                               
-                              
+                              {/* Action buttons */}
                               <div className="flex gap-1">
                                 <button
                                   onClick={() => toggleStudentStatus(stop.id, student.id)}
@@ -893,10 +712,10 @@ export default function DriverMapPage() {
                 ))}
               </div>
               
-              
+              {/* Footer panel - Summary với thống kê chi tiết */}
               <div className="bg-gray-50 p-4 border-t">
                 <div className="mb-4">
-                  <h4 className="font-semibold text-gray-800 mb-2"> Tổng kết chuyến đi</h4>
+                  <h4 className="font-semibold text-gray-800 mb-2">📊 Tổng kết chuyến đi</h4>
                   <div className="grid grid-cols-3 gap-2 text-center text-sm">
                     <div className="bg-green-100 p-3 rounded-lg">
                       <div className="font-bold text-green-700 text-lg">{getTotalPickedUp()}</div>
@@ -913,7 +732,7 @@ export default function DriverMapPage() {
                   </div>
                 </div>
 
-                
+                {/* Progress overview */}
                 <div className="mb-4">
                   <div className="flex justify-between text-sm text-gray-600 mb-1">
                     <span>Tiến độ đón học sinh</span>

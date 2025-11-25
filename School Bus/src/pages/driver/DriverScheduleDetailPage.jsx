@@ -2,8 +2,39 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { schedulesService } from "../../services/schedulesService";
 import Header from "../../components/admin/Header";
+import { FiCalendar, FiUsers, FiPhone, FiX, FiMapPin } from 'react-icons/fi';
 
-const CURRENT_DRIVER_ID = 1;
+// Lấy driver ID từ user_id qua API - hoạt động với BẤT KỲ driver nào trong database
+const getCurrentDriverId = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.id) return null;
+    
+    // Gọi API để lấy driver_id từ user_id - không giới hạn chỉ 3 drivers
+    const response = await fetch(`http://localhost:5000/api/drivers/by-user/${user.id}`, {
+      cache: 'no-cache'
+    });
+    
+    // Kiểm tra nếu response không phải JSON (có thể là HTML error page)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API trả về HTML thay vì JSON. Backend có thể đang lỗi.');
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      return data.driver_id;
+    } else {
+      console.warn('User không phải là driver hoặc driver không active:', data.message);
+      return null;
+    }
+  } catch (error) {
+    console.error('Lỗi khi gọi API lấy driver ID:', error);
+    return null; // Không còn fallback - chỉ dùng API
+  }
+};
 
 export default function DriverScheduleDetailPage() {
   const { id } = useParams();
@@ -15,6 +46,7 @@ export default function DriverScheduleDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
 
+
   useEffect(() => {
     fetchScheduleDetail();
     fetchScheduleStops();
@@ -23,31 +55,21 @@ export default function DriverScheduleDetailPage() {
   const fetchScheduleDetail = async () => {
     try {
       setLoading(true);
-      const response = await schedulesService.getScheduleById(id, CURRENT_DRIVER_ID);
-     
-      // Xử lý response - có thể là object hoặc array
-      let scheduleData = null;
-      if (Array.isArray(response) && response.length > 0) {
-        // Nếu là array, lấy phần tử đầu tiên
-        scheduleData = response[0];
-    
-      } else if (response && (response.id || response.schedule_id)) {
-        // Nếu là object với id
-        scheduleData = response;
       
+      const driverId = await getCurrentDriverId();
+      if (!driverId) {
+        setError('Không tìm thấy thông tin tài xế. Vui lòng đăng nhập lại.');
+        return;
       }
       
-      if (scheduleData) {
-        setSchedule(scheduleData);
+      const response = await schedulesService.getScheduleById(id, driverId);
+      const scheduleData = Array.isArray(response) ? response[0] : response;
       
-      } else {
-      
-        setSchedule(null);
-      }
+      setSchedule(scheduleData || null);
       setError(null);
     } catch (err) {
       setError('Lỗi khi tải chi tiết lịch làm việc: ' + err.message);
-      console.error('Error fetching schedule detail:', err);
+      setSchedule(null);
     } finally {
       setLoading(false);
     }
@@ -55,42 +77,19 @@ export default function DriverScheduleDetailPage() {
 
   const fetchScheduleStops = async () => {
     try {
-      const stopsData = await schedulesService.getScheduleStops(CURRENT_DRIVER_ID, id);
-      
-      console.log(' Stops data structure:', {
-        type: typeof stopsData,
-        isArray: Array.isArray(stopsData),
-        hasStops: stopsData?.stops ? 'yes' : 'no',
-        stopsLength: stopsData?.stops?.length || 0,
-        keys: Object.keys(stopsData || {})
-      });
-      
-      // Service đã xử lý để trả về object {scheduleId, routeId, routeName, stops}
-      if (stopsData && stopsData.stops && Array.isArray(stopsData.stops)) {
-        console.log(' Valid stops data found:', stopsData.stops.length, 'stops');
-        setStops(stopsData.stops);
-      } else {
-        console.log(' No valid stops data found in response');
+      const driverId = await getCurrentDriverId();
+      if (!driverId) {
         setStops([]);
+        return;
       }
+      
+      const stopsData = await schedulesService.getScheduleStops(driverId, id);
+      setStops(stopsData?.stops || []);
     } catch (err) {
-      console.error('Error fetching stops:', err);
       setStops([]);
     }
   };
 
-  const handleStatusUpdate = async (newStatus) => {
-    try {
-      setUpdating(true);
-      await schedulesService.updateScheduleStatus(id, newStatus);
-      await fetchScheduleDetail(); // Reload để cập nhật trạng thái mới
-    } catch (err) {
-      setError('Lỗi khi cập nhật trạng thái: ' + err.message);
-      console.error('Error updating status:', err);
-    } finally {
-      setUpdating(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -132,7 +131,7 @@ export default function DriverScheduleDetailPage() {
         <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-6xl mb-4">📅</div>
+            <div className="mb-4 flex justify-center"><FiCalendar className="w-12 h-12" aria-hidden="true" /></div>
             <p className="text-slate-500 text-lg">Không tìm thấy thông tin lịch làm việc</p>
             <button 
               onClick={() => navigate(-1)} 
@@ -160,20 +159,16 @@ export default function DriverScheduleDetailPage() {
               </h1>
               <p className="text-slate-600">
                 {schedule.route_name} • 
-                {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
-                {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
+                {schedule.scheduled_start_time?.substring(0, 5) } – 
+                {schedule.scheduled_end_time?.substring(0, 5) }
               </p>
             </div>
-            <div className="flex gap-3">
-        
-              
-              <button
-                onClick={() => navigate(-1)}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                ← Quay lại
-              </button>
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              ← Quay lại
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -197,8 +192,9 @@ export default function DriverScheduleDetailPage() {
                                            schedule.shift_type === 'evening' ? 'Tối' : 'Khác';
                       return `Ca ${shiftTypeText}`;
                     } else {
-                      // Fallback: dựa vào thời gian
+                   
                       const startHour = schedule.start_time ? parseInt(schedule.start_time.split(':')[0]) : 0;
+               
                       let shiftTypeText = '';
                       if (startHour >= 6 && startHour < 12) {
                         shiftTypeText = 'Sáng';
@@ -215,8 +211,8 @@ export default function DriverScheduleDetailPage() {
               <div className="flex items-center gap-3">
                 <span className="text-slate-600 font-medium min-w-[120px]">Thời gian:</span>
                 <span className="font-bold text-lg text-slate-900">
-                  🕐 {schedule.scheduled_start_time?.substring(0, 5) || schedule.start_time?.substring(0, 5)} – 
-                  {schedule.scheduled_end_time?.substring(0, 5) || schedule.end_time?.substring(0, 5)}
+                   {schedule.scheduled_start_time?.substring(0, 5) } – 
+                  {schedule.scheduled_end_time?.substring(0, 5)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -258,7 +254,7 @@ export default function DriverScheduleDetailPage() {
                     onClick={() => setShowStudentsModal(true)}
                     className="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
                   >
-                    👥 Xem danh sách
+                    Xem danh sách
                   </button>
                 </div>
               </div>
@@ -276,7 +272,7 @@ export default function DriverScheduleDetailPage() {
         {showStudentsModal && (
           <div 
             className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={(e) => e.target === e.currentTarget && setShowStudentsModal(false)}
+            // onClick={(e) => e.target === e.currentTarget && setShowStudentsModal(false)}
           >
             <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
               {/* Modal Header */}
@@ -284,7 +280,7 @@ export default function DriverScheduleDetailPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      👥 Danh sách học sinh
+                      <FiUsers className="w-6 h-6" aria-hidden="true" /> Danh sách học sinh
                     </h2>
                     <p className="text-green-100 mt-1">
                       Chuyến {id} - {schedule.students?.length || 0} học sinh
@@ -293,8 +289,9 @@ export default function DriverScheduleDetailPage() {
                   <button
                     onClick={() => setShowStudentsModal(false)}
                     className="p-2 hover:bg-white/20 rounded-lg transition-colors group"
+                    aria-label="Đóng"
                   >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">✕</span>
+                    <FiX className="w-5 h-5 group-hover:scale-110 transition-transform" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -353,10 +350,12 @@ export default function DriverScheduleDetailPage() {
                           </div>
                           {(student.parent_phone || student.phone) && (
                             <button 
-                              className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-lg transition-colors"
+                              className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-lg transition-colors flex items-center gap-2"
                               onClick={() => window.open(`tel:${student.parent_phone || student.phone}`)}
+                              aria-label={`Gọi ${student.parent_name || student.name}`}
                             >
-                              📞 Gọi ngay
+                              <FiPhone className="w-4 h-4" aria-hidden="true" />
+                              <span>Gọi ngay</span>
                             </button>
                           )}
                         </td>
@@ -374,8 +373,8 @@ export default function DriverScheduleDetailPage() {
         {/* Bảng điểm dừng */}
         <div className="bg-white rounded-xl shadow-lg border border-[#D8E359]/20 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-[#174D2C] flex items-center gap-2">
-              📍 Danh sách điểm dừng
+              <h2 className="text-xl font-bold text-[#174D2C] flex items-center gap-2">
+              <FiMapPin className="w-5 h-5" aria-hidden="true" /> Danh sách điểm dừng
             </h2>
             <p className="text-slate-600 mt-1">
               Tuyến {schedule.route_name} - {stops.length} điểm dừng
