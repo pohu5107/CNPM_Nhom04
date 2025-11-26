@@ -35,8 +35,7 @@ export default function StudentsPanel({
                   Học sinh - {busNumber}
                 </h3>
                 <div className="text-blue-100 text-sm mt-1">
-                  {getTotalPickedUp()}/{totalStudents} đã đón •{" "}
-                  {getRemainingStudents()} còn lại • {getTotalAbsent()} vắng
+                  {getTotalPickedUp()}/{totalStudents} đã đón
                 </div>
               </div>
               <button

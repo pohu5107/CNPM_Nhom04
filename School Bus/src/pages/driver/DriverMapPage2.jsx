@@ -15,6 +15,12 @@ import ArrivalConfirmModal from "../../components/driver/ArrivalConfirmModal.jsx
 import IncidentReportModal from "../../components/driver/IncidentReportModal.jsx";
 import EndTripModal from "../../components/driver/EndTripModal.jsx";
 import StudentsPanel from "../../components/driver/StudentsPanel.jsx";
+import { 
+  FaPlay, FaUsers, FaCheckCircle, FaExclamationTriangle, 
+  FaPhone, FaMapMarkerAlt, FaClock, FaCompass, 
+  FaTimes, FaPaperPlane, FaSignOutAlt, FaArrowLeft, 
+  FaCog, FaTimesCircle 
+} from "react-icons/fa";
 
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -225,6 +231,11 @@ export default function DriverMapPage() {
   const addAlert = (type, message) => {
     const newAlert = { id: Date.now(), type, message, time: new Date() };
     setAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
+    
+    // Auto-hide alert after 3 seconds
+    setTimeout(() => {
+      setAlerts((prev) => prev.filter((alert) => alert.id !== newAlert.id));
+    }, 3000);
   };
 
   // Update current time every second
@@ -286,7 +297,7 @@ export default function DriverMapPage() {
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Quay lại danh sách chuyến"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-700" />
+                <FaArrowLeft className="w-5 h-5 text-gray-700" />
               </button>
 
               <div className="flex items-center gap-3">
@@ -302,7 +313,7 @@ export default function DriverMapPage() {
                   <div className="text-sm text-gray-600 flex items-center gap-4">
                     <span>Mã chuyến: #{mockSchedule.id}</span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                      <FaClock className="w-3 h-3" />
                       {mockSchedule.startTime} - {mockSchedule.endTime}
                     </span>
                   </div>
@@ -317,7 +328,7 @@ export default function DriverMapPage() {
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Cài đặt / Kết thúc ca"
               >
-                <Settings className="w-5 h-5 text-gray-700" />
+                <FaCog className="w-5 h-5 text-gray-700" />
               </button>
             </div>
           </div>
@@ -340,9 +351,6 @@ export default function DriverMapPage() {
               }`}
             >
               <div className="text-sm font-medium">{alert.message}</div>
-              <div className="text-xs opacity-75">
-                {alert.time.toLocaleTimeString("vi-VN")}
-              </div>
             </div>
           ))}
         </div>
@@ -445,7 +453,7 @@ export default function DriverMapPage() {
                 {nextStop && status !== "completed" ? (
                   <>
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <FaMapMarkerAlt className="w-4 h-4 text-blue-600 flex-shrink-0" />
                       <div className="font-semibold text-gray-800">
                         Điểm tiếp theo: {nextStop.name}
                       </div>
@@ -453,20 +461,17 @@ export default function DriverMapPage() {
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <Navigation className="w-3 h-3" />
+                        <FaCompass className="w-3 h-3" />
                         <span>→ Còn lại: 1,2km</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
+                        <FaClock className="w-3 h-3" />
                         <span>Dự kiến: 5p</span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1 text-sm">
-                      <Users className="w-3 h-3 text-orange-600" />
-                      <span className="text-orange-600 font-medium">
-                        🧑‍🎓 Học sinh còn lại: {getRemainingStudents()}
-                      </span>
+                  
                     </div>
                   </>
                 ) : (
@@ -514,7 +519,7 @@ export default function DriverMapPage() {
               className="w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-green-200 pulse-animation"
               title="🚀 Bắt đầu chuyến"
             >
-              <Play className="w-7 h-7" />
+              <FaPlay className="w-7 h-7" />
             </button>
           )}
 
@@ -525,7 +530,7 @@ export default function DriverMapPage() {
               className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-blue-200 relative"
               title="🧍 Danh sách học sinh"
             >
-              <Users className="w-7 h-7" />
+              <FaUsers className="w-7 h-7" />
               {getRemainingStudents() > 0 && (
                 <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
                   {getRemainingStudents()}
@@ -550,7 +555,7 @@ export default function DriverMapPage() {
                   : "Cần đón đủ học sinh trước"
               }
             >
-              <CheckCircle className="w-7 h-7" />
+              <FaCheckCircle className="w-7 h-7" />
             </button>
           )}
 
@@ -560,7 +565,7 @@ export default function DriverMapPage() {
             className="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-red-200"
             title="⚠️ Báo cáo sự cố"
           >
-            <AlertTriangle className="w-7 h-7" />
+            <FaExclamationTriangle className="w-7 h-7" />
           </button>
 
           {/* 4️ Nút Liên hệ khẩn cấp */}
@@ -569,7 +574,7 @@ export default function DriverMapPage() {
             className="w-16 h-16 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all shadow-yellow-200"
             title="📞 Liên hệ khẩn cấp"
           >
-            <Phone className="w-7 h-7" />
+            <FaPhone className="w-7 h-7" />
           </button>
         </div>
 
@@ -579,7 +584,7 @@ export default function DriverMapPage() {
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="w-8 h-8 text-green-600" />
+                  <FaMapMarkerAlt className="w-8 h-8 text-green-600" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">
                   Xác nhận đến điểm dừng
@@ -625,7 +630,7 @@ export default function DriverMapPage() {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <FaExclamationTriangle className="w-5 h-5 text-red-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">
                     Báo cáo sự cố
@@ -635,7 +640,7 @@ export default function DriverMapPage() {
                   onClick={() => setShowIncidentModal(false)}
                   className="text-gray-500 hover:text-gray-700 p-1"
                 >
-                  <X className="w-5 h-5" />
+                  <FaTimes className="w-5 h-5" />
                 </button>
               </div>
 
@@ -690,7 +695,7 @@ export default function DriverMapPage() {
                   disabled={!incidentText.trim()}
                   className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" />
+                  <FaPaperPlane className="w-4 h-4" />
                   Gửi báo cáo
                 </button>
               </div>
@@ -704,7 +709,7 @@ export default function DriverMapPage() {
             <div className="bg-white rounded-xl p-6 max-w-md mx-4 border shadow-2xl">
               <div className="text-center">
                 <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <LogOut className="w-8 h-8 text-yellow-600" />
+                  <FaSignOutAlt className="w-8 h-8 text-yellow-600" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">
                   Kết thúc chuyến đi
@@ -754,7 +759,7 @@ export default function DriverMapPage() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-semibold text-lg flex items-center gap-2">
-                      <Users className="w-5 h-5" />
+                      <FaUsers className="w-5 h-5" />
                       Học sinh - {mockSchedule.busNumber}
                     </h3>
                     <div className="text-blue-100 text-sm mt-1">
@@ -766,7 +771,7 @@ export default function DriverMapPage() {
                     onClick={() => setShowStudentsPanel(false)}
                     className="text-white hover:bg-blue-800 p-2 rounded-lg transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <FaTimes className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -845,17 +850,17 @@ export default function DriverMapPage() {
                               {/* Status indicator */}
                               {student.status === "picked_up" ? (
                                 <div className="text-green-600 text-sm font-medium flex items-center gap-1">
-                                  <CheckCircle className="w-4 h-4" />
+                                  <FaCheckCircle className="w-4 h-4" />
                                   Đã đón
                                 </div>
                               ) : student.status === "absent" ? (
                                 <div className="text-red-600 text-sm font-medium flex items-center gap-1">
-                                  <XCircle className="w-4 h-4" />
+                                  <FaTimesCircle className="w-4 h-4" />
                                   Vắng mặt
                                 </div>
                               ) : (
                                 <div className="text-orange-600 text-sm font-medium flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
+                                  <FaClock className="w-4 h-4" />
                                   Chờ đón
                                 </div>
                               )}
@@ -873,7 +878,7 @@ export default function DriverMapPage() {
                                   }`}
                                   title="Đánh dấu đã đón"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
+                                  <FaCheckCircle className="w-4 h-4" />
                                 </button>
 
                                 <button
@@ -887,7 +892,7 @@ export default function DriverMapPage() {
                                   }`}
                                   title="Đánh dấu vắng mặt"
                                 >
-                                  <XCircle className="w-4 h-4" />
+                                  <FaTimesCircle className="w-4 h-4" />
                                 </button>
 
                                 <button
@@ -897,7 +902,7 @@ export default function DriverMapPage() {
                                   className="p-2 rounded-lg bg-gray-200 text-gray-600 hover:bg-blue-600 hover:text-white transition-colors"
                                   title={`Gọi ${student.phone}`}
                                 >
-                                  <Phone className="w-4 h-4" />
+                                  <FaPhone className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>

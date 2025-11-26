@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 14, 2025 lúc 06:14 AM
+-- Thời gian đã tạo: Th10 26, 2025 lúc 04:53 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -140,7 +140,7 @@ CREATE TABLE `drivers` (
 --
 
 INSERT INTO `drivers` (`id`, `user_id`, `name`, `phone`, `license_number`, `address`, `status`, `created_at`, `updated_at`) VALUES
-(1, 2, 'Nguyễn Văn A', '0901234567', 'A1-12345', NULL, 'active', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
+(1, 2, 'Nguyễn Văn A', '0901234567', 'A1-12345', '23 an dương vương\n', 'active', '2025-10-20 13:44:19', '2025-11-23 03:33:24'),
 (2, 3, 'Trần Thị B', '0912345678', 'A1-54321', '273 an dương vương', 'active', '2025-10-20 13:44:19', '2025-10-23 03:03:13'),
 (3, 7, 'Lê Văn C', '0923456789', 'A1-98765', '273 an dương vương ', 'active', '2025-10-20 13:44:19', '2025-10-23 02:40:09');
 
@@ -191,8 +191,7 @@ INSERT INTO `parents` (`id`, `user_id`, `name`, `phone`, `address`, `relationshi
 (10, 27, 'Đỗ Văn Phong', '0967890123', '147 Điện Biên Phủ, Q.1, TP.HCM', 'Ba'),
 (11, 26, 'Bùi Thị Linh', '0978901234', '258 Nguyễn Oanh, Q.Gò Vấp, TP.HCM', 'Mẹ'),
 (12, 25, 'Cao Minh Đức', '0989012345', '369 Võ Văn Ngân, Q.Thủ Đức, TP.HCM', 'Ba'),
-(13, 24, 'Lâm Thị Xuân', '0990123456', '741 Pasteur, Q.1, TP.HCM', 'Mẹ'),
-(131, 34, 'tespa', '0591258322', '123 Nguyễn Văn Cừ.', 'Mẹ');
+(13, 24, 'Lâm Thị Xuân', '0990123456', '741 Pasteur, Q.1, TP.HCM', 'Mẹ');
 
 -- --------------------------------------------------------
 
@@ -204,7 +203,7 @@ CREATE TABLE `routes` (
   `id` int(11) NOT NULL,
   `route_name` varchar(100) NOT NULL,
   `distance` decimal(10,2) DEFAULT NULL,
-  `status` enum('active','inactive','maintenance') DEFAULT 'active',
+  `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -240,11 +239,6 @@ CREATE TABLE `route_stops` (
 --
 
 INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `student_pickup_count`, `created_at`) VALUES
-(103, 1, 44, 0, 0, '2025-10-31 12:08:03'),
-(104, 1, 1, 1, 3, '2025-10-31 12:08:03'),
-(105, 1, 46, 2, 5, '2025-10-31 12:08:03'),
-(106, 1, 2, 3, 4, '2025-10-31 12:08:03'),
-(107, 1, 43, 99, 0, '2025-10-31 12:08:03'),
 (108, 2, 49, 0, 0, '2025-10-31 12:08:03'),
 (109, 2, 50, 1, 4, '2025-10-31 12:08:03'),
 (110, 2, 51, 2, 3, '2025-10-31 12:08:03'),
@@ -269,7 +263,11 @@ INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `student_p
 (129, 6, 55, 1, 4, '2025-10-31 12:08:03'),
 (130, 6, 56, 2, 7, '2025-10-31 12:08:03'),
 (131, 6, 57, 3, 5, '2025-10-31 12:08:03'),
-(132, 6, 43, 99, 0, '2025-10-31 12:08:03');
+(132, 6, 43, 99, 0, '2025-10-31 12:08:03'),
+(133, 1, 1, 0, 0, '2025-11-26 03:48:47'),
+(134, 1, 100, 1, 2, '2025-11-26 03:48:47'),
+(135, 1, 101, 2, 2, '2025-11-26 03:48:47'),
+(136, 1, 43, 99, 0, '2025-11-26 03:48:47');
 
 -- --------------------------------------------------------
 
@@ -304,12 +302,11 @@ INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift
 (6, 3, 6, 6, '2025-11-09', 'morning', '06:45:00', '07:45:00', 30, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-12 05:22:18'),
 (10, 3, 6, 3, '2025-11-09', 'afternoon', '17:00:00', '18:00:00', 30, 'scheduled', NULL, NULL, NULL, '2025-10-24 05:00:15', '2025-11-12 05:22:32'),
 (23, 1, 1, 5, '2025-10-23', 'afternoon', '17:30:00', '18:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:26:54', '2025-11-11 04:45:27'),
-(24, 1, 1, 1, '2025-10-23', 'morning', '06:30:00', '07:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:28:15', '2025-11-12 05:21:45'),
+(24, 1, 1, 1, '2025-10-23', 'morning', '06:00:00', '07:00:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:28:15', '2025-11-26 03:37:52'),
 (26, 2, 3, 4, '2025-11-09', 'afternoon', '17:30:00', '18:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-07 10:42:35', '2025-11-12 05:21:33'),
-(28, 1, 2, 6, '2025-11-09', 'morning', '06:20:00', '07:10:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-08 16:02:52', '2025-11-09 05:47:39'),
-(31, 1, 2, 3, '2025-11-09', 'afternoon', '17:30:00', '18:55:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 05:23:17', '2025-11-12 05:10:14'),
-(34, 1, 1, 1, '2025-11-10', 'morning', '06:30:00', '07:30:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 16:04:16', '2025-11-11 04:45:07'),
-(35, 1, 2, 5, '2025-11-10', 'afternoon', '17:00:00', '17:40:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-10 14:47:18', '2025-11-10 14:47:18');
+(34, 1, 1, 1, '2025-11-10', 'morning', '06:00:00', '07:00:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-09 16:04:16', '2025-11-26 03:37:24'),
+(35, 1, 2, 5, '2025-11-10', 'afternoon', '17:00:00', '17:40:00', 30, 'scheduled', NULL, NULL, NULL, '2025-11-10 14:47:18', '2025-11-10 14:47:18'),
+(43, 1, 1, 1, '2025-12-01', 'morning', '06:00:00', '07:00:00', 30, 'scheduled', NULL, NULL, 'lên lịch', '2025-11-26 03:36:54', '2025-11-26 03:36:54');
 
 -- --------------------------------------------------------
 
@@ -331,10 +328,10 @@ CREATE TABLE `stops` (
 --
 
 INSERT INTO `stops` (`id`, `name`, `address`, `latitude`, `longitude`, `status`) VALUES
-(1, 'Nhà Văn hóa Thanh Niên', '4 Phạm Ngọc Thạch, P. Bến Nghé, Q.1', 10.78310000, 106.69970000, 'active'),
+(1, 'Nhà Văn hóa Thanh Niên', '4 Phạm Ngọc Thạch, P. Bến Nghé, Q.1', 10.75875000, 106.68095000, 'active'),
 (2, 'Ngã tư Hàng Xanh', 'Giao lộ Xô Viết Nghệ Tĩnh & Điện Biên Phủ, P.21, Q. Bình Thạnh', 10.79610000, 106.70370000, 'active'),
 (3, 'Gigamall Thủ Đức', '240 Phạm Văn Đồng, P. Hiệp Bình Chánh, Thủ Đức', 10.83290000, 106.72030000, 'active'),
-(43, 'Truong THCS Nguyen Du', '123 Duong Giao Duc, Q.1, TP.HCM', 10.77690000, 106.70090000, 'active'),
+(43, 'Truong THCS Nguyen Du', '123 Duong Giao Duc, Q.1, TP.HCM', 10.75450000, 106.68150000, 'active'),
 (44, 'Cong vien 23/9', '2 Pham Ngoc Thach, Q.1, TP.HCM', 10.78300000, 106.69970000, 'active'),
 (45, 'Nha Van Hoa Thanh Nien', '4 Pham Ngoc Thach, P. Ben Nghe, Q.1', 10.78310000, 106.69970000, 'active'),
 (46, 'Nga Sau Phu Dong', '240 Pham Van Dong, P. Hiep Binh Chanh, Thu Duc', 10.83290000, 106.72030000, 'active'),
@@ -348,7 +345,9 @@ INSERT INTO `stops` (`id`, `name`, `address`, `latitude`, `longitude`, `status`)
 (54, 'Chung cu Sunview Town', '321 Vo Van Ngan, Thu Duc, TP.HCM', 10.85160000, 106.77180000, 'active'),
 (55, 'Vincom Thu Duc', '216 Vo Van Ngan, Thu Duc, TP.HCM', 10.85000000, 106.77000000, 'active'),
 (56, 'Xa Lo Ha Noi - Nga 4 Binh Thai', '1040 Xa Lo Ha Noi, Thu Duc, TP.HCM', 10.86000000, 106.78000000, 'active'),
-(57, 'Cau Sai Gon', 'Cau Sai Gon, TP.HCM', 10.82000000, 106.74000000, 'active');
+(57, 'Cau Sai Gon', 'Cau Sai Gon, TP.HCM', 10.82000000, 106.74000000, 'active'),
+(100, 'Nguyễn Văn Cừ', 'Đường Nguyễn Văn Cừ, Q.1, TP.HCM', 10.76055000, 106.68340000, 'active'),
+(101, 'Nguyễn Biểu', 'Đường Nguyễn Biểu, Q.1, TP.HCM', 10.75790000, 106.68310000, 'active');
 
 -- --------------------------------------------------------
 
@@ -379,18 +378,16 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`id`, `name`, `grade`, `class_id`, `class`, `address`, `phone`, `parent_id`, `morning_route_id`, `afternoon_route_id`, `morning_pickup_stop_id`, `afternoon_dropoff_stop_id`, `pickup_time`, `dropoff_time`, `status`) VALUES
-(4, 'Nguyễn Minh Khang', '6', 1, '6A1', '123 Nguyễn Thái Học, Q.1, TP.HCM', '0901234567', 4, 1, 5, 1, 2, NULL, NULL, 'active'),
+(4, 'Nguyễn Minh Khang', '6', 1, '6A1', '123 Nguyễn Thái Học, Q.1, TP.HCM', '0901234567', 4, 6, 3, 55, 56, NULL, NULL, 'active'),
 (5, 'Trần Thùy Linh', '6', 2, '6A2', '456 Lê Văn Sỹ, Q.3, TP.HCM', '0912345678', 5, 2, 4, 50, 52, NULL, NULL, 'active'),
 (6, 'Lê Tuấn Anh', '7', 6, '7A1', '789 Võ Văn Tần, Q.Gò Vấp, TP.HCM', '0923456789', 6, 6, 3, 57, 57, NULL, NULL, 'active'),
 (7, 'Phạm Hoài An', '7', 7, '7A2', '321 Phan Văn Trị, Q.Gò Vấp, TP.HCM', '0934567890', 7, 6, 3, 56, 56, NULL, NULL, 'active'),
-(8, 'Hoàng Nam Phong', '8', 10, '8A1', '654 Kha Vạn Cân, Q.Thủ Đức, TP.HCM', '0945678901', 8, 1, 5, 46, 2, NULL, NULL, 'active'),
+(8, 'Hoàng Nam Phong', '8', 10, '8A1', '654 Kha Vạn Cân, Q.Thủ Đức, TP.HCM', '0945678901', 8, 2, 4, 51, 52, NULL, NULL, 'active'),
 (9, 'Võ Mai Phương', '6', 3, '6A3', '987 Lê Văn Việt, Q.Thủ Đức, TP.HCM', '0956789012', 9, 2, 4, 51, 53, NULL, NULL, 'active'),
-(10, 'Đỗ Phong Vũ', '7', 8, '7B1', '147 Điện Biên Phủ, Q.1, TP.HCM', '0967890123', 10, 6, 3, 56, 57, NULL, NULL, 'active'),
-(11, 'Bùi Linh Chi', '6', 4, '6B1', '258 Nguyễn Oanh, Q.Gò Vấp, TP.HCM', '0978901234', 11, 1, 5, 2, 48, NULL, NULL, 'active'),
-(12, 'Cao Đức Minh', '7', 9, '7B2', '369 Võ Văn Ngân, Q.Thủ Đức, TP.HCM', '0989012345', 12, 2, 4, 52, 53, NULL, NULL, 'active'),
-(13, 'Lâm Xuân Mai', '6', 5, '6B2', '741 Pasteur, Q.1, TP.HCM', '0990123456', 13, 6, 3, 55, 56, NULL, NULL, 'active'),
-(131, 'teststudent', '6', 4, '6B1', 'ko có\n', '0389142313', 6, 6, 3, 57, 55, NULL, NULL, 'active'),
-(132, 'Kim Vinh Trương 2', '6', 4, '6B1', '123 duong a', '9502834923', 131, 2, 4, 51, 53, NULL, NULL, 'active');
+(10, 'Đỗ Phong Vũ', '7', 8, '7B1', '147 Điện Biên Phủ, Q.1, TP.HCM', '0967890123', 10, 1, 5, 101, 2, NULL, NULL, 'active'),
+(11, 'Bùi Linh Chi', '6', 4, '6B1', '258 Nguyễn Oanh, Q.Gò Vấp, TP.HCM', '0978901234', 11, 1, 5, 101, 48, NULL, NULL, 'active'),
+(12, 'Cao Đức Minh', '7', 9, '7B2', '369 Võ Văn Ngân, Q.Thủ Đức, TP.HCM', '0989012345', 12, 1, 5, 100, 2, NULL, NULL, 'active'),
+(13, 'Lâm Xuân Mai', '7', 6, '7A1', '741 Pasteur, Q.1, TP.HCM', '0990123456', 13, 1, 5, 100, 2, NULL, NULL, 'active');
 
 -- --------------------------------------------------------
 
@@ -413,24 +410,20 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`, `updated_at`) VALUES
-(1, 'admin', 'admin@school.com', '$2b$10$hashed_password_admin', 'admin', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(2, 'driver1', 'driver1@school.com', '$2b$10$hashed_password_driver1', 'driver', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(3, 'driver2', 'driver2@school.com', '$2b$10$hashed_password_driver2', 'driver', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(4, 'parent1', 'parent1@gmail.com', '$2b$10$hashed_password_parent1', 'parent', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(5, 'parent2', 'parent2@gmail.com', '$2b$10$hashed_password_parent2', 'parent', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(6, 'parent3', 'parent3@gmail.com', '$2b$10$hashed_password_parent3', 'parent', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(7, 'driver3', 'driver3@school.com', '$2b$10$hashed_password_driver3', 'driver', '2025-10-20 13:44:19', '2025-10-20 13:44:19'),
-(24, 'pa1', 'pa1@gmail.com', '$2a$10$dxwXV7sVD3VClgXz0N/h5u9zdbzcMLAyGAXS99QY9dgGUVEGyQHi.', 'parent', '2025-11-12 04:54:45', '2025-11-12 04:54:45'),
-(25, 'pa2', 'pa2@gmail.com', '$2a$10$QVDnwDN7SR5QkwpYoE5TbOkXt3G2EUTRfdQ2eq5kD2/hkMUl4.Y8.', 'parent', '2025-11-12 04:55:01', '2025-11-12 04:55:01'),
-(26, 'pa3', 'pa3@gmail.com', '$2a$10$v0i83IqYscGyoM6NpvLOXe0nU/f9DdC4ftGt1L5X6/tcz3B.PGiBq', 'parent', '2025-11-12 05:03:23', '2025-11-12 05:03:23'),
-(27, 'pa4', 'pa4@gmail.com', '$2a$10$v5aqe.g0HL.HlJbDHui4IesMVqee/KR2egNNa8k1pPGKL7pPvW4oK', 'parent', '2025-11-12 05:03:42', '2025-11-12 05:03:42'),
-(28, 'pa5', 'pa5@gmail.com', '$2a$10$2/77GNnApY3e.P2faL5X1.vjvXNDKkB/dq8LHQt2wCOZsRM.0AkIK', 'parent', '2025-11-12 05:04:00', '2025-11-12 05:04:00'),
-(29, 'pa6', 'pa6@gmail.com', '$2a$10$0lKbgkqAUWz/xHwub4jzy.Dy7jTHyXmt9tr4hgexIKh3Ur3nGlRPC', 'parent', '2025-11-12 05:04:14', '2025-11-12 05:04:14'),
-(30, 'pa10', 'pa10@gmail.com', '$2a$10$t5vqDiR3IFTqM.35dJZUeuPmfNhqAIYso3mcuJwWC3Xc6aocGXG72', 'parent', '2025-11-12 05:04:40', '2025-11-12 05:04:40'),
-(31, 'pa9', 'pa9@gmail.com', '$2a$10$lJGetOoQLnf2M42m8alZmOLPwO0MaTfolFo/ZUDCiQUYB66ewO6p6', 'parent', '2025-11-12 05:04:55', '2025-11-12 05:04:55'),
-(32, 'pa7', 'pa7@gmail.com', '$2a$10$vyUtHsmkpZBHqby/mxc3JuLUxqjpTRGR7BCpELYE2mngdBGZQsMY2', 'parent', '2025-11-12 05:05:08', '2025-11-12 05:05:08'),
-(33, 'pa8', 'pa8@gmail.com', '$2a$10$3aGDHD2Ry4.nbeHXe1nP1e3jWD6P8Xhy8FC.FgaP6ddGikpEiN8hC', 'parent', '2025-11-12 05:05:21', '2025-11-12 05:05:21'),
-(34, 'testerpa', 'tespa@gmail.com', '$2a$10$NoIAibKEFHTM0dbEBrGgc.f02PhrZBuGKIK1e8HoG7DFmkYkk29Si', 'parent', '2025-11-12 05:29:01', '2025-11-12 05:29:01');
+(1, 'admin', 'admin@school.com', 'admin123', 'admin', '2025-10-20 13:44:19', '2025-11-24 05:28:15'),
+(2, 'driver1', 'driver1@school.com', 'driver123', 'driver', '2025-10-20 13:44:19', '2025-11-24 11:42:11'),
+(3, 'driver2', 'driver2@school.com', 'driver123', 'driver', '2025-10-20 13:44:19', '2025-11-24 11:42:11'),
+(7, 'driver3', 'driver3@school.com', 'driver123', 'driver', '2025-10-20 13:44:19', '2025-11-24 11:42:11'),
+(24, 'pa1', 'pa1@gmail.com', 'parent123', 'parent', '2025-11-12 04:54:45', '2025-11-24 05:28:16'),
+(25, 'pa2', 'pa2@gmail.com', 'parent123', 'parent', '2025-11-12 04:55:01', '2025-11-24 05:28:16'),
+(26, 'pa3', 'pa3@gmail.com', 'parent123', 'parent', '2025-11-12 05:03:23', '2025-11-24 05:28:16'),
+(27, 'pa4', 'pa4@gmail.com', 'parent123', 'parent', '2025-11-12 05:03:42', '2025-11-24 05:28:16'),
+(28, 'pa5', 'pa5@gmail.com', 'parent123', 'parent', '2025-11-12 05:04:00', '2025-11-24 05:28:16'),
+(29, 'pa6', 'pa6@gmail.com', 'parent123', 'parent', '2025-11-12 05:04:14', '2025-11-24 05:28:16'),
+(30, 'pa10', 'pa10@gmail.com', 'parent123', 'parent', '2025-11-12 05:04:40', '2025-11-24 05:28:16'),
+(31, 'pa9', 'pa9@gmail.com', 'parent123', 'parent', '2025-11-12 05:04:55', '2025-11-24 05:28:16'),
+(32, 'pa7', 'pa7@gmail.com', 'parent123', 'parent', '2025-11-12 05:05:08', '2025-11-24 05:28:16'),
+(33, 'pa8', 'pa8@gmail.com', 'parent123', 'parent', '2025-11-12 05:05:21', '2025-11-24 12:41:52');
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -577,7 +570,7 @@ ALTER TABLE `classes`
 -- AUTO_INCREMENT cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT cho bảng `notifications`
@@ -589,7 +582,7 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=132;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
@@ -601,31 +594,31 @@ ALTER TABLE `routes`
 -- AUTO_INCREMENT cho bảng `route_stops`
 --
 ALTER TABLE `route_stops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
 
 --
 -- AUTO_INCREMENT cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT cho bảng `stops`
 --
 ALTER TABLE `stops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=138;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

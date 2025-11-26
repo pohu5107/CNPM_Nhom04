@@ -17,9 +17,6 @@ export default function AlertsContainer({ alerts }) {
           }`}
         >
           <div className="text-sm font-medium">{alert.message}</div>
-          <div className="text-xs opacity-75">
-            {alert.time.toLocaleTimeString("vi-VN")}
-          </div>
         </div>
       ))}
     </div>

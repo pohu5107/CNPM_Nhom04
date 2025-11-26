@@ -45,11 +45,19 @@ export default function DriverScheduleDetailPage() {
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [currentDriverName, setCurrentDriverName] = useState("Tài xế");
 
 
   useEffect(() => {
     fetchScheduleDetail();
     fetchScheduleStops();
+    // Load current logged-in user's display name (simple, from localStorage)
+    try {
+      const user = JSON.parse(localStorage.getItem('user')) || null;
+      if (user) setCurrentDriverName(user.username || user.name || 'Tài xế');
+    } catch (_) {
+      // ignore
+    }
   }, [id]);
 
   const fetchScheduleDetail = async () => {
@@ -94,7 +102,7 @@ export default function DriverScheduleDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30">
-        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
+        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name={schedule?.driver_name || currentDriverName} />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#D8E359] border-t-[#174D2C] mx-auto mb-4"></div>
@@ -108,7 +116,7 @@ export default function DriverScheduleDetailPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30">
-        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
+        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name={schedule?.driver_name || currentDriverName} />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center text-red-600">
             <div className="text-6xl mb-4"></div>
@@ -128,7 +136,7 @@ export default function DriverScheduleDetailPage() {
   if (!schedule) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/30">
-        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
+        <Header title="CHI TIẾT LỊCH LÀM VIỆC" name={schedule?.driver_name || currentDriverName} />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="mb-4 flex justify-center"><FiCalendar className="w-12 h-12" aria-hidden="true" /></div>
@@ -147,7 +155,7 @@ export default function DriverScheduleDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-green-50/30">
-      <Header title="CHI TIẾT LỊCH LÀM VIỆC" name="Tài xế" />
+      <Header title="CHI TIẾT LỊCH LÀM VIỆC" name={schedule?.driver_name || currentDriverName} />
       
       <div className="flex-1 overflow-y-auto w-full px-6 py-4">
         {/* Thông tin chuyến - Card chính */}

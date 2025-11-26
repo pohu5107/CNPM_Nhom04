@@ -15,6 +15,12 @@ import IncidentReportModal from "../../components/driver/IncidentReportModal.jsx
 import EndTripModal from "../../components/driver/EndTripModal.jsx";
 import StudentsPanel from "../../components/driver/StudentsPanel.jsx";
 import { studentsService } from "../../services/studentsService.js";
+import { 
+  FaPlay, FaUsers, FaCheckCircle, FaExclamationTriangle, 
+  FaPhone, FaMapMarkerAlt, FaClock, FaCompass, 
+  FaTimes, FaPaperPlane, FaSignOutAlt, FaArrowLeft, 
+  FaCog, FaTimesCircle 
+} from "react-icons/fa";
 
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -43,14 +49,15 @@ export default function DriverMapPage() {
   const [clock, setClock] = useState(new Date());
   const [resumeFn, setResumeFn] = useState(null);
   const [pausedWpIdx, setPausedWpIdx] = useState(null);
+  const [busCurrentPosition, setBusCurrentPosition] = useState(null);
 
   // Mock schedule & stops; only students fetched from API
   const mockSchedule = {
     id: scheduleId || 1,
     routeName: "Tuyến Quận 1 - Sáng",
     busNumber: "BUS-04",
-    startTime: "06:30",
-    endTime: "07:30",
+    startTime: "06:00",
+    endTime: "07:0",
     totalStudents: 0,
   };
 
@@ -59,7 +66,7 @@ export default function DriverMapPage() {
       {
         id: 1,
         name: "Nhà Văn hóa Thanh Niên",
-        time: "06:30",
+        time: "06:00",
         lat: 10.75875,
         lng: 106.68095,
         students: [],
@@ -68,7 +75,7 @@ export default function DriverMapPage() {
       {
         id: 2,
         name: "Nguyễn Văn Cừ",
-        time: "06:40",
+        time: "06:20",
         lat: 10.76055,
         lng: 106.6834,
         students: [],
@@ -76,7 +83,7 @@ export default function DriverMapPage() {
       {
         id: 3,
         name: "Nguyễn Biểu",
-        time: "06:50",
+        time: "06:40",
         lat: 10.7579,
         lng: 106.6831,
         students: [],
@@ -99,8 +106,50 @@ export default function DriverMapPage() {
 
   const currentStop = stops[stopIdx];
   const nextStop = stops[stopIdx + 1];
-  const remainingDistance = "1.2 km";
-  const estimatedTime = nextStop ? nextStop.time : schedule.endTime;
+  
+  // Tính toán khoảng cách động và thời gian dự kiến
+  const calculateRemainingDistance = () => {
+    if (!nextStop || status === "completed") return "0 km";
+    
+    // Sử dụng vị trí bus hiện tại nếu có, nếu không thì dùng điểm dừng hiện tại
+    const fromLat = busCurrentPosition?.lat || currentStop?.lat || stops[0]?.lat;
+    const fromLng = busCurrentPosition?.lng || currentStop?.lng || stops[0]?.lng;
+    const toLat = nextStop.lat;
+    const toLng = nextStop.lng;
+    
+    if (!fromLat || !fromLng || !toLat || !toLng) return "1.2 km"; // fallback
+    
+    // Công thức Haversine để tính khoảng cách thực tế
+    const R = 6371; // Bán kính Trái Đất (km)
+    const dLat = (toLat - fromLat) * Math.PI / 180;
+    const dLng = (toLng - fromLng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(fromLat * Math.PI / 180) * Math.cos(toLat * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    
+    return distance < 0.1 ? "< 0.1 km" : `${distance.toFixed(1)} km`;
+  };
+
+  const calculateEstimatedTime = () => {
+    if (!nextStop || status === "completed") return schedule.endTime;
+    
+    // Luôn trả về thời gian theo lịch trình để demo nhất quán (6h-7h)
+    return nextStop.time;
+  };
+
+  const remainingDistance = calculateRemainingDistance();
+  const estimatedTime = nextStop ? calculateEstimatedTime() : schedule.endTime;
+  
+  // Hiển thị thông tin trạng thái chi tiết
+  const getDetailedStatus = () => {
+    if (status === "not_started") return "Chưa khởi hành";
+    if (status === "completed") return "Đã hoàn thành";
+    if (pausedWpIdx !== null) return `Đang dừng tại ${stops[pausedWpIdx]?.name}`;
+    return "Đang di chuyển";
+  };
   useEffect(() => {
     const loadStudent = async () => {
 
@@ -121,10 +170,14 @@ export default function DriverMapPage() {
           students: student 
         };
       });
+      
+      // Tính tổng số học sinh thực tế được gán cho các điểm dừng
+      const totalAssignedStudents = newStops.reduce((total, stop) => total + stop.students.length, 0);
+      
       setStops(newStops); 
       setSchedule(prev => ({ 
           ...prev, 
-          totalStudents: list.length 
+          totalStudents: totalAssignedStudents 
       }));
     };
     loadStudent();
@@ -144,13 +197,13 @@ export default function DriverMapPage() {
 
   const confirmArrival = () => {
     if (!pickedAllAt(stopIdx)) {
-      pushNotice("error", "⚠️ Chưa đón đủ học sinh tại điểm này");
+      pushNotice("error", " Chưa đón đủ học sinh tại điểm này");
       return;
     }
 
     if (resumeFn) resumeFn();
 
-    pushNotice("success", `✅ Đã đón xong tại ${currentStop.name}`);
+    pushNotice("success", ` Đã đón xong tại ${currentStop.name}`);
 
     if (stopIdx === stops.length - 1) {
       pushNotice("success", "🏁 Đã hoàn thành tuyến đường");
@@ -165,7 +218,7 @@ export default function DriverMapPage() {
 
   const submitIncident = () => {
     if (incidentMsg.trim()) {
-      pushNotice("error", `🚨 Đã gửi báo cáo sự cố: ${incidentMsg}`);
+      pushNotice("error", ` Đã gửi báo cáo sự cố: ${incidentMsg}`);
       setIncidentMsg("");
       setShowIncident(false);
     }
@@ -174,7 +227,7 @@ export default function DriverMapPage() {
   const confirmEndTrip = () => {
     setStatus("completed");
     setTracking(false);
-    pushNotice("success", "🏁 Đã kết thúc chuyến đi");
+    pushNotice("success", " Đã kết thúc chuyến đi");
     setShowEndTrip(false);
     setTimeout(() => navigate("/driver/schedule"), 2000);
   };
@@ -189,7 +242,7 @@ export default function DriverMapPage() {
             if (stu.id !== studentId) return stu;
             if (stu.status === "picked_up") return stu; // không revert
             const updated = { ...stu, status: "picked_up" };
-            pushNotice("success", `✅ Đã đón ${updated.name}`);
+            pushNotice("success", ` Đã đón ${updated.name}`);
             return updated;
           }),
         };
@@ -209,7 +262,7 @@ export default function DriverMapPage() {
                   student.status === "absent" ? "waiting" : "absent";
                 pushNotice(
                   "warning",
-                  `${newStatus === "absent" ? "❌ Vắng mặt" : "⏳ Có mặt"} ${
+                  `${newStatus === "absent" ? " Vắng mặt" : " Có mặt"} ${
                     student.name
                   }`
                 );
@@ -227,6 +280,11 @@ export default function DriverMapPage() {
   const pushNotice = (type, message) => {
     const item = { id: Date.now(), type, message, time: new Date() };
     setNotices((prev) => [item, ...prev.slice(0, 4)]);
+    
+    // Tự động ẩn thông báo sau 3 giây
+    setTimeout(() => {
+      setNotices((prev) => prev.filter(notice => notice.id !== item.id));
+    }, 3000);
   };
 
   const totalPicked = () => {
@@ -311,6 +369,9 @@ export default function DriverMapPage() {
                 waypoints={routeWaypoints}
                 speedMetersPerSec={50}
                 loop={false}
+                onPositionUpdate={(position) => {
+                  setBusCurrentPosition(position); // Cập nhật vị trí bus để tính khoảng cách chính xác
+                }}
                 onReachStop={(wpIdx, resumeFn) => {
                   setStopIdx(wpIdx); // Cập nhật trạng thái hiện tại ngay khi đến
                   setPausedWpIdx(wpIdx);
@@ -337,17 +398,68 @@ export default function DriverMapPage() {
         />
 
         {/* Floating Action Buttons */}
-        <FloatingActionButtons
-          tripStatus={status}
-          pausedWaypointIdx={pausedWpIdx}
-          allStudentsPickedUp={pickedAllAt(stopIdx)}
-          getRemainingStudents={remainingStudents}
-          onStartTrip={startTrip}
-          onOpenStudents={() => setShowStudents(true)}
-          onConfirmArrival={() => setShowArrival(true)}
-          onReportIncident={() => setShowIncident(true)}
-          onEmergencyCall={() => window.open("tel:1900-1234")}
-        />
+        <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-50">
+          {/* Start Trip Button */}
+          {status === "not_started" && (
+            <button
+              onClick={startTrip}
+              className="w-16 h-16 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all"
+              title="Bắt đầu chuyến"
+            >
+              <FaPlay className="w-7 h-7" />
+            </button>
+          )}
+          
+          {/* Students Button */}
+          {status !== "not_started" && (
+            <button
+              onClick={() => setShowStudents(true)}
+              className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all relative"
+              title="Danh sách học sinh"
+            >
+              <FaUsers className="w-7 h-7" />
+              {remainingStudents() > 0 && (
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  {remainingStudents()}
+                </div>
+              )}
+            </button>
+          )}
+          
+          {/* Confirm Arrival Button */}
+          {status !== "not_started" && pausedWpIdx !== null && (
+            <button
+              onClick={() => setShowArrival(true)}
+              disabled={!pickedAllAt(stopIdx)}
+              className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all transform hover:scale-105 ${
+                pickedAllAt(stopIdx)
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+              }`}
+              title={pickedAllAt(stopIdx) ? "Đã đón xong - tiếp tục" : "Cần đón đủ học sinh trước"}
+            >
+              <FaCheckCircle className="w-7 h-7" />
+            </button>
+          )}
+          
+          {/* Incident Report Button */}
+          <button
+            onClick={() => setShowIncident(true)}
+            className="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all"
+            title="Báo cáo sự cố"
+          >
+            <FaExclamationTriangle className="w-7 h-7" />
+          </button>
+          
+          {/* Emergency Call Button */}
+          <button
+            onClick={() => window.open("tel:1900-1234")}
+            className="w-16 h-16 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full shadow-xl flex items-center justify-center transform hover:scale-105 transition-all"
+            title="Liên hệ khẩn cấp"
+          >
+            <FaPhone className="w-7 h-7" />
+          </button>
+        </div>
 
         {/* Modals */}
         <ArrivalConfirmModal

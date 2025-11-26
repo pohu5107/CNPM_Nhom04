@@ -14,6 +14,7 @@ export default function BusRoutePause({
   waypoints = [],
   speedMetersPerSec = 18,
   onReachStop = () => {},
+  onPositionUpdate = () => {}, // Callback để báo cáo vị trí hiện tại
   loop = false,
 }) {
   const map = useMap();
@@ -57,26 +58,45 @@ export default function BusRoutePause({
       padding: [40, 40],
     });
 
-    // Set timeout for OSRM routing (3 seconds)
+    // Set timeout for OSRM routing (8 seconds - longer timeout for better success)
     const routingTimeout = setTimeout(() => {
       console.warn("[BusRoutePause] OSRM timeout, using fallback");
       drawFallback();
-    }, 3000);
+    }, 8000);
 
-    routingControlRef.current = L.Routing.control({
-      waypoints: latLngWaypoints,
-      router: L.Routing.osrmv1({
-        serviceUrl: "https://router.project-osrm.org/route/v1",
-      }),
-      addWaypoints: false,
-      draggableWaypoints: false,
-      show: false,
-      fitSelectedRoutes: false,
-      lineOptions: { styles: [{ color: "#2563eb", weight: 5, opacity: 0.9 }] },
-      createMarker: () => null,
-      routeWhileDragging: false,
-      autoRoute: true,
-    }).addTo(map);
+    // Try direct OSRM API call for better reliability
+    const fetchDirectOSRM = async () => {
+      try {
+        const coords = latLngWaypoints.map(wp => `${wp.lng},${wp.lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        
+        console.log('[BusRoutePause] Direct OSRM call:', url);
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.routes && data.routes[0]) {
+          const route = data.routes[0];
+          const coords = route.geometry.coordinates.map(c => L.latLng(c[1], c[0]));
+          console.log('[BusRoutePause] Got', coords.length, 'route coordinates');
+          handleDirectRoute(coords);
+          return true;
+        }
+      } catch (error) {
+        console.warn('[BusRoutePause] Direct OSRM failed:', error);
+      }
+      return false;
+    };
+
+    // Start direct OSRM fetch
+    fetchDirectOSRM().then(success => {
+      clearTimeout(routingTimeout);
+      if (!success) {
+        console.warn('[BusRoutePause] Using fallback after direct OSRM failed');
+        drawFallback();
+      }
+    });
 
     let fallbackUsed = false;
 
@@ -99,8 +119,17 @@ export default function BusRoutePause({
         const duration = (distance / speedMetersPerSec) * 1000;
         simpleSegments.push({ from, to, duration });
       }
-      // Bus marker already exists, just ensure it's at start position
-      if (markerRef.current) {
+      // Ensure bus marker exists and is at start position
+      if (!markerRef.current) {
+        console.log("[BusRoutePause] Creating fallback marker");
+        markerRef.current = L.marker(latLngWaypoints[0], {
+          icon: L.divIcon({
+            html: "<div style='font-size:30px'>🚌</div>",
+            iconSize: [24, 24],
+            className: "bus-pause-icon",
+          }),
+        }).addTo(map);
+      } else {
         markerRef.current.setLatLng(latLngWaypoints[0]);
       }
       // Pause at each intermediate waypoint (excluding start)
@@ -117,32 +146,40 @@ export default function BusRoutePause({
       animRef.current = requestAnimationFrame(step);
     };
 
-    const handleRoutesFound = (e) => {
-      clearTimeout(routingTimeout);
-      if (fallbackUsed) return; // Don't override fallback if already started
-
-      console.log("[BusRoutePause] routesfound waypoints:", waypoints);
-      const route = e.routes[0];
-      const coords = route.coordinates.map((c) => L.latLng(c.lat, c.lng));
-      console.log("[BusRoutePause] total coords:", coords.length);
+    const handleDirectRoute = (coords) => {
+      if (fallbackUsed) return;
+      
+      console.log("[BusRoutePause] Processing direct route with", coords.length, "coords");
+      
       // Replace baseline with actual route polyline
-      if (routePolylineRef.current) routePolylineRef.current.remove();
-      routePolylineRef.current = L.polyline(coords, {
-        color: "#2563eb",
-        weight: 5,
-      }).addTo(map);
-      map.fitBounds(routePolylineRef.current.getBounds(), {
-        padding: [40, 40],
-      });
       if (baselinePolylineRef.current) {
         try {
           baselinePolylineRef.current.remove();
         } catch (_) {}
         baselinePolylineRef.current = null;
       }
+      
+      if (routePolylineRef.current) routePolylineRef.current.remove();
+      routePolylineRef.current = L.polyline(coords, {
+        color: "#2563eb",
+        weight: 5,
+        opacity: 0.9
+      }).addTo(map);
+      
+      map.fitBounds(routePolylineRef.current.getBounds(), {
+        padding: [40, 40],
+      });
 
-      // Bus marker already created, just update position
-      if (markerRef.current) {
+      // Ensure bus marker exists and update position
+      if (!markerRef.current) {
+        markerRef.current = L.marker(coords[0], {
+          icon: L.divIcon({
+            html: "<div style='font-size:30px'>🚌</div>",
+            iconSize: [24, 24],
+            className: "bus-pause-icon",
+          }),
+        }).addTo(map);
+      } else {
         markerRef.current.setLatLng(coords[0]);
       }
 
@@ -156,10 +193,9 @@ export default function BusRoutePause({
         segments.push({ from, to, duration });
       }
 
-      // Determine coordinate indices closest to original waypoints (excluding first) for pauses
+      // Determine coordinate indices closest to original waypoints for pauses
       const pauseIndices = [];
       for (let i = 1; i < latLngWaypoints.length; i++) {
-        // pause at each intermediate including final arrival
         const wp = latLngWaypoints[i];
         let closestIdx = 0,
           min = Infinity;
@@ -184,13 +220,6 @@ export default function BusRoutePause({
       };
       animRef.current = requestAnimationFrame(step);
     };
-
-    routingControlRef.current.on("routesfound", handleRoutesFound);
-    routingControlRef.current.on("routingerror", (err) => {
-      clearTimeout(routingTimeout);
-      console.error("[BusRoutePause] routingerror:", err);
-      drawFallback();
-    });
 
     const step = (now) => {
       const st = stateRef.current;
@@ -231,7 +260,26 @@ export default function BusRoutePause({
       const t = elapsed / seg.duration;
       const lat = seg.from.lat + (seg.to.lat - seg.from.lat) * t;
       const lng = seg.from.lng + (seg.to.lng - seg.from.lng) * t;
-      markerRef.current.setLatLng([lat, lng]);
+      
+      // Báo cáo vị trí hiện tại cho parent component
+      onPositionUpdate({ lat, lng });
+      
+      // Defensive check to prevent null reference error
+      if (markerRef.current && markerRef.current.setLatLng) {
+        markerRef.current.setLatLng([lat, lng]);
+      } else {
+        console.warn("[BusRoutePause] Marker lost, recreating...");
+        if (map) {
+          markerRef.current = L.marker([lat, lng], {
+            icon: L.divIcon({
+              html: "<div style='font-size:30px'>🚌</div>",
+              iconSize: [24, 24],
+              className: "bus-pause-icon",
+            }),
+          }).addTo(map);
+        }
+      }
+      
       animRef.current = requestAnimationFrame(step);
     };
 

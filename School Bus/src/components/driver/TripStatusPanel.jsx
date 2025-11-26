@@ -70,12 +70,7 @@ export default function TripStatusPanel({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-sm">
-                  <Users className="w-3 h-3 text-orange-600" />
-                  <span className="text-orange-600 font-medium">
-                    🧑‍🎓 Học sinh còn lại: {getRemainingStudents()}
-                  </span>
-                </div>
+
               </>
             ) : (
               <div className="text-center py-2">
