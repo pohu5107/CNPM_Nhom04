@@ -2,6 +2,9 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import RoutingMachine from '../../components/map/RoutingMachine'; // Import component mới tạo
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Simple MapPin SVG Icon component
 const MapPin = ({ className }) => (
@@ -13,8 +16,6 @@ const MapPin = ({ className }) => (
 
 // --- ICONS ---
 // Fix for default marker icon
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadow, iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -28,6 +29,14 @@ const busLocationIcon = new L.Icon({
 const schoolIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/2602/2602414.png', // School icon
   iconSize: [35, 35],
+  iconAnchor: [17, 45],
+  popupAnchor: [0, -35],
+});
+
+const pickupIcon = new L.Icon({
+  // Hình cột biển báo xe buýt
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+  iconSize: [35, 35],
   iconAnchor: [17, 35],
   popupAnchor: [0, -35],
 });
@@ -35,16 +44,16 @@ const schoolIcon = new L.Icon({
 /// --- PLACEHOLDER DATA ---
 
 const tripStatusData = {
-  status: 'ontime',   /// To test, change status to 'ontime' or 'late'
-  nextStop: 'Nhà Văn hóa Thanh Niên',
+  status: 'on',  
+  nextStop: 'Nguyễn Văn Cừ',
   eta: '20 phút',
-  incident: 'Kẹt xe nghiêm trọng tại khu vực trung tâm.',
-  passedStops: ['Công viên 23/9', 'Trường THCS Nguyễn Du'],
+  incident: '',
+  passedStops: [ 'Nhà Văn hóa Thanh Niên'],
 };
 
 const studentInfo = {
-  name: 'Trần Dũng Minh',
-  class: '6A1',
+  name: 'Lâm Xuân Mai',
+  class: '7A1',
 };
 
 const busInfo = {
@@ -53,10 +62,12 @@ const busInfo = {
   driverName: 'Nguyễn Văn A',
   driverPhone: '0901234567',
 };
+ 
 
-const busLocation = [10.787, 106.705];
-const schoolLocation = [10.790, 106.715];
-const mapCenter = [10.787, 106.710];
+const busLocation = [10.7880, 106.6992];   // startpoint
+const schoolLocation = [10.7998, 106.7116];  // endpoint
+const pickupLocation = [10.7862, 106.7012];  // pickup
+const mapCenter = [10.787, 106.711];
 const defaultZoom = 14;
 const recenterZoom = 18;
 
@@ -66,7 +77,7 @@ const TripStatusCard = ({ statusInfo }) => {
   const isLate = (statusInfo.status || '').toLowerCase() === 'late';
   const cardStyle = isLate ? 'bg-red-100 border-l-4 border-red-500 text-red-800' : 'bg-blue-100 border-l-4 border-blue-500 text-blue-800';
   const eta = isLate ? statusInfo.eta : '5 phút';
-  const etaNumber = eta.split(' ')[0]; // Extract number from ETA string
+  const etaNumber = eta.split(' ')[0]; 
 
   return (
   <div className={`p-6 rounded-lg shadow-md ${cardStyle}`}>
@@ -106,12 +117,28 @@ const TripStatusCard = ({ statusInfo }) => {
   );
 };
 
-function RecenterButton() {
+function BusLocationButton() {
   const map = useMap();
   const handleClick = () => map.flyTo(busLocation, recenterZoom);
   return (
-    <button onClick={handleClick} className="absolute bottom-5 right-5 z-[1000] w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Tìm vị trí xe buýt">
-      <MapPin className="w-6 h-6" />
+    <button onClick={handleClick} 
+    className="absolute bottom-5 right-5 z-[1000] w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Tìm vị trí xe buýt">
+      <MapPin className="w-8 h-8 object-contain" />
+    </button>
+  );
+}
+
+function FindPickupButton({ pickupLocation }) {
+  const map = useMap();
+  const handleClick = () => map.flyTo(pickupLocation, recenterZoom); 
+  return (
+    <button 
+      onClick={handleClick} 
+      className="absolute bottom-20 right-5 z-[1000] w-12 h-12 bg-orange-100 rounded-full shadow-lg transition-colors duration-200 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 flex items-center justify-center" 
+      title="Xem điểm đón" >
+      <img src={pickupIcon.options.iconUrl} alt="Pickup Icon" 
+        className="w-8 h-8 object-contain" 
+      />
     </button>
   );
 }
@@ -139,9 +166,15 @@ const ParentPage = () => {
           <div className="w-full h-[600px] relative rounded-lg overflow-hidden border">
             <MapContainer center={mapCenter} zoom={defaultZoom} style={{ height: '100%', width: '100%' }}>
               <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+              {/* Gọi RoutingMachine ở đây */}
+              <RoutingMachine start={busLocation} end={schoolLocation} /> 
+
               <Marker position={busLocation} icon={busLocationIcon}><Popup>Vị trí hiện tại của xe buýt.</Popup></Marker>
               <Marker position={schoolLocation} icon={schoolIcon}><Popup>Trường học.</Popup></Marker>
-              <RecenterButton />
+              <Marker position={pickupLocation} icon={pickupIcon}><Popup>điểm đón/trả </Popup></Marker>
+              <FindPickupButton pickupLocation={pickupLocation} />             
+              <BusLocationButton />
             </MapContainer>
           </div>
         </div>

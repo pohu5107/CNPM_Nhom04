@@ -2,6 +2,8 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css"; // CSS cho đường đi thực tế
+import BusRouteAnimationV2 from "../../components/map/BusRouteAnimationV2.jsx";
 
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -12,8 +14,22 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+
 export default function MapPage() {
-  const center = [10.776, 106.700]; // HCM
+  // Tọa độ Đại học Sài Gòn (273 An Dương Vương, Quận 5, TP.HCM) gần chính xác
+  const campus = [10.75875, 106.68095];
+  const center = campus;
+
+
+  const stops = [
+    { id: 1, name: "Nhà Văn hóa Thanh Niên", lat: 10.75875, lng: 106.68095 },
+    { id: 2, name: "Nguyễn Văn Cừ", lat: 10.76055, lng: 106.6834 },
+    { id: 3, name: "Nguyễn Biểu", lat: 10.7579, lng: 106.6831 },
+    { id: 4, name: "Trường THCS Nguyễn Du", lat: 10.7545, lng: 106.6815 },
+  ];
+
+
+  const routeWaypoints = [campus, ...stops.map((s) => [s.lat, s.lng]), campus];
 
   return (
     <div
@@ -33,8 +49,8 @@ export default function MapPage() {
         }}
       >
         <MapContainer
-          center={center}
-          zoom={13}
+          center={routeWaypoints.length ? routeWaypoints[0] : center}
+          zoom={16}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom
         >
@@ -43,9 +59,33 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <Marker position={center}>
-            <Popup>Vị trí trung tâm — TP.HCM</Popup>
+        
+          <Marker position={stops && stops.length ? [stops[0].lat, stops[0].lng] : campus}>
+            <Popup>
+              <strong>{stops && stops.length ? stops[0].name : "Đại học Sài Gòn"}</strong>
+              <br /> {stops && stops.length ? "" : "273 An Dương Vương, Quận 5"}
+            </Popup>
           </Marker>
+
+
+          {stops.map((s) => (
+            <Marker key={s.id} position={[s.lat, s.lng]}>
+              <Popup>
+                <strong>{s.name}</strong>
+                <br /> Lat: {s.lat.toFixed(5)}
+                <br /> Lng: {s.lng.toFixed(5)}
+              </Popup>
+            </Marker>
+          ))}
+
+
+          <BusRouteAnimationV2
+            waypoints={routeWaypoints}
+            stopDurationMs={2500}
+            // Dùng tốc độ tương tự ở trang driver để giao diện đồng nhất
+            speedMetersPerSec={50}
+            loop={false}
+          />
         </MapContainer>
       </div>
     </div>
