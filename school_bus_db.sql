@@ -3,24 +3,19 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 27, 2025 lúc 04:25 AM
+-- Thời gian đã tạo: Th10 27, 2025 lúc 12:13 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-
 START TRANSACTION;
-
 SET time_zone = "+00:00";
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */
-;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */
-;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */
-;
-/*!40101 SET NAMES utf8mb4 */
-;
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Cơ sở dữ liệu: `school_bus_db`
@@ -33,71 +28,39 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `buses` (
-    `id` int(11) NOT NULL,
-    `bus_number` varchar(20) NOT NULL,
-    `license_plate` varchar(20) NOT NULL,
-    `capacity` int(11) DEFAULT 25 COMMENT 'Sức chứa tối đa của xe',
-    `status` enum(
-        'active',
-        'maintenance',
-        'inactive'
-    ) DEFAULT 'active',
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `bus_number` varchar(20) NOT NULL,
+  `license_plate` varchar(20) NOT NULL,
+  `capacity` int(11) DEFAULT 25 COMMENT 'Sức chứa tối đa của xe',
+  `status` enum('active','maintenance','inactive') DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `buses`
 --
 
-INSERT INTO
-    `buses` (
-        `id`,
-        `bus_number`,
-        `license_plate`,
-        `capacity`,
-        `status`,
-        `created_at`
-    )
-VALUES (
-        1,
-        'BUS-04',
-        '51K-123.45',
-        20,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        2,
-        'BUS-02',
-        '51K-678.90',
-        20,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        3,
-        'BUS-03',
-        '51K-111.22',
-        15,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        6,
-        'BUS-05',
-        '51K-123.94',
-        25,
-        'active',
-        '2025-11-10 15:15:58'
-    );
+INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `capacity`, `status`, `created_at`) VALUES
+(1, 'BUS-04', '51K-123.45', 20, 'active', '2025-10-20 13:44:19'),
+(2, 'BUS-02', '51K-678.90', 20, 'active', '2025-10-20 13:44:19'),
+(3, 'BUS-03', '51K-111.22', 15, 'active', '2025-10-20 13:44:19'),
+(6, 'BUS-05', '51K-123.94', 25, 'active', '2025-11-10 15:15:58');
 
 -- --------------------------------------------------------
 
 --
 -- Cấu trúc bảng cho bảng `classes`
+--
+
+CREATE TABLE `classes` (
+  `id` int(11) NOT NULL,
+  `class_name` varchar(20) NOT NULL,
+  `grade` varchar(20) NOT NULL,
+  `academic_year` varchar(20) DEFAULT '2024-2025',
+  `max_students` int(11) DEFAULT 40,
+  `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
- ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
->>>>>>> kimvinh
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `classes`
@@ -125,16 +88,16 @@ INSERT INTO `classes` (`id`, `class_name`, `grade`, `academic_year`, `max_studen
 --
 
 CREATE TABLE `drivers` (
-    `id` int(11) NOT NULL,
-    `user_id` int(11) DEFAULT NULL,
-    `name` varchar(100) NOT NULL,
-    `phone` varchar(20) DEFAULT NULL,
-    `license_number` varchar(50) DEFAULT NULL,
-    `address` text DEFAULT NULL,
-    `status` enum('active', 'inactive') DEFAULT 'active',
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `name` varchar(100) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `license_number` varchar(50) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `drivers`
@@ -152,13 +115,13 @@ INSERT INTO `drivers` (`id`, `user_id`, `name`, `phone`, `license_number`, `addr
 --
 
 CREATE TABLE `parents` (
-    `id` int(11) NOT NULL,
-    `user_id` int(11) DEFAULT NULL,
-    `name` varchar(100) NOT NULL,
-    `phone` varchar(20) DEFAULT NULL,
-    `address` text DEFAULT NULL,
-    `relationship` varchar(50) DEFAULT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `name` varchar(100) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `relationship` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `parents`
@@ -183,71 +146,24 @@ INSERT INTO `parents` (`id`, `user_id`, `name`, `phone`, `address`, `relationshi
 --
 
 CREATE TABLE `routes` (
-    `id` int(11) NOT NULL,
-    `route_name` varchar(100) NOT NULL,
-    `distance` decimal(10, 2) DEFAULT NULL,
-    `status` enum(
-        'active',
-        'inactive',
-        'maintenance'
-    ) DEFAULT 'active',
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `route_name` varchar(100) NOT NULL,
+  `distance` decimal(10,2) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `routes`
 --
 
-INSERT INTO
-    `routes` (
-        `id`,
-        `route_name`,
-        `distance`,
-        `status`,
-        `created_at`
-    )
-VALUES (
-        1,
-        'Tuyến Quận 1 - Sáng',
-        15.50,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        2,
-        'Tuyến Gò Vấp - Sáng',
-        22.00,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        3,
-        'Tuyến Thủ Đức - Chiều',
-        18.20,
-        'active',
-        '2025-10-20 13:44:19'
-    ),
-    (
-        4,
-        'Tuyến Gò Vấp - Chiều',
-        22.00,
-        'active',
-        '2025-10-24 11:28:48'
-    ),
-    (
-        5,
-        'Tuyến Quận 1 - Chiều',
-        15.50,
-        'active',
-        '2025-10-24 12:19:25'
-    ),
-    (
-        6,
-        'Tuyến Thủ Đức - Sáng',
-        18.20,
-        'active',
-        '2025-10-24 12:19:25'
-    );
+INSERT INTO `routes` (`id`, `route_name`, `distance`, `status`, `created_at`) VALUES
+(1, 'Tuyến Quận 1 - Sáng', 15.50, 'active', '2025-10-20 13:44:19'),
+(2, 'Tuyến Gò Vấp - Sáng', 22.00, 'active', '2025-10-20 13:44:19'),
+(3, 'Tuyến Thủ Đức - Chiều', 18.20, 'active', '2025-10-20 13:44:19'),
+(4, 'Tuyến Gò Vấp - Chiều', 22.00, 'active', '2025-10-24 11:28:48'),
+(5, 'Tuyến Quận 1 - Chiều', 15.50, 'active', '2025-10-24 12:19:25'),
+(6, 'Tuyến Thủ Đức - Sáng', 18.20, 'active', '2025-10-24 12:19:25');
 
 -- --------------------------------------------------------
 
@@ -256,13 +172,13 @@ VALUES (
 --
 
 CREATE TABLE `route_stops` (
-    `id` int(11) NOT NULL,
-    `route_id` int(11) NOT NULL,
-    `stop_id` int(11) NOT NULL,
-    `stop_order` int(11) NOT NULL,
-    `student_pickup_count` int(11) DEFAULT 0,
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+  `id` int(11) NOT NULL,
+  `route_id` int(11) NOT NULL,
+  `stop_id` int(11) NOT NULL,
+  `stop_order` int(11) NOT NULL,
+  `student_pickup_count` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `route_stops`
@@ -306,31 +222,22 @@ INSERT INTO `route_stops` (`id`, `route_id`, `stop_id`, `stop_order`, `student_p
 --
 
 CREATE TABLE `schedules` (
-    `id` int(11) NOT NULL,
-    `driver_id` int(11) NOT NULL,
-    `bus_id` int(11) NOT NULL,
-    `route_id` int(11) NOT NULL,
-    `date` date NOT NULL,
-    `shift_type` enum(
-        'morning',
-        'afternoon',
-        'evening'
-    ) NOT NULL,
-    `scheduled_start_time` time NOT NULL COMMENT 'Thời gian dự kiến bắt đầu chuyến (theo lịch)',
-    `scheduled_end_time` time NOT NULL COMMENT 'Thời gian dự kiến kết thúc chuyến (theo lịch)',
-    `student_count` int(11) DEFAULT 0,
-    `status` enum(
-        'scheduled',
-        'in_progress',
-        'completed',
-        'cancelled'
-    ) DEFAULT 'scheduled',
-    `actual_start_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút bắt đầu chuyến',
-    `actual_end_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút kết thúc chuyến',
-    `notes` text DEFAULT NULL,
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `driver_id` int(11) NOT NULL,
+  `bus_id` int(11) NOT NULL,
+  `route_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `shift_type` enum('morning','afternoon','evening') NOT NULL,
+  `scheduled_start_time` time NOT NULL COMMENT 'Thời gian dự kiến bắt đầu chuyến (theo lịch)',
+  `scheduled_end_time` time NOT NULL COMMENT 'Thời gian dự kiến kết thúc chuyến (theo lịch)',
+  `student_count` int(11) DEFAULT 0,
+  `status` enum('scheduled','in_progress','completed','cancelled') DEFAULT 'scheduled',
+  `actual_start_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút bắt đầu chuyến',
+  `actual_end_time` datetime DEFAULT NULL COMMENT 'Thời gian thực tế tài xế bấm nút kết thúc chuyến',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `schedules`
@@ -354,13 +261,13 @@ INSERT INTO `schedules` (`id`, `driver_id`, `bus_id`, `route_id`, `date`, `shift
 --
 
 CREATE TABLE `stops` (
-    `id` int(11) NOT NULL,
-    `name` varchar(255) NOT NULL,
-    `address` text DEFAULT NULL,
-    `latitude` decimal(10, 8) NOT NULL,
-    `longitude` decimal(11, 8) NOT NULL,
-    `status` enum('active', 'inactive') DEFAULT 'active'
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `address` text DEFAULT NULL,
+  `latitude` decimal(10,8) NOT NULL,
+  `longitude` decimal(11,8) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `stops`
@@ -395,22 +302,22 @@ INSERT INTO `stops` (`id`, `name`, `address`, `latitude`, `longitude`, `status`)
 --
 
 CREATE TABLE `students` (
-    `id` int(11) NOT NULL,
-    `name` varchar(100) NOT NULL,
-    `grade` varchar(20) DEFAULT NULL,
-    `class_id` int(11) DEFAULT NULL,
-    `class` varchar(20) DEFAULT NULL,
-    `address` text DEFAULT NULL,
-    `phone` varchar(20) DEFAULT NULL,
-    `parent_id` int(11) DEFAULT NULL,
-    `morning_route_id` int(11) DEFAULT NULL COMMENT 'ID tuyến xe đón buổi sáng',
-    `afternoon_route_id` int(11) DEFAULT NULL COMMENT 'ID tuyến xe trả buổi chiều',
-    `morning_pickup_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng đón học sinh (tham chiếu stops.id)',
-    `afternoon_dropoff_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng trả học sinh (tham chiếu stops.id)',
-    `pickup_time` time DEFAULT NULL,
-    `dropoff_time` time DEFAULT NULL,
-    `status` enum('active', 'inactive') DEFAULT 'active'
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `grade` varchar(20) DEFAULT NULL,
+  `class_id` int(11) DEFAULT NULL,
+  `class` varchar(20) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  `morning_route_id` int(11) DEFAULT NULL COMMENT 'ID tuyến xe đón buổi sáng',
+  `afternoon_route_id` int(11) DEFAULT NULL COMMENT 'ID tuyến xe trả buổi chiều',
+  `morning_pickup_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng đón học sinh (tham chiếu stops.id)',
+  `afternoon_dropoff_stop_id` int(11) DEFAULT NULL COMMENT 'ID của điểm dừng trả học sinh (tham chiếu stops.id)',
+  `pickup_time` time DEFAULT NULL,
+  `dropoff_time` time DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `students`
@@ -435,14 +342,14 @@ INSERT INTO `students` (`id`, `name`, `grade`, `class_id`, `class`, `address`, `
 --
 
 CREATE TABLE `users` (
-    `id` int(11) NOT NULL,
-    `username` varchar(50) NOT NULL,
-    `email` varchar(100) NOT NULL,
-    `password` varchar(255) NOT NULL,
-    `role` enum('admin', 'driver', 'parent') DEFAULT 'parent',
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+  `id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('admin','driver','parent') DEFAULT 'parent',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `users`
@@ -472,89 +379,83 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`
 -- Chỉ mục cho bảng `buses`
 --
 ALTER TABLE `buses`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `bus_number` (`bus_number`),
-ADD UNIQUE KEY `license_plate` (`license_plate`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `bus_number` (`bus_number`),
+  ADD UNIQUE KEY `license_plate` (`license_plate`);
 
 --
 -- Chỉ mục cho bảng `classes`
 --
 ALTER TABLE `classes`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `unique_class_year` (`class_name`, `academic_year`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_class_year` (`class_name`,`academic_year`);
 
 --
 -- Chỉ mục cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `license_number` (`license_number`),
-ADD KEY `user_id` (`user_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `license_number` (`license_number`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Chỉ mục cho bảng `parents`
 --
 ALTER TABLE `parents`
-ADD PRIMARY KEY (`id`),
-ADD KEY `user_id` (`user_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Chỉ mục cho bảng `routes`
 --
-ALTER TABLE `routes` ADD PRIMARY KEY (`id`);
+ALTER TABLE `routes`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Chỉ mục cho bảng `route_stops`
 --
 ALTER TABLE `route_stops`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `unique_route_stop_order` (`route_id`, `stop_order`),
-ADD KEY `idx_route_id` (`route_id`),
-ADD KEY `idx_stop_id` (`stop_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_route_stop_order` (`route_id`,`stop_order`),
+  ADD KEY `idx_route_id` (`route_id`),
+  ADD KEY `idx_stop_id` (`stop_id`);
 
 --
 -- Chỉ mục cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `unique_driver_date_shift` (
-    `driver_id`,
-    `date`,
-    `shift_type`
-),
-ADD UNIQUE KEY `schedules_bus_date_shift` (
-    `bus_id`,
-    `date`,
-    `shift_type`
-),
-ADD KEY `bus_id` (`bus_id`),
-ADD KEY `route_id` (`route_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_driver_date_shift` (`driver_id`,`date`,`shift_type`),
+  ADD UNIQUE KEY `schedules_bus_date_shift` (`bus_id`,`date`,`shift_type`),
+  ADD KEY `bus_id` (`bus_id`),
+  ADD KEY `route_id` (`route_id`);
 
 --
 -- Chỉ mục cho bảng `stops`
 --
-ALTER TABLE `stops` ADD PRIMARY KEY (`id`);
+ALTER TABLE `stops`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Chỉ mục cho bảng `students`
 --
 ALTER TABLE `students`
-ADD PRIMARY KEY (`id`),
-ADD KEY `parent_id` (`parent_id`),
-ADD KEY `class_id` (`class_id`),
-ADD KEY `idx_class_id` (`class_id`),
-ADD KEY `fk_morning_pickup_stop` (`morning_pickup_stop_id`),
-ADD KEY `fk_afternoon_dropoff_stop` (`afternoon_dropoff_stop_id`),
-ADD KEY `fk_morning_route` (`morning_route_id`),
-ADD KEY `fk_afternoon_route` (`afternoon_route_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `parent_id` (`parent_id`),
+  ADD KEY `class_id` (`class_id`),
+  ADD KEY `idx_class_id` (`class_id`),
+  ADD KEY `fk_morning_pickup_stop` (`morning_pickup_stop_id`),
+  ADD KEY `fk_afternoon_dropoff_stop` (`afternoon_dropoff_stop_id`),
+  ADD KEY `fk_morning_route` (`morning_route_id`),
+  ADD KEY `fk_afternoon_route` (`afternoon_route_id`);
 
 --
 -- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
-ADD PRIMARY KEY (`id`),
-ADD UNIQUE KEY `username` (`username`),
-ADD UNIQUE KEY `email` (`email`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT cho các bảng đã đổ
@@ -564,15 +465,13 @@ ADD UNIQUE KEY `email` (`email`);
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,
-AUTO_INCREMENT = 7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `classes`
 --
 ALTER TABLE `classes`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,
-AUTO_INCREMENT = 14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT cho bảng `drivers`
@@ -584,14 +483,13 @@ ALTER TABLE `drivers`
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=135;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=136;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
 --
 ALTER TABLE `routes`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,
-AUTO_INCREMENT = 8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `route_stops`
@@ -621,7 +519,7 @@ ALTER TABLE `students`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- Các ràng buộc cho các bảng đã đổ
@@ -631,45 +529,41 @@ ALTER TABLE `users`
 -- Các ràng buộc cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-ADD CONSTRAINT `drivers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `drivers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `parents`
 --
 ALTER TABLE `parents`
-ADD CONSTRAINT `parents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `parents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `route_stops`
 --
 ALTER TABLE `route_stops`
-ADD CONSTRAINT `route_stops_ibfk_1` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE CASCADE,
-ADD CONSTRAINT `route_stops_ibfk_2` FOREIGN KEY (`stop_id`) REFERENCES `stops` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `route_stops_ibfk_1` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `route_stops_ibfk_2` FOREIGN KEY (`stop_id`) REFERENCES `stops` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `schedules`
 --
 ALTER TABLE `schedules`
-ADD CONSTRAINT `schedules_ibfk_1` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
-ADD CONSTRAINT `schedules_ibfk_2` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE,
-ADD CONSTRAINT `schedules_ibfk_3` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `schedules_ibfk_1` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `schedules_ibfk_2` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `schedules_ibfk_3` FOREIGN KEY (`route_id`) REFERENCES `routes` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `students`
 --
 ALTER TABLE `students`
-ADD CONSTRAINT `fk_afternoon_dropoff_stop` FOREIGN KEY (`afternoon_dropoff_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-ADD CONSTRAINT `fk_afternoon_route` FOREIGN KEY (`afternoon_route_id`) REFERENCES `routes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-ADD CONSTRAINT `fk_morning_pickup_stop` FOREIGN KEY (`morning_pickup_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-ADD CONSTRAINT `fk_morning_route` FOREIGN KEY (`morning_route_id`) REFERENCES `routes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parents` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-ADD CONSTRAINT `students_ibfk_4` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
+  ADD CONSTRAINT `fk_afternoon_dropoff_stop` FOREIGN KEY (`afternoon_dropoff_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_afternoon_route` FOREIGN KEY (`afternoon_route_id`) REFERENCES `routes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_morning_pickup_stop` FOREIGN KEY (`morning_pickup_stop_id`) REFERENCES `stops` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_morning_route` FOREIGN KEY (`morning_route_id`) REFERENCES `routes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parents` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `students_ibfk_4` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */
-;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */
-;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */
-;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
