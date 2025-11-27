@@ -44,16 +44,16 @@ const pickupIcon = new L.Icon({
 /// --- PLACEHOLDER DATA ---
 
 const tripStatusData = {
-  status: 'late',  
-  nextStop: 'Trường THCS Nguyễn Du',
+  status: 'on',  
+  nextStop: 'Nguyễn Văn Cừ',
   eta: '20 phút',
-  incident: 'Kẹt xe nghiêm trọng tại khu vực trung tâm.',
-  passedStops: ['Công viên 23/9', 'Nhà Văn hóa Thanh Niên'],
+  incident: '',
+  passedStops: [ 'Nhà Văn hóa Thanh Niên'],
 };
 
 const studentInfo = {
-  name: 'Trần Dũng Minh',
-  class: '6A1',
+  name: 'Lâm Xuân Mai',
+  class: '7A1',
 };
 
 const busInfo = {
