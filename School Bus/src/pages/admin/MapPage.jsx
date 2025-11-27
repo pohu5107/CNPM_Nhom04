@@ -14,19 +14,22 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+
 export default function MapPage() {
   // Tọa độ Đại học Sài Gòn (273 An Dương Vương, Quận 5, TP.HCM) gần chính xác
   const campus = [10.75875, 106.68095];
   const center = campus;
 
-  // Demo tuyến đường quanh trường với 2 điểm dừng (không phải đường chim bay)
-  // Waypoints: Campus -> Stop 1 -> Stop 2
-  const routeWaypoints = [
-    campus,
-    [10.76055, 106.6834], // Điểm dừng 1 (gần vòng quanh An Dương Vương / Nguyễn Văn Cừ)
-    [10.7579, 106.6831], // Điểm dừng 2 (phía Đông Bắc trường, gần Trần Phú)
-    campus, // Quay lại điểm bắt đầu
+
+  const stops = [
+    { id: 1, name: "Nhà Văn hóa Thanh Niên", lat: 10.75875, lng: 106.68095 },
+    { id: 2, name: "Nguyễn Văn Cừ", lat: 10.76055, lng: 106.6834 },
+    { id: 3, name: "Nguyễn Biểu", lat: 10.7579, lng: 106.6831 },
+    { id: 4, name: "Trường THCS Nguyễn Du", lat: 10.7545, lng: 106.6815 },
   ];
+
+
+  const routeWaypoints = [campus, ...stops.map((s) => [s.lat, s.lng]), campus];
 
   return (
     <div
@@ -46,7 +49,7 @@ export default function MapPage() {
         }}
       >
         <MapContainer
-          center={center}
+          center={routeWaypoints.length ? routeWaypoints[0] : center}
           zoom={16}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom
@@ -56,33 +59,32 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Marker Campus */}
-          <Marker position={campus}>
+        
+          <Marker position={stops && stops.length ? [stops[0].lat, stops[0].lng] : campus}>
             <Popup>
-              <strong>Đại học Sài Gòn</strong>
-              <br /> 273 An Dương Vương, Quận 5
+              <strong>{stops && stops.length ? stops[0].name : "Đại học Sài Gòn"}</strong>
+              <br /> {stops && stops.length ? "" : "273 An Dương Vương, Quận 5"}
             </Popup>
           </Marker>
 
-          {/* Hai điểm dừng demo */}
-          {routeWaypoints.slice(1).map((p, i) => (
-            <Marker key={i} position={p}>
+
+          {stops.map((s) => (
+            <Marker key={s.id} position={[s.lat, s.lng]}>
               <Popup>
-                <strong>Điểm dừng {i + 1}</strong>
-                <br />
-                Lat: {p[0].toFixed(5)}
-                <br />
-                Lng: {p[1].toFixed(5)}
+                <strong>{s.name}</strong>
+                <br /> Lat: {s.lat.toFixed(5)}
+                <br /> Lng: {s.lng.toFixed(5)}
               </Popup>
             </Marker>
           ))}
 
-          {/* Xe buýt chạy theo đường thực giữa các waypoint */}
+
           <BusRouteAnimationV2
             waypoints={routeWaypoints}
             stopDurationMs={2500}
-            speedMetersPerSec={18}
-            loop={true}
+            // Dùng tốc độ tương tự ở trang driver để giao diện đồng nhất
+            speedMetersPerSec={50}
+            loop={false}
           />
         </MapContainer>
       </div>
