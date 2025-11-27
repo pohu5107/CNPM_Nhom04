@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 26, 2025 lúc 04:53 AM
+-- Thời gian đã tạo: Th10 27, 2025 lúc 04:25 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -20,24 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Cơ sở dữ liệu: `school_bus_db`
 --
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `attendance`
---
-
-CREATE TABLE `attendance` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) DEFAULT NULL,
-  `bus_id` int(11) DEFAULT NULL,
-  `date` date NOT NULL,
-  `pickup_time` time DEFAULT NULL,
-  `dropoff_time` time DEFAULT NULL,
-  `status` enum('present','absent','late') DEFAULT 'present',
-  `notes` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -67,23 +49,6 @@ INSERT INTO `buses` (`id`, `bus_number`, `license_plate`, `capacity`, `status`, 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `bus_locations`
---
-
-CREATE TABLE `bus_locations` (
-  `id` bigint(20) NOT NULL,
-  `schedule_id` int(11) NOT NULL COMMENT 'Chuyến đi (lịch trình) mà vị trí này thuộc về',
-  `bus_id` int(11) NOT NULL COMMENT 'Xe buýt đang gửi vị trí',
-  `driver_id` int(11) NOT NULL COMMENT 'Tài xế đang lái chuyến này',
-  `latitude` decimal(10,8) NOT NULL COMMENT 'Kinh độ',
-  `longitude` decimal(11,8) NOT NULL COMMENT 'Vĩ độ',
-  `speed` decimal(5,2) DEFAULT 0.00 COMMENT 'Tốc độ (km/h)',
-  `timestamp` datetime NOT NULL COMMENT 'Thời điểm chính xác của tọa độ'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ tọa độ GPS real-time của xe buýt';
-
--- --------------------------------------------------------
-
---
 -- Cấu trúc bảng cho bảng `classes`
 --
 
@@ -92,7 +57,6 @@ CREATE TABLE `classes` (
   `class_name` varchar(20) NOT NULL,
   `grade` varchar(20) NOT NULL,
   `academic_year` varchar(20) DEFAULT '2024-2025',
-  `homeroom_teacher` varchar(100) DEFAULT NULL,
   `max_students` int(11) DEFAULT 40,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -102,20 +66,20 @@ CREATE TABLE `classes` (
 -- Đang đổ dữ liệu cho bảng `classes`
 --
 
-INSERT INTO `classes` (`id`, `class_name`, `grade`, `academic_year`, `homeroom_teacher`, `max_students`, `status`, `created_at`) VALUES
-(1, '6A1', '6', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(2, '6A2', '6', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(3, '6A3', '6', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(4, '6B1', '6', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(5, '6B2', '6', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(6, '7A1', '7', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(7, '7A2', '7', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(8, '7B1', '7', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(9, '7B2', '7', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(10, '8A1', '8', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(11, '8A2', '8', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(12, '9A1', '9', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59'),
-(13, '9A2', '9', '2024-2025', NULL, 40, 'active', '2025-10-21 15:55:59');
+INSERT INTO `classes` (`id`, `class_name`, `grade`, `academic_year`, `max_students`, `status`, `created_at`) VALUES
+(1, '6A1', '6', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(2, '6A2', '6', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(3, '6A3', '6', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(4, '6B1', '6', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(5, '6B2', '6', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(6, '7A1', '7', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(7, '7A2', '7', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(8, '7B1', '7', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(9, '7B2', '7', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(10, '8A1', '8', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(11, '8A2', '8', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(12, '9A1', '9', '2024-2025', 40, 'active', '2025-10-21 15:55:59'),
+(13, '9A2', '9', '2024-2025', 40, 'active', '2025-10-21 15:55:59');
 
 -- --------------------------------------------------------
 
@@ -143,24 +107,6 @@ INSERT INTO `drivers` (`id`, `user_id`, `name`, `phone`, `license_number`, `addr
 (1, 2, 'Nguyễn Văn A', '0901234567', 'A1-12345', '23 an dương vương\n', 'active', '2025-10-20 13:44:19', '2025-11-23 03:33:24'),
 (2, 3, 'Trần Thị B', '0912345678', 'A1-54321', '273 an dương vương', 'active', '2025-10-20 13:44:19', '2025-10-23 03:03:13'),
 (3, 7, 'Lê Văn C', '0923456789', 'A1-98765', '273 an dương vương ', 'active', '2025-10-20 13:44:19', '2025-10-23 02:40:09');
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `notifications`
---
-
-CREATE TABLE `notifications` (
-  `id` int(11) NOT NULL,
-  `sender_user_id` int(11) DEFAULT NULL COMMENT 'ID người gửi (từ users.id). NULL = Hệ thống tự gửi',
-  `recipient_user_id` int(11) NOT NULL COMMENT 'ID người nhận (từ users.id)',
-  `schedule_id` int(11) DEFAULT NULL COMMENT 'Liên kết tới lịch trình (nếu có)',
-  `title` varchar(255) NOT NULL,
-  `message_content` text NOT NULL,
-  `type` enum('delay','approaching','incident','general','system') NOT NULL DEFAULT 'general',
-  `status` enum('sent','read') NOT NULL DEFAULT 'sent',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Lưu trữ tin nhắn và cảnh báo';
 
 -- --------------------------------------------------------
 
@@ -430,30 +376,12 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`
 --
 
 --
--- Chỉ mục cho bảng `attendance`
---
-ALTER TABLE `attendance`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_student_date` (`student_id`,`date`),
-  ADD KEY `bus_id` (`bus_id`);
-
---
 -- Chỉ mục cho bảng `buses`
 --
 ALTER TABLE `buses`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `bus_number` (`bus_number`),
   ADD UNIQUE KEY `license_plate` (`license_plate`);
-
---
--- Chỉ mục cho bảng `bus_locations`
---
-ALTER TABLE `bus_locations`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_schedule_id` (`schedule_id`),
-  ADD KEY `idx_bus_id` (`bus_id`),
-  ADD KEY `idx_timestamp` (`timestamp`),
-  ADD KEY `fk_location_driver` (`driver_id`);
 
 --
 -- Chỉ mục cho bảng `classes`
@@ -469,15 +397,6 @@ ALTER TABLE `drivers`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `license_number` (`license_number`),
   ADD KEY `user_id` (`user_id`);
-
---
--- Chỉ mục cho bảng `notifications`
---
-ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_recipient_user_id` (`recipient_user_id`),
-  ADD KEY `idx_schedule_id` (`schedule_id`),
-  ADD KEY `fk_notification_sender` (`sender_user_id`);
 
 --
 -- Chỉ mục cho bảng `parents`
@@ -543,22 +462,10 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT cho bảng `attendance`
---
-ALTER TABLE `attendance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
 -- AUTO_INCREMENT cho bảng `buses`
 --
 ALTER TABLE `buses`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT cho bảng `bus_locations`
---
-ALTER TABLE `bus_locations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `classes`
@@ -570,19 +477,13 @@ ALTER TABLE `classes`
 -- AUTO_INCREMENT cho bảng `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
-
---
--- AUTO_INCREMENT cho bảng `notifications`
---
-ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=135;
 
 --
 -- AUTO_INCREMENT cho bảng `routes`
@@ -612,46 +513,23 @@ ALTER TABLE `stops`
 -- AUTO_INCREMENT cho bảng `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=138;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=139;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- Các ràng buộc cho các bảng đã đổ
 --
 
 --
--- Các ràng buộc cho bảng `attendance`
---
-ALTER TABLE `attendance`
-  ADD CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `attendance_ibfk_2` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `bus_locations`
---
-ALTER TABLE `bus_locations`
-  ADD CONSTRAINT `fk_location_bus` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_location_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_location_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`) ON DELETE CASCADE;
-
---
 -- Các ràng buộc cho bảng `drivers`
 --
 ALTER TABLE `drivers`
   ADD CONSTRAINT `drivers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `notifications`
---
-ALTER TABLE `notifications`
-  ADD CONSTRAINT `fk_notification_recipient` FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_notification_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_notification_sender` FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
 -- Các ràng buộc cho bảng `parents`

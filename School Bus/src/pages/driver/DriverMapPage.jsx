@@ -206,7 +206,7 @@ export default function DriverMapPage() {
     pushNotice("success", ` Đã đón xong tại ${currentStop.name}`);
 
     if (stopIdx === stops.length - 1) {
-      pushNotice("success", "🏁 Đã hoàn thành tuyến đường");
+      pushNotice("success", " Đã hoàn thành tuyến đường");
       setStatus("completed");
     }
 

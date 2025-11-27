@@ -14,7 +14,7 @@ const sendError = (res, err, msg = 'Lỗi server') => {
 router.get('/', async (req, res) => {
     try {
         const [rows] = await pool.execute(`
-            SELECT id, class_name, grade, academic_year, homeroom_teacher, max_students, status
+            SELECT id, class_name, grade, academic_year, max_students, status
             FROM classes
             WHERE status = 'active'
             ORDER BY grade ASC, class_name ASC
