@@ -149,7 +149,7 @@ CREATE TABLE `routes` (
   `id` int(11) NOT NULL,
   `route_name` varchar(100) NOT NULL,
   `distance` decimal(10,2) DEFAULT NULL,
-  `status` enum('active','inactive') DEFAULT 'active',
+  `status` enum('active','inactive','maintenance') DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
