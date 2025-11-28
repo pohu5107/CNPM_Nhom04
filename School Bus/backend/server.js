@@ -15,6 +15,7 @@ import schedulesRoutes from './routes/schedulesRoutes.js';
 import userRoutes  from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js'; // Thêm dòng này
 import adminschedulesRoutes from './routes/adminschedulesRoutes.js';
+import notificationsRoutes from './routes/notificationsRoutes.js';
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/schedules', schedulesRoutes);
 app.use('/api/admin-schedules', adminschedulesRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes); // Thêm dòng này
+app.use("/api/notifications", notificationsRoutes);
 // check
 app.get('/api/health', async (req, res) => {
     try {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 27, 2025 lúc 12:13 PM
+-- Thời gian đã tạo: Th10 28, 2025 lúc 01:56 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -107,6 +107,31 @@ INSERT INTO `drivers` (`id`, `user_id`, `name`, `phone`, `license_number`, `addr
 (1, 2, 'Nguyễn Văn A', '0901234567', 'A1-12345', '23 an dương vương\n', 'active', '2025-10-20 13:44:19', '2025-11-23 03:33:24'),
 (2, 3, 'Trần Thị B', '0912345678', 'A1-54321', '273 an dương vương', 'active', '2025-10-20 13:44:19', '2025-10-23 03:03:13'),
 (3, 7, 'Lê Văn C', '0923456789', 'A1-98765', '273 an dương vương ', 'active', '2025-10-20 13:44:19', '2025-10-23 02:40:09');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL,
+  `driver_id` int(11) NOT NULL,
+  `schedule_id` int(11) DEFAULT NULL,
+  `type` enum('incident','alert','info') DEFAULT 'incident',
+  `title` varchar(255) NOT NULL DEFAULT 'Thông báo sự cố',
+  `message` text NOT NULL,
+  `route_name` varchar(255) DEFAULT NULL,
+  `status` enum('unread','read') DEFAULT 'unread',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `notifications`
+--
+
+INSERT INTO `notifications` (`id`, `driver_id`, `schedule_id`, `type`, `title`, `message`, `route_name`, `status`, `created_at`) VALUES
+(2, 1, NULL, 'incident', 'Thông báo sự cố', 'Xe gặp sự cố kỹ thuật', 'Tuyến Quận 1 - Sáng', 'unread', '2025-11-28 12:53:56');
 
 -- --------------------------------------------------------
 
@@ -399,6 +424,16 @@ ALTER TABLE `drivers`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Chỉ mục cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `driver_id` (`driver_id`),
+  ADD KEY `schedule_id` (`schedule_id`),
+  ADD KEY `created_at` (`created_at`),
+  ADD KEY `status` (`status`);
+
+--
 -- Chỉ mục cho bảng `parents`
 --
 ALTER TABLE `parents`
@@ -480,6 +515,12 @@ ALTER TABLE `drivers`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
+-- AUTO_INCREMENT cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT cho bảng `parents`
 --
 ALTER TABLE `parents`
@@ -530,6 +571,13 @@ ALTER TABLE `users`
 --
 ALTER TABLE `drivers`
   ADD CONSTRAINT `drivers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `parents`

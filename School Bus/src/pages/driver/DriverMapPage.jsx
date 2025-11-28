@@ -15,6 +15,7 @@ import IncidentReportModal from "../../components/driver/IncidentReportModal.jsx
 import EndTripModal from "../../components/driver/EndTripModal.jsx";
 import StudentsPanel from "../../components/driver/StudentsPanel.jsx";
 import { studentsService } from "../../services/studentsService.js";
+import { notificationsService } from "../../services/notificationsService.js";
 import { 
   FaPlay, FaUsers, FaCheckCircle, FaExclamationTriangle, 
   FaPhone, FaMapMarkerAlt, FaClock, FaCompass, 
@@ -193,6 +194,14 @@ export default function DriverMapPage() {
   const startTrip = () => {
     setStatus("in_progress");
     pushNotice("success", "Đã bắt đầu chuyến đi!");
+    
+    // Lưu trạng thái để parent biết
+    localStorage.setItem('busStatus', JSON.stringify({
+      status: 'in_progress',
+      currentStop: stopIdx,
+      startTime: new Date().toLocaleTimeString('vi-VN'),
+      startTimestamp: Date.now()
+    }));
   };
 
   const confirmArrival = () => {
@@ -208,6 +217,20 @@ export default function DriverMapPage() {
     if (stopIdx === stops.length - 1) {
       pushNotice("success", " Đã hoàn thành tuyến đường");
       setStatus("completed");
+      // Cập nhật trạng thái hoàn thành
+      localStorage.setItem('busStatus', JSON.stringify({
+        status: 'completed',
+        currentStop: stopIdx,
+        completedTime: new Date().toLocaleTimeString('vi-VN')
+      }));
+    } else {
+      // Cập nhật trạng thái tiếp tục với timestamp để parent tạo lại animation
+      localStorage.setItem('busStatus', JSON.stringify({
+        status: 'in_progress',
+        currentStop: stopIdx + 1,
+        lastUpdate: new Date().toLocaleTimeString('vi-VN'),
+        resumeTimestamp: Date.now() // Để parent biết cần tạo lại animation
+      }));
     }
 
     setPausedWpIdx(null);
@@ -216,11 +239,29 @@ export default function DriverMapPage() {
     setShowStudents(false);
   };
 
-  const submitIncident = () => {
+  const submitIncident = async () => {
     if (incidentMsg.trim()) {
-      pushNotice("error", ` Đã gửi báo cáo sự cố: ${incidentMsg}`);
-      setIncidentMsg("");
-      setShowIncident(false);
+      try {
+        // Gửi sự cố lên database thông qua API
+        const notificationData = {
+          driver_id: 1, // TODO: Lấy driver_id thực tế từ session/auth
+          schedule_id: scheduleId ? parseInt(scheduleId) : null, // Parse và handle null
+          type: 'incident',
+          title: 'Thông báo sự cố',
+          message: incidentMsg,
+          route_name: schedule.routeName
+        };
+
+        console.log('Sending notification data:', notificationData);
+        await notificationsService.createNotification(notificationData);
+        
+        pushNotice("success", ` Đã gửi báo cáo sự cố: ${incidentMsg}`);
+        setIncidentMsg("");
+        setShowIncident(false);
+      } catch (error) {
+        console.error('Lỗi khi gửi thông báo sự cố:', error);
+        pushNotice("error", ` Lỗi khi gửi báo cáo sự cố. Vui lòng thử lại.`);
+      }
     }
   };
 
@@ -373,10 +414,19 @@ export default function DriverMapPage() {
                   setBusCurrentPosition(position); // Cập nhật vị trí bus để tính khoảng cách chính xác
                 }}
                 onReachStop={(wpIdx, resumeFn) => {
-                  setStopIdx(wpIdx); // Cập nhật trạng thái hiện tại ngay khi đến
+                  setStopIdx(wpIdx);
                   setPausedWpIdx(wpIdx);
                   setResumeFn(() => resumeFn);
                   setShowStudents(true);
+                  
+                  // Cập nhật trạng thái dừng
+                  localStorage.setItem('busStatus', JSON.stringify({
+                    status: 'paused',
+                    currentStop: wpIdx,
+                    stopName: stops[wpIdx].name,
+                    pausedTime: new Date().toLocaleTimeString('vi-VN')
+                  }));
+                  
                   pushNotice(
                     "warning",
                     `⚠️ Đã đến điểm dừng: ${stops[wpIdx].name} - chờ xác nhận`

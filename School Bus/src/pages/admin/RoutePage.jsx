@@ -29,7 +29,7 @@ export default function RoutePage() {
         const response = await axios.get("http://localhost:5000/api/routes", {
           timeout: 15000, // 15 giây thay vì 10 giây
         });
-        console.log("✅ Routes response:", response.data);
+        console.log(" Routes response:", response.data);
 
         if (response.data && response.data.data) {
           // Map backend data to frontend format
