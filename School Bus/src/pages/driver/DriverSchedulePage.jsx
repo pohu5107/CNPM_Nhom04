@@ -8,7 +8,7 @@ import { FaBus, FaRocket } from 'react-icons/fa';
 
 const getCurrentDriverId = async () => {
   try {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(sessionStorage.getItem('user'));
     if (!user?.id) return null;
     
     // Gọi API để lấy driver_id từ user_id - hoạt động với BẤT KỲ driver nào trong DB
@@ -84,7 +84,7 @@ export default function DriverSchedulePage() {
   useEffect(() => {
     const loadDriverInfo = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = JSON.parse(sessionStorage.getItem('user'));
         const driverId = await getCurrentDriverId();
         
         if (driverId) {

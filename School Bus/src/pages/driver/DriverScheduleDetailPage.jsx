@@ -7,7 +7,7 @@ import { FiCalendar, FiUsers, FiPhone, FiX, FiMapPin } from 'react-icons/fi';
 // Lấy driver ID từ user_id qua API - hoạt động với BẤT KỲ driver nào trong database
 const getCurrentDriverId = async () => {
   try {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(sessionStorage.getItem('user'));
     if (!user?.id) return null;
     
     // Gọi API để lấy driver_id từ user_id - không giới hạn chỉ 3 drivers
@@ -52,9 +52,9 @@ export default function DriverScheduleDetailPage() {
   useEffect(() => {
     fetchScheduleDetail();
     fetchScheduleStops();
-    // Load current logged-in user's display name (simple, from localStorage)
+    // Load current logged-in user's display name (simple, from sessionStorage)
     try {
-      const user = JSON.parse(localStorage.getItem('user')) || null;
+      const user = JSON.parse(sessionStorage.getItem('user')) || null;
       if (user) setCurrentDriverName(user.username || user.name || 'Tài xế');
     } catch (_) {
       // ignore

@@ -4,9 +4,9 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Xóa thông tin đăng nhập khỏi localStorage
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    // Xóa thông tin đăng nhập khỏi sessionStorage
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
     // Chuyển hướng về trang đăng nhập
     navigate('/login');
   };

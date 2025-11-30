@@ -26,9 +26,9 @@ export default function LoginPage() {
                 password,
             });
 
-            // Lưu token vào localStorage để sử dụng cho các request sau
-            localStorage.setItem('authToken', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            // Lưu token vào sessionStorage để có thể login nhiều tab cùng lúc
+            sessionStorage.setItem('authToken', response.data.token);
+            sessionStorage.setItem('user', JSON.stringify(response.data.user));
 
             // **Kiểm tra vai trò và chuyển hướng dựa trên vai trò**
             const userRole = response.data.user.role;
@@ -43,8 +43,8 @@ export default function LoginPage() {
                 // Nếu không có vai trò hoặc vai trò không xác định, quay về trang login
                 // và hiển thị lỗi.
                 setError('Vai trò người dùng không hợp lệ. Vui lòng liên hệ quản trị viên.');
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('user');
+                sessionStorage.removeItem('authToken');
+                sessionStorage.removeItem('user');
             }
 
         } catch (err) {

@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
 const useAuth = () => {
-    const token = localStorage.getItem('authToken');
-    const user = JSON.parse(localStorage.getItem('user'));
+    const token = sessionStorage.getItem('authToken');
+    const user = JSON.parse(sessionStorage.getItem('user') || 'null');
     return {
         isAuthenticated: !!token,
         userRole: user?.role,
