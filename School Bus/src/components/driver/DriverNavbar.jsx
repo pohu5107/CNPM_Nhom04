@@ -1,6 +1,13 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function DriverNavbar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+    navigate('/login');
+  };
   return (
     <aside
       className="h-screen w-56 sm:w-60 md:w-64 lg:w-72 flex-shrink-0 text-black flex flex-col p-4 bg overflow-y-auto overflow-x-hidden border shadow-lg"
@@ -39,7 +46,10 @@ export default function DriverNavbar() {
         ))}
       </nav>
        <div className="border-t border-[#D8E359]/50 pt-5 text-center mt-auto">
-          <button className="bg-white hover:bg-[#c6d93a] text-[#174D2C] px-4 py-2 rounded-md text-lg font-semibold transition-colors duration-200 border border-black">
+          <button 
+            onClick={handleLogout}
+            className="bg-white hover:bg-[#c6d93a] text-[#174D2C] px-4 py-2 rounded-md text-lg font-semibold transition-colors duration-200 border border-black"
+          >
             Đăng xuất
           </button>
         </div>

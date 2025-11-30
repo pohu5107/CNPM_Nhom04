@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 // Simple SVG Icons
 const HomeIcon = ({ className }) => (
@@ -21,9 +21,16 @@ const ArrowLeftOnRectangleIcon = ({ className }) => (
 );
 
 const ParentNavbar = () => {
+  const navigate = useNavigate();
   const navigation = [
     { name: 'Trang chính', href: '/parents', icon: HomeIcon, end: true },
   ];
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+    navigate('/login');
+  };
 
   return (
     <div className="w-64 bg-white shadow-lg h-full flex flex-col">
@@ -50,13 +57,13 @@ const ParentNavbar = () => {
         ))}
       </nav>
       <div className="px-4 py-6 border-t">
-        <NavLink
-          to="/logout"
-          className="flex items-center px-4 py-3 text-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200"
+        <button
+          onClick={handleLogout}
+          className="flex items-center w-full px-4 py-3 text-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200"
         >
           <ArrowLeftOnRectangleIcon className="h-6 w-6 mr-3" />
           Đăng xuất
-        </NavLink>
+        </button>
       </div>
     </div>
   );
