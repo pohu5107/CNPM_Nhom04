@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from 'prop-types';
+// ĐÃ SỬA LỖI ĐƯỜNG DẪN. Sử dụng đường dẫn 3 cấp đúng nhất theo cấu trúc: 
+// src/components/admin/User/UserForm.jsx -> src/common/
+import FormInput from '../../common/FormInput';
+import Button from '../../common/Button';
 
 function UserForm({ user, mode, onCancel, onSubmit }) {
     const isEdit = mode === 'edit';
@@ -36,6 +41,7 @@ function UserForm({ user, mode, onCancel, onSubmit }) {
         if (!form.email.trim()) e.email = "Email không được rỗng";
         else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) e.email = "Email không hợp lệ";
 
+        // Password logic
         if (!isEdit && !form.password) e.password = "Password bắt buộc khi tạo mới";
         if (form.password && form.password.length < 6) e.password = "Password ít nhất 6 ký tự";
 
@@ -46,10 +52,16 @@ function UserForm({ user, mode, onCancel, onSubmit }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' })); // Xóa lỗi khi người dùng thay đổi
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isView) {
+            onCancel(); // Nếu ở chế độ xem, nút Submit đóng modal
+            return;
+        }
 
         if (!validate()) return;
         setSaving(true);
@@ -65,96 +77,125 @@ function UserForm({ user, mode, onCancel, onSubmit }) {
             // only send password if creating or user typed something
             if (!isEdit || (isEdit && form.password)) payload.password = form.password;
 
-            await onSubmit(payload, isEdit ? "edit" : "create");
+            // onSubmit(payload) sẽ được handleFormSubmit trong UserPage gọi
+            await onSubmit(payload);
         } finally {
             setSaving(false);
         }
     };
 
+    // Định nghĩa hàm dịch vai trò để hiển thị trong dropdown (tương tự như ScheduleTable)
+    // const translateRole = (role) => {
+    //     switch (role) {
+    //         case 'admin': return 'Quản trị viên';
+    //         case 'driver': return 'Tài xế';
+    //         case 'parent': return 'Phụ huynh';
+    //         default: return role;
+    //     }
+    // };
+
+    // Cấu hình options cho select role
+    const roleOptions = [
+        { value: 'admin', label: 'Quản trị viên' },
+        { value: 'driver', label: 'Tài xế' },
+        { value: 'parent', label: 'Phụ huynh' },
+    ];
+
+
     return (
-        <form onSubmit={handleSubmit}>
-            <h2 className="text-3xl font-semibold mb-6 ml-[2%] mt-5">{isEdit ? "Sửa Tài Khoản" : "Thêm Tài Khoản"}</h2>
+        <form onSubmit={handleSubmit} className="p-6">
 
-            <div className="space-y-4">
-                <div className="block">
-                    <div className="text-lg font-medium mb-4 ml-[2%]">Username</div>                    <input
-                        name="username"
-                        value={form.username}
+            {/* Loại bỏ h2 tùy chỉnh, để Modal component cha handle tiêu đề */}
+
+            {/* BỐ CỤC 2 CỘT */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* 1. Username */}
+                <FormInput
+                    label="Username"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    error={errors.username}
+                    required
+                    readOnly={isView}
+                />
+
+                {/* 2. Email */}
+                <FormInput
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    error={errors.email}
+                    required
+                    readOnly={isView}
+                />
+
+                {/* 3. Role (Full width for better look) */}
+                <div className="md:col-span-2">
+                    <FormInput
+                        label="Vai trò (Role)"
+                        name="role"
+                        type="select"
+                        value={form.role}
                         onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={saving || isView}
+                        error={errors.role}
+                        options={roleOptions}
+                        required
                         readOnly={isView}
                     />
-                    {errors.username && <div className="text-red-600 text-sm mt-1">{errors.username}</div>}
                 </div>
 
-                <div className="block">
-                    <div className="text-lg font-medium mb-1 ml-[2%]">Email</div>
-                    <input
-                        name="email"
-                        type="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={saving || isView}
-                        readOnly={isView}
-                    />
-                    {errors.email && <div className="text-red-600 text-sm mt-1">{errors.email}</div>}
-                </div>
 
+                {/* 4. Password (Chỉ hiển thị khi không ở chế độ Xem, kéo dài 2 cột) */}
                 {!isView && (
-                    <div className="block">
-                        <div className="text-lg font-medium mb-1 ml-[2%]">Password {isEdit ? "(để trống nếu không đổi)" : ""}</div>
-                        <input
+                    <div className="md:col-span-2">
+                        <FormInput
+                            label={`Mật khẩu (Password) ${isEdit ? "(Để trống nếu không đổi)" : ""}`}
                             name="password"
                             type="password"
                             value={form.password}
                             onChange={handleChange}
-                            className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            disabled={saving}
+                            error={errors.password}
+                            required={!isEdit} // Bắt buộc khi tạo mới
                         />
-                        {errors.password && <div className="text-red-600 text-sm mt-1">{errors.password}</div>}
                     </div>
                 )}
-
-                <div className="block">
-                    <div className="text-lg font-medium mb-1 ml-[2%]">Role</div>
-                    <select
-                        name="role"
-                        value={form.role}
-                        onChange={handleChange}
-                        className="mx-auto block w-29/30 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        disabled={saving || isView}
-                    >
-                        <option value="admin">Admin</option>
-                        <option value="driver">Driver</option>
-                        <option value="parent">Parent</option>
-                    </select>
-                </div>
             </div>
 
-            <div className="flex gap-3 justify-center pt-6 mt-6 border-t border-slate-200">
-                <button
+            {/* CHÂN FORM VÀ NÚT BẤM (Căn phải) */}
+            <div className="flex gap-3 justify-end pt-6 mt-6 border-t border-slate-200">
+                {/* Nút Hủy / Đóng */}
+                <Button
                     type="button"
+                    variant="secondary"
                     onClick={onCancel}
-                    className="px-4 mb-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={saving}
                 >
                     {isView ? 'Đóng' : 'Hủy'}
-                </button>
+                </Button>
 
+                {/* Nút Submit / Cập nhật / Tạo */}
                 {!isView && (
-                    <button
+                    <Button
                         type="submit"
-                        className="px-4 mb-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                        disabled={saving}
+                        loading={saving}
                     >
-                        {saving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo"}
-                    </button>
+                        {isEdit ? "Cập nhật" : "Tạo"}
+                    </Button>
                 )}
             </div>
         </form>
     );
 }
+
+UserForm.propTypes = {
+    user: PropTypes.object,
+    mode: PropTypes.oneOf(['add', 'edit', 'view']).isRequired,
+    onCancel: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+};
 
 export default UserForm;

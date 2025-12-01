@@ -55,7 +55,7 @@ const UserTable = ({ users = [], loading = false, onAdd, onEdit, onView, onDelet
 
     return (
         <Table
-            title="Quản lý User"
+            title="Quản lý Tài Khoản"
             data={filteredUsers}
             columns={columns}
             searchValue={searchTerm}
@@ -64,7 +64,7 @@ const UserTable = ({ users = [], loading = false, onAdd, onEdit, onView, onDelet
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}
-            addButtonText="Thêm user"
+            addButtonText="Thêm Tài Khoản"
             filters={filters}
             emptyMessage={searchTerm || roleFilter ? 'Không tìm thấy user nào phù hợp' : 'Chưa có user nào'}
         />
